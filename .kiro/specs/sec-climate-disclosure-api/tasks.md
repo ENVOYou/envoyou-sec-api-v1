@@ -36,14 +36,23 @@
     - Create FastAPI dependency for role-based route protection
     - Implement permission checking for different user actions
     - Add audit logging for all authentication events
+
+
+
+
+
     - _Requirements: 4.1, 7.1_
 
 - [ ] 3. Build EPA emission factors data management system
-  - [ ] 3.1 Create EPA data ingestion service
+  - [x] 3.1 Create EPA data ingestion service
+
+
     - Implement service to fetch latest EPA emission factors
     - Create data validation for EPA factor format and consistency
     - Build versioning system for historical EPA data tracking
     - _Requirements: 5.1, 5.2, 5.3_
+
+
 
   - [ ] 3.2 Implement EPA data caching and refresh mechanism
     - Set up Redis caching for EPA emission factors with TTL

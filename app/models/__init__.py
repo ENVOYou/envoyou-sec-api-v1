@@ -6,6 +6,10 @@ from app.models.epa_data import (
     EmissionFactor, EPADataUpdate, EPADataValidation,
     FuelType, ElectricityRegion, EmissionFactorSource
 )
+from app.models.emissions import (
+    Company, CompanyEntity, EmissionsCalculation, ActivityData, CalculationAuditTrail,
+    EmissionScope, CalculationStatus, CalculationMethod
+)
 from app.core.audit_logger import AuditLog
 
 __all__ = [
@@ -22,5 +26,13 @@ __all__ = [
     "FuelType",
     "ElectricityRegion",
     "EmissionFactorSource",
+    "Company",
+    "CompanyEntity",
+    "EmissionsCalculation",
+    "ActivityData",
+    "CalculationAuditTrail",
+    "EmissionScope",
+    "CalculationStatus",
+    "CalculationMethod",
     "AuditLog"
 ]
