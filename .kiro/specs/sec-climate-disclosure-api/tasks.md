@@ -30,12 +30,19 @@
     - Build token refresh and logout functionality
     - _Requirements: 7.1_
 
+
+
+
   - [x] 2.2 Implement authorization middleware
 
 
     - Create FastAPI dependency for role-based route protection
+
+
+
     - Implement permission checking for different user actions
     - Add audit logging for all authentication events
+
 
 
 
@@ -68,7 +75,10 @@
     - Build calculation result storage with complete metadata
     - _Requirements: 1.1, 1.2_
 
-  - [ ] 4.2 Implement Scope 2 emissions calculator
+  - [x] 4.2 Implement Scope 2 emissions calculator
+
+
+
     - Create calculation logic for electricity consumption using EPA factors
     - Handle different grid regions and renewable energy percentages
     - Implement location-based emission factor selection

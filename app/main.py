@@ -11,7 +11,7 @@ import uvicorn
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.middleware import AuditMiddleware, ErrorHandlingMiddleware
-from app.services.epa_scheduler import epa_scheduler
+from app.services.background_tasks import task_manager
 
 # Create FastAPI application
 app = FastAPI(
@@ -44,10 +44,13 @@ app.include_router(api_router, prefix="/v1")
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
+    task_status = task_manager.get_task_status()
+    
     return {
         "status": "healthy",
         "service": "envoyou-sec-api",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "background_tasks": task_status
     }
 
 @app.get("/")
@@ -63,15 +66,15 @@ async def root():
 @app.on_event("startup")
 async def startup_event():
     """Application startup event"""
-    # Start EPA data scheduler
-    await epa_scheduler.start_scheduler()
+    # Start background task manager
+    await task_manager.start_all_tasks()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event"""
-    # Stop EPA data scheduler
-    await epa_scheduler.stop_scheduler()
+    # Stop background task manager
+    await task_manager.stop_all_tasks()
 
 if __name__ == "__main__":
     uvicorn.run(

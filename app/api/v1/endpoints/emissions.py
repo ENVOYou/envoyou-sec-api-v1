@@ -212,9 +212,16 @@ async def calculate_scope1_emissions(
 ):
     """
     Calculate Scope 1 (direct) GHG emissions from fuel combustion and other direct sources
+    
+    Enhanced with:
+    - Intelligent EPA factor selection
+    - Comprehensive unit conversions
+    - Advanced data quality scoring
+    - Detailed calculation insights
+    - SEC compliance features
     """
     calculator = Scope1EmissionsCalculator(db)
-    return calculator.calculate_scope1_emissions(request, str(current_user.id))
+    return await calculator.calculate_scope1_emissions(request, str(current_user.id))
 
 
 @router.post("/calculate/scope2", response_model=EmissionsCalculationResponse)
@@ -225,9 +232,17 @@ async def calculate_scope2_emissions(
 ):
     """
     Calculate Scope 2 (indirect energy) GHG emissions from purchased electricity
+    
+    Enhanced with:
+    - Intelligent EPA eGRID factor selection
+    - Regional electricity grid mapping
+    - Market-based vs Location-based methods
+    - Renewable energy percentage adjustments
+    - Advanced data quality scoring
+    - Detailed calculation insights
     """
     calculator = Scope2EmissionsCalculator(db)
-    return calculator.calculate_scope2_emissions(request, str(current_user.id))
+    return await calculator.calculate_scope2_emissions(request, str(current_user.id))
 
 
 @router.get("/calculations", response_model=List[CalculationSummary])
