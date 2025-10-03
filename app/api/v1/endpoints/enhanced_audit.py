@@ -63,12 +63,11 @@ async def get_data_lineage(
 
 
 @router.get("/calculations/{calculation_id}/sec-compliance")
-@require_roles(["cfo", "general_counsel", "admin"])
 async def get_sec_compliance_report(
     calculation_id: str,
     include_technical_details: bool = Query(True, description="Include technical details in report"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["cfo", "general_counsel", "admin"]))
 ):
     """
     Generate SEC Climate Disclosure Rule compliance report
@@ -118,7 +117,6 @@ async def get_sec_compliance_report(
 
 
 @router.post("/calculations/{calculation_id}/enhanced-audit")
-@require_roles(["admin", "auditor"])
 async def create_enhanced_audit_event(
     calculation_id: str,
     event_type: str,
@@ -128,7 +126,7 @@ async def create_enhanced_audit_event(
     data_lineage: Optional[Dict[str, Any]] = None,
     reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin", "auditor"]))
 ):
     """
     Create enhanced audit event with forensic-grade data capture
@@ -189,11 +187,10 @@ async def create_enhanced_audit_event(
 
 
 @router.get("/calculations/{calculation_id}/integrity-check")
-@require_roles(["admin", "auditor", "cfo"])
 async def perform_integrity_check(
     calculation_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin", "auditor", "cfo"]))
 ):
     """
     Perform comprehensive calculation integrity verification
@@ -244,14 +241,13 @@ async def perform_integrity_check(
 
 
 @router.get("/companies/{company_id}/audit-summary")
-@require_roles(["cfo", "general_counsel", "admin"])
 async def get_company_audit_summary(
     company_id: str,
     reporting_year: Optional[int] = Query(None, description="Filter by reporting year"),
     start_date: Optional[datetime] = Query(None, description="Filter by start date"),
     end_date: Optional[datetime] = Query(None, description="Filter by end date"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["cfo", "general_counsel", "admin"]))
 ):
     """
     Get comprehensive audit summary for all company calculations
@@ -307,13 +303,12 @@ async def get_company_audit_summary(
 
 
 @router.post("/export/audit-trail")
-@require_roles(["admin", "auditor"])
 async def export_audit_trail(
     calculation_ids: List[str],
     export_format: str = Query("json", description="Export format (json, csv)"),
     include_metadata: bool = Query(True, description="Include metadata in export"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin", "auditor"]))
 ):
     """
     Export audit trail data for external auditors
@@ -367,13 +362,12 @@ async def export_audit_trail(
 
 
 @router.get("/calculations/{calculation_id}/forensic-report")
-@require_roles(["admin", "auditor", "cfo", "general_counsel"])
 async def get_forensic_report(
     calculation_id: str,
     include_raw_data: bool = Query(True, description="Include raw calculation data"),
     include_user_details: bool = Query(True, description="Include user information"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin", "auditor", "cfo", "general_counsel"]))
 ):
     """
     Generate comprehensive forensic report for SEC audit purposes

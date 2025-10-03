@@ -138,13 +138,12 @@ async def get_emission_factor_by_code(
 
 
 @router.post("/refresh")
-@require_roles(["admin", "cfo"])
 async def refresh_epa_data(
     background_tasks: BackgroundTasks,
     sources: Optional[List[str]] = None,
     force_update: bool = False,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin", "cfo"]))
 ):
     """
     Refresh EPA data from external sources (Admin/CFO only)
@@ -199,10 +198,9 @@ async def refresh_epa_data(
 
 
 @router.get("/cache/status")
-@require_roles(["admin", "cfo"])
 async def get_cache_status(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin", "cfo"]))
 ):
     """
     Get EPA cache status and statistics (Admin/CFO only)
@@ -224,11 +222,10 @@ async def get_cache_status(
 
 
 @router.post("/cache/clear")
-@require_roles(["admin"])
 async def clear_cache(
     source: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin"]))
 ):
     """
     Clear EPA cache (Admin only)
@@ -279,10 +276,9 @@ async def clear_cache(
 
 
 @router.post("/auto-refresh/start")
-@require_roles(["admin"])
 async def start_auto_refresh(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin"]))
 ):
     """
     Start automated EPA data refresh (Admin only)
@@ -320,10 +316,9 @@ async def start_auto_refresh(
 
 
 @router.post("/auto-refresh/stop")
-@require_roles(["admin"])
 async def stop_auto_refresh(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles(["admin"]))
 ):
     """
     Stop automated EPA data refresh (Admin only)
