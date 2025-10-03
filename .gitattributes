@@ -1,0 +1,27 @@
+# Pastikan semua file teks pakai LF di repo
+* text eol=lf
+
+# File Python & config
+*.py text eol=lf
+*.env text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+
+# Windows-specific (biar nggak rusak CRLF)
+*.bat text eol=crlf
+
+# Pastikan file shell executable (buat script di Linux)
+*.sh text eol=lf
+*.sh executable
+
+# Jangan pernah normalize file biner
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
+*.db binary
