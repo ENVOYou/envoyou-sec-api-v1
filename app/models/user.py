@@ -87,3 +87,26 @@ class User(BaseModel, AuditMixin):
     def can_manage_epa_data(self) -> bool:
         """Check if user can manage EPA emission factors"""
         return self.role == UserRole.ADMIN
+    
+    def can_read_emissions(self) -> bool:
+        """Check if user can read emissions data"""
+        return self.role in [
+            UserRole.CFO, 
+            UserRole.GENERAL_COUNSEL, 
+            UserRole.FINANCE_TEAM, 
+            UserRole.AUDITOR, 
+            UserRole.ADMIN
+        ]
+    
+    def can_write_emissions(self) -> bool:
+        """Check if user can write emissions data"""
+        return self.role in [
+            UserRole.CFO, 
+            UserRole.FINANCE_TEAM, 
+            UserRole.ADMIN
+        ]
+    
+    def get_permissions(self) -> dict:
+        """Get all permissions for the user based on their role"""
+        from app.core.security import JWTManager
+        return JWTManager.get_user_permissions(self.role)
