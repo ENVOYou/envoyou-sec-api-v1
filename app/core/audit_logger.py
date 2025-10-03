@@ -9,10 +9,9 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, String, DateTime, Text, Boolean
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID, JSON
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ class AuditLog(BaseModel):
     event_description = Column(Text, nullable=False)
     
     # User information
-    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    user_id = Column(GUID(), nullable=True, index=True)
     user_email = Column(String(255), nullable=True)
     user_role = Column(String(50), nullable=True)
     
@@ -40,9 +39,9 @@ class AuditLog(BaseModel):
     http_method = Column(String(10), nullable=True)
     
     # Event data
-    event_data = Column(JSONB, nullable=True)
-    before_state = Column(JSONB, nullable=True)
-    after_state = Column(JSONB, nullable=True)
+    event_data = Column(JSON, nullable=True)
+    before_state = Column(JSON, nullable=True)
+    after_state = Column(JSON, nullable=True)
     
     # Status and metadata
     success = Column(Boolean, nullable=False, default=True)

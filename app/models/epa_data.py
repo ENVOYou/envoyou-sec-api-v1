@@ -4,11 +4,10 @@ Stores EPA emission factors with versioning for audit compliance
 """
 
 from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Text, Index
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 import enum
 
-from app.models.base import BaseModel, AuditMixin
+from app.models.base import BaseModel, AuditMixin, GUID, JSON
 
 
 class FuelType(enum.Enum):
@@ -100,7 +99,7 @@ class EmissionFactor(BaseModel, AuditMixin):
     description = Column(Text, nullable=True)
     methodology = Column(Text, nullable=True)
     uncertainty = Column(Float, nullable=True)  # Percentage uncertainty
-    additional_data = Column(JSONB, nullable=True)
+    additional_data = Column(JSON, nullable=True)
     
     # Indexes for performance
     __table_args__ = (
@@ -140,7 +139,7 @@ class EPADataUpdate(BaseModel, AuditMixin):
     
     # Validation results
     validation_passed = Column(Boolean, default=False, nullable=False)
-    validation_errors = Column(JSONB, nullable=True)
+    validation_errors = Column(JSON, nullable=True)
     
     def __repr__(self):
         return f"<EPADataUpdate(type='{self.update_type}', status='{self.status}')>"
@@ -156,7 +155,7 @@ class EPADataValidation(BaseModel):
     rule_type = Column(String(50), nullable=False)  # FORMAT, RANGE, CONSISTENCY
     
     # Rule parameters
-    rule_parameters = Column(JSONB, nullable=True)
+    rule_parameters = Column(JSON, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     
     # Validation statistics

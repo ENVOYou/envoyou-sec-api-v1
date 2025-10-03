@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "testserver"]
     
     # Database
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/envoyou_sec"

@@ -21,6 +21,9 @@ class TestAuthentication:
             }
         )
         
+        if response.status_code != 200:
+            print(f"Response status: {response.status_code}")
+            print(f"Response body: {response.text}")
         assert response.status_code == 200
         data = response.json()
         

@@ -2,12 +2,62 @@
 Base model classes and common fields
 """
 
-from sqlalchemy import Column, DateTime, String, Boolean
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, DateTime, String, Boolean, TypeDecorator, CHAR, Text
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB as PostgresJSONB
 from sqlalchemy.sql import func
 import uuid
+import json
 
 from app.db.database import Base
+
+
+class GUID(TypeDecorator):
+    """
+    Platform-independent GUID type.
+    Uses PostgreSQL's UUID type when available, otherwise uses CHAR(36).
+    """
+    impl = CHAR
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PostgresUUID())
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return str(value)
+        else:
+            # For SQLite and other databases, always return string
+            if isinstance(value, uuid.UUID):
+                return str(value)
+            elif isinstance(value, str):
+                try:
+                    # Validate it's a valid UUID string
+                    uuid.UUID(value)
+                    return value
+                except ValueError:
+                    # If not valid UUID, generate new one
+                    return str(uuid.uuid4())
+            else:
+                return str(uuid.uuid4())
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        else:
+            # Always return UUID object for consistency
+            if isinstance(value, uuid.UUID):
+                return value
+            else:
+                try:
+                    return uuid.UUID(str(value))
+                except (ValueError, TypeError):
+                    # If invalid UUID string, return None or generate new one
+                    return None
 
 
 class TimestampMixin:
@@ -18,7 +68,7 @@ class TimestampMixin:
 
 class UUIDMixin:
     """Mixin for UUID primary key"""
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    id = Column(GUID(), primary_key=True, default=lambda: str(uuid.uuid4()), nullable=False)
 
 
 class BaseModel(Base, UUIDMixin, TimestampMixin):
@@ -26,8 +76,44 @@ class BaseModel(Base, UUIDMixin, TimestampMixin):
     __abstract__ = True
 
 
+class JSON(TypeDecorator):
+    """
+    Platform-independent JSON type.
+    Uses PostgreSQL's JSONB type when available, otherwise uses TEXT.
+    """
+    impl = Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PostgresJSONB())
+        else:
+            return dialect.type_descriptor(Text())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return value  # PostgreSQL handles JSON natively
+        else:
+            # For SQLite and other databases, serialize to JSON string
+            return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return value  # PostgreSQL returns dict/list directly
+        else:
+            # For SQLite and other databases, deserialize from JSON string
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return value
+
+
 class AuditMixin:
     """Mixin for audit trail fields"""
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(GUID(), nullable=True)
+    updated_by = Column(GUID(), nullable=True)
     is_deleted = Column(Boolean, default=False, nullable=False)

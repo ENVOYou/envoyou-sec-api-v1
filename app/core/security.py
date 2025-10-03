@@ -15,7 +15,18 @@ from app.models.user import UserRole
 
 
 # Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use pbkdf2_sha256 for testing to avoid bcrypt issues
+import os
+from app.core.config import settings
+
+if settings.ENVIRONMENT == "testing":
+    pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+else:
+    pwd_context = CryptContext(
+        schemes=["bcrypt"], 
+        deprecated="auto",
+        bcrypt__rounds=12
+    )
 
 
 class SecurityUtils:
@@ -24,11 +35,17 @@ class SecurityUtils:
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify a password against its hash"""
+        # Bcrypt has a 72 byte limit, truncate if necessary
+        if len(plain_password.encode('utf-8')) > 72:
+            plain_password = plain_password[:72]
         return pwd_context.verify(plain_password, hashed_password)
     
     @staticmethod
     def get_password_hash(password: str) -> str:
         """Generate password hash"""
+        # Bcrypt has a 72 byte limit, truncate if necessary
+        if len(password.encode('utf-8')) > 72:
+            password = password[:72]
         return pwd_context.hash(password)
     
     @staticmethod

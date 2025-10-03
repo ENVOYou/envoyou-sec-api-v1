@@ -4,13 +4,12 @@ Stores emissions data, calculations, and audit trails for SEC compliance
 """
 
 from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
 import uuid
 
-from app.models.base import BaseModel, AuditMixin
+from app.models.base import BaseModel, AuditMixin, GUID, JSON
 
 
 class EmissionScope(enum.Enum):
@@ -73,7 +72,7 @@ class CompanyEntity(BaseModel, AuditMixin):
     __tablename__ = "company_entities"
     
     # Entity information
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False, index=True)
+    company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     entity_type = Column(String(50), nullable=False)  # subsidiary, division, facility
     
@@ -107,8 +106,8 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     calculation_code = Column(String(100), unique=True, nullable=False, index=True)
     
     # Company and entity references
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False, index=True)
-    entity_id = Column(UUID(as_uuid=True), ForeignKey("company_entities.id"), nullable=True, index=True)
+    company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
+    entity_id = Column(GUID(), ForeignKey("company_entities.id"), nullable=True, index=True)
     
     # Calculation details
     scope = Column(String(20), nullable=False, index=True)  # scope_1, scope_2, scope_3
@@ -118,9 +117,9 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     
     # Calculation status and workflow
     status = Column(String(20), default="pending", nullable=False, index=True)
-    calculated_by = Column(UUID(as_uuid=True), nullable=False)  # User ID
-    reviewed_by = Column(UUID(as_uuid=True), nullable=True)  # User ID
-    approved_by = Column(UUID(as_uuid=True), nullable=True)  # User ID
+    calculated_by = Column(GUID(), nullable=False)  # User ID
+    reviewed_by = Column(GUID(), nullable=True)  # User ID
+    approved_by = Column(GUID(), nullable=True)  # User ID
     
     # Calculation results (in metric tons CO2e)
     total_co2e = Column(Float, nullable=True)
@@ -129,9 +128,9 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     total_n2o = Column(Float, nullable=True)
     
     # Calculation metadata
-    input_data = Column(JSONB, nullable=False)  # Original input data
-    calculation_parameters = Column(JSONB, nullable=True)  # Calculation parameters used
-    emission_factors_used = Column(JSONB, nullable=False)  # EPA factors used with versions
+    input_data = Column(JSON, nullable=False)  # Original input data
+    calculation_parameters = Column(JSON, nullable=True)  # Calculation parameters used
+    emission_factors_used = Column(JSON, nullable=False)  # EPA factors used with versions
     
     # Quality and uncertainty
     data_quality_score = Column(Float, nullable=True)  # 0-100 score
@@ -140,11 +139,11 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     # Audit and compliance
     calculation_timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     calculation_duration_seconds = Column(Float, nullable=True)
-    validation_errors = Column(JSONB, nullable=True)
-    validation_warnings = Column(JSONB, nullable=True)
+    validation_errors = Column(JSON, nullable=True)
+    validation_warnings = Column(JSON, nullable=True)
     
     # External references
-    source_documents = Column(JSONB, nullable=True)  # References to source documents
+    source_documents = Column(JSON, nullable=True)  # References to source documents
     third_party_verification = Column(Boolean, default=False, nullable=False)
     
     # Relationships
@@ -161,7 +160,7 @@ class ActivityData(BaseModel, AuditMixin):
     __tablename__ = "activity_data"
     
     # Calculation reference
-    calculation_id = Column(UUID(as_uuid=True), ForeignKey("emissions_calculations.id"), nullable=False, index=True)
+    calculation_id = Column(GUID(), ForeignKey("emissions_calculations.id"), nullable=False, index=True)
     
     # Activity data details
     activity_type = Column(String(100), nullable=False, index=True)  # fuel_combustion, electricity, etc.
@@ -183,7 +182,7 @@ class ActivityData(BaseModel, AuditMixin):
     measurement_method = Column(String(255), nullable=True)
     
     # Emission factor applied
-    emission_factor_id = Column(UUID(as_uuid=True), nullable=True)  # Reference to EPA factor
+    emission_factor_id = Column(GUID(), nullable=True)  # Reference to EPA factor
     emission_factor_value = Column(Float, nullable=False)
     emission_factor_unit = Column(String(100), nullable=False)
     emission_factor_source = Column(String(100), nullable=False)
@@ -196,7 +195,7 @@ class ActivityData(BaseModel, AuditMixin):
     
     # Additional metadata
     notes = Column(Text, nullable=True)
-    additional_data = Column(JSONB, nullable=True)
+    additional_data = Column(JSON, nullable=True)
     
     # Relationships
     calculation = relationship("EmissionsCalculation", back_populates="activity_data")
@@ -210,21 +209,21 @@ class CalculationAuditTrail(BaseModel):
     __tablename__ = "calculation_audit_trails"
     
     # Calculation reference
-    calculation_id = Column(UUID(as_uuid=True), ForeignKey("emissions_calculations.id"), nullable=False, index=True)
+    calculation_id = Column(GUID(), ForeignKey("emissions_calculations.id"), nullable=False, index=True)
     
     # Audit event details
     event_type = Column(String(100), nullable=False, index=True)  # created, modified, approved, etc.
     event_description = Column(Text, nullable=False)
     
     # User and timestamp
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(GUID(), nullable=False)
     user_role = Column(String(50), nullable=False)
     event_timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     
     # Change details
     field_changed = Column(String(100), nullable=True)
-    old_value = Column(JSONB, nullable=True)
-    new_value = Column(JSONB, nullable=True)
+    old_value = Column(JSON, nullable=True)
+    new_value = Column(JSON, nullable=True)
     
     # System information
     ip_address = Column(String(45), nullable=True)
@@ -233,7 +232,7 @@ class CalculationAuditTrail(BaseModel):
     
     # Additional context
     reason = Column(Text, nullable=True)
-    additional_metadata = Column(JSONB, nullable=True)
+    additional_metadata = Column(JSON, nullable=True)
     
     def __repr__(self):
         return f"<CalculationAuditTrail(event='{self.event_type}', timestamp='{self.event_timestamp}')>"
