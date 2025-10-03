@@ -56,19 +56,25 @@ class Settings(BaseSettings):
     
     @validator("ENVIRONMENT")
     def validate_environment(cls, v):
-        if v not in ["development", "staging", "production"]:
-            raise ValueError("ENVIRONMENT must be development, staging, or production")
+        if v not in ["development", "staging", "production", "testing"]:
+            raise ValueError("ENVIRONMENT must be development, staging, production, or testing")
         return v
     
     @validator("CORS_ORIGINS", pre=True)
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
+            # Handle empty string case
+            if not v.strip():
+                return []
             return [origin.strip() for origin in v.split(",")]
         return v
     
     @validator("ALLOWED_HOSTS", pre=True)
     def parse_allowed_hosts(cls, v):
         if isinstance(v, str):
+            # Handle empty string case
+            if not v.strip():
+                return []
             return [host.strip() for host in v.split(",")]
         return v
     
