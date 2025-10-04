@@ -6,21 +6,20 @@ Stores emissions data, calculations, and audit trails for SEC compliance
 import enum
 import uuid
 
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Float
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app.models.base import GUID
-from app.models.base import JSON
-from app.models.base import AuditMixin
-from app.models.base import BaseModel
+from app.models.base import GUID, JSON, AuditMixin, BaseModel
 
 
 class EmissionScope(enum.Enum):

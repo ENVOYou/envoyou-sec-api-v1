@@ -4,26 +4,16 @@ Handles user authentication, token management, and security operations
 """
 
 import logging
-from datetime import datetime
-from datetime import timedelta
-from typing import Any
-from typing import Dict
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
-from fastapi import HTTPException
-from fastapi import status
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.security import JWTManager
-from app.core.security import SecurityUtils
-from app.models.user import User
-from app.models.user import UserRole
-from app.models.user import UserStatus
-from app.schemas.auth import TokenResponse
-from app.schemas.auth import UserCreate
-from app.schemas.auth import UserCredentials
-from app.schemas.auth import UserResponse
+from app.core.security import JWTManager, SecurityUtils
+from app.models.user import User, UserRole, UserStatus
+from app.schemas.auth import TokenResponse, UserCreate, UserCredentials, UserResponse
 
 logger = logging.getLogger(__name__)
 

@@ -6,15 +6,8 @@ import json
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CHAR
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import String
-from sqlalchemy import Text
-from sqlalchemy import TypeDecorator
-from sqlalchemy.dialects.postgresql import JSONB as PostgresJSONB
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from sqlalchemy import CHAR, Boolean, Column, DateTime, String, Text, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB as PostgresJSONB, UUID as PostgresUUID
 from sqlalchemy.sql import func
 
 from app.db.database import Base

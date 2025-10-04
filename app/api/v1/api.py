@@ -5,16 +5,18 @@ Aggregates all API endpoints for version 1
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import audit
-from app.api.v1.endpoints import auth
-from app.api.v1.endpoints import emissions
-from app.api.v1.endpoints import emissions_validation
-from app.api.v1.endpoints import enhanced_audit
-from app.api.v1.endpoints import epa_cache
-from app.api.v1.endpoints import epa_ghgrp
-from app.api.v1.endpoints import reports
-from app.api.v1.endpoints import validation
-from app.api.v1.endpoints import workflow
+from app.api.v1.endpoints import (
+    audit,
+    auth,
+    emissions,
+    emissions_validation,
+    enhanced_audit,
+    epa_cache,
+    epa_ghgrp,
+    reports,
+    validation,
+    workflow,
+)
 
 # Create main API router
 api_router = APIRouter()

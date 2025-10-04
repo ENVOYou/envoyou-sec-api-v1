@@ -8,12 +8,9 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
-from pydantic import EmailStr
-from pydantic import validator
+from pydantic import BaseModel, EmailStr, validator
 
-from app.models.user import UserRole
-from app.models.user import UserStatus
+from app.models.user import UserRole, UserStatus
 
 
 class UserCredentials(BaseModel):

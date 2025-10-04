@@ -4,18 +4,11 @@ Emissions calculation schemas for request/response validation
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import validator
+from pydantic import BaseModel, Field, validator
 
-from app.models.emissions import CalculationMethod
-from app.models.emissions import CalculationStatus
-from app.models.emissions import EmissionScope
+from app.models.emissions import CalculationMethod, CalculationStatus, EmissionScope
 
 
 class ActivityDataInput(BaseModel):

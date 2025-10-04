@@ -5,20 +5,14 @@ Combines database storage with Redis caching for optimal performance
 
 import asyncio
 import logging
-from datetime import datetime
-from datetime import timedelta
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
-from fastapi import HTTPException
-from fastapi import status
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.schemas.epa_data import EmissionFactorResponse
-from app.schemas.epa_data import EPAFactorSummary
+from app.schemas.epa_data import EmissionFactorResponse, EPAFactorSummary
 from app.services.epa_service import EPADataIngestionService
 from app.services.redis_cache import EPACacheService
 

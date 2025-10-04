@@ -4,17 +4,13 @@ Role-based access control and permission management
 """
 
 from functools import wraps
-from typing import Callable
-from typing import List
+from typing import Callable, List
 
-from fastapi import Depends
-from fastapi import HTTPException
-from fastapi import status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
-from app.models.user import User
-from app.models.user import UserRole
+from app.models.user import User, UserRole
 
 
 def require_roles(allowed_roles: List[str]) -> Callable:

@@ -3,25 +3,16 @@ EPA Cache Management API Endpoints
 Provides endpoints for managing EPA data caching and refresh
 """
 
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter
-from fastapi import BackgroundTasks
-from fastapi import Depends
-from fastapi import HTTPException
-from fastapi import status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.core.audit_logger import AuditLogger
 from app.core.auth import require_roles
 from app.models.user import User
-from app.schemas.epa_data import EmissionFactorResponse
-from app.schemas.epa_data import EPAFactorSummary
+from app.schemas.epa_data import EmissionFactorResponse, EPAFactorSummary
 from app.services.epa_cache_service import EPACachedService
 
 router = APIRouter()

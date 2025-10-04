@@ -7,27 +7,17 @@ and cross-verification of company emissions data
 import asyncio
 import json
 import logging
-from datetime import datetime
-from datetime import timedelta
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from fastapi import HTTPException
-from fastapi import status
-from sqlalchemy import and_
-from sqlalchemy import desc
-from sqlalchemy import func
-from sqlalchemy import or_
+from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
 from app.core.config import settings
-from app.models.emissions import Company
-from app.models.emissions import EmissionsCalculation
+from app.models.emissions import Company, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
 from app.services.redis_cache import EPACacheService
 

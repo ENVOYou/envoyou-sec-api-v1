@@ -4,20 +4,12 @@ Advanced forensic and SEC compliance audit capabilities
 """
 
 from datetime import datetime
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
-from fastapi import Query
-from fastapi import status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.core.audit_logger import AuditLogger
 from app.core.auth import require_roles
 from app.models.user import User

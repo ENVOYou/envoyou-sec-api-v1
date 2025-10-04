@@ -9,36 +9,32 @@ import hashlib
 import io
 import json
 import logging
-from datetime import datetime
-from datetime import timedelta
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from fastapi import HTTPException
-from fastapi import status
-from sqlalchemy import and_
-from sqlalchemy import desc
-from sqlalchemy import or_
+from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
 from app.core.config import settings
-from app.models.epa_data import ElectricityRegion
-from app.models.epa_data import EmissionFactor
-from app.models.epa_data import EmissionFactorSource
-from app.models.epa_data import EPADataUpdate
-from app.models.epa_data import EPADataValidation
-from app.models.epa_data import FuelType
-from app.schemas.epa_data import EmissionFactorCreate
-from app.schemas.epa_data import EmissionFactorResponse
-from app.schemas.epa_data import EPADataUpdateRequest
-from app.schemas.epa_data import EPADataUpdateResponse
-from app.schemas.epa_data import EPAFactorSummary
-from app.schemas.epa_data import ValidationResult
+from app.models.epa_data import (
+    ElectricityRegion,
+    EmissionFactor,
+    EmissionFactorSource,
+    EPADataUpdate,
+    EPADataValidation,
+    FuelType,
+)
+from app.schemas.epa_data import (
+    EmissionFactorCreate,
+    EmissionFactorResponse,
+    EPADataUpdateRequest,
+    EPADataUpdateResponse,
+    EPAFactorSummary,
+    ValidationResult,
+)
 
 logger = logging.getLogger(__name__)
 

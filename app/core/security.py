@@ -9,14 +9,10 @@ import hashlib
 # Use pbkdf2_sha256 for testing to avoid bcrypt issues
 import os
 import secrets
-from datetime import datetime
-from datetime import timedelta
-from typing import Any
-from typing import Dict
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
-from jose import JWTError
-from jose import jwt
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
