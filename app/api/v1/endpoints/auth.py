@@ -3,37 +3,36 @@ Authentication endpoints
 JWT-based authentication with role-based access control
 """
 
-from typing import Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.audit_logger import AuditLogger
+from app.core.dependencies import get_admin_user, get_current_active_user
+from app.core.security import JWTManager
 from app.db.database import get_db
+from app.models.user import User
 from app.schemas.auth import (
-    UserCredentials, TokenResponse, TokenRefresh, 
-    UserCreate, UserResponse, UserPermissions, PasswordChange
+    PasswordChange,
+    TokenRefresh,
+    TokenResponse,
+    UserCreate,
+    UserCredentials,
+    UserPermissions,
+    UserResponse,
 )
 from app.services.auth_service import AuthService
-from app.core.security import JWTManager
-from app.core.dependencies import (
-    get_current_active_user, get_admin_user
-)
-from app.core.audit_logger import AuditLogger
-from app.models.user import User
 
 router = APIRouter()
 security = HTTPBearer()
 jwt_manager = JWTManager()
 
 
-
-
-
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    credentials: UserCredentials,
-    request: Request,
-    db: Session = Depends(get_db)
+    credentials: UserCredentials, request: Request, db: Session = Depends(get_db)
 ):
     """
     User authentication endpoint
@@ -41,15 +40,15 @@ async def login(
     """
     auth_service = AuthService(db)
     audit_logger = AuditLogger(db)
-    
+
     # Get request metadata
-    request_id = getattr(request.state, 'request_id', None)
+    request_id = getattr(request.state, "request_id", None)
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
-    
+
     try:
         token_response = auth_service.authenticate_user(credentials)
-        
+
         # Log successful authentication
         audit_logger.log_authentication_event(
             event_type="LOGIN_SUCCESS",
@@ -57,11 +56,11 @@ async def login(
             success=True,
             request_id=request_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
-        
+
         return token_response
-        
+
     except HTTPException as e:
         # Log failed authentication
         audit_logger.log_authentication_event(
@@ -71,16 +70,13 @@ async def login(
             request_id=request_id,
             ip_address=ip_address,
             user_agent=user_agent,
-            error_message=e.detail
+            error_message=e.detail,
         )
         raise
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(
-    token_data: TokenRefresh,
-    db: Session = Depends(get_db)
-):
+async def refresh_token(token_data: TokenRefresh, db: Session = Depends(get_db)):
     """
     Refresh access token using refresh token
     """
@@ -92,7 +88,7 @@ async def refresh_token(
 async def logout(
     request: Request,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     User logout endpoint
@@ -100,28 +96,23 @@ async def logout(
     This endpoint can be used for audit logging
     """
     audit_logger = AuditLogger(db)
-    
+
     # Log logout event
     audit_logger.log_authentication_event(
         event_type="LOGOUT",
         user_email=current_user.email,
         success=True,
-        request_id=getattr(request.state, 'request_id', None),
+        request_id=getattr(request.state, "request_id", None),
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
-        additional_data={"user_id": str(current_user.id)}
+        additional_data={"user_id": str(current_user.id)},
     )
-    
-    return {
-        "message": "Successfully logged out",
-        "user_id": str(current_user.id)
-    }
+
+    return {"message": "Successfully logged out", "user_id": str(current_user.id)}
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(
-    current_user: User = Depends(get_current_active_user)
-):
+async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
     """
     Get current user information
     """
@@ -130,19 +121,18 @@ async def get_current_user_info(
 
 @router.get("/permissions", response_model=UserPermissions)
 async def get_user_permissions(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ):
     """
     Get current user permissions based on role
     """
     auth_service = AuthService(db)
     permissions_data = auth_service.get_user_permissions(current_user)
-    
+
     return UserPermissions(
         user_id=permissions_data["user_id"],
         role=current_user.role,
-        permissions=permissions_data["permissions"]
+        permissions=permissions_data["permissions"],
     )
 
 
@@ -151,34 +141,34 @@ async def register_user(
     user_data: UserCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_admin_user)  # Use admin dependency
+    current_user: User = Depends(get_admin_user),  # Use admin dependency
 ):
     """
     Register new user (Admin only)
     """
     auth_service = AuthService(db)
     audit_logger = AuditLogger(db)
-    
+
     try:
         new_user = auth_service.create_user(user_data)
-        
+
         # Log user creation
         audit_logger.log_data_access_event(
             user=current_user,
             resource_type="user",
             resource_id=str(new_user.id),
             action="CREATE",
-            request_id=getattr(request.state, 'request_id', None),
+            request_id=getattr(request.state, "request_id", None),
             ip_address=request.client.host if request.client else None,
             endpoint="/v1/auth/register",
             additional_data={
                 "new_user_email": new_user.email,
-                "new_user_role": new_user.role.value
-            }
+                "new_user_role": new_user.role.value,
+            },
         )
-        
+
         return new_user
-        
+
     except Exception as e:
         # Log failed user creation
         audit_logger.log_data_access_event(
@@ -186,13 +176,10 @@ async def register_user(
             resource_type="user",
             resource_id="unknown",
             action="CREATE_FAILED",
-            request_id=getattr(request.state, 'request_id', None),
+            request_id=getattr(request.state, "request_id", None),
             ip_address=request.client.host if request.client else None,
             endpoint="/v1/auth/register",
-            additional_data={
-                "attempted_email": user_data.email,
-                "error": str(e)
-            }
+            additional_data={"attempted_email": user_data.email, "error": str(e)},
         )
         raise
 
@@ -201,38 +188,38 @@ async def register_user(
 async def change_password(
     password_data: PasswordChange,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Change user password
     """
+    from datetime import datetime
+
     auth_service = AuthService(db)
-    
+
     # Verify current password
     if not auth_service.security.verify_password(
-        password_data.current_password, 
-        current_user.hashed_password
+        password_data.current_password, current_user.hashed_password
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
+            detail="Current password is incorrect",
         )
-    
+
     # Update password
     current_user.hashed_password = auth_service.security.get_password_hash(
         password_data.new_password
     )
-    current_user.password_changed_at = auth_service.db.func.now()
-    
+    current_user.password_changed_at = datetime.utcnow()
+
     db.commit()
-    
+
     return {"message": "Password changed successfully"}
 
 
 @router.post("/audit-session")
 async def create_audit_session(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ):
     """
     Create audit session for external auditors
