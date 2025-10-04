@@ -226,11 +226,10 @@ class EPADataIngestionService:
                     records_updated += 1
                 else:
                     # Create new factor
-                    new_factor = EmissionFactor(
-                        **factor_data,
-                        is_current=True,
-                        valid_from=datetime.utcnow()
-                    )
+                    factor_data['is_current'] = True
+                    if 'valid_from' not in factor_data:
+                        factor_data['valid_from'] = datetime.utcnow()
+                    new_factor = EmissionFactor(**factor_data)
                     self.db.add(new_factor)
                     records_added += 1
             
@@ -346,9 +345,10 @@ class EPADataIngestionService:
             deprecated_factors = total_factors - current_factors
             
             # Category breakdown
+            from sqlalchemy import func
             category_query = self.db.query(
                 EmissionFactor.category,
-                self.db.func.count(EmissionFactor.id)
+                func.count(EmissionFactor.id)
             ).filter(
                 EmissionFactor.is_current == True
             ).group_by(EmissionFactor.category).all()
@@ -358,7 +358,7 @@ class EPADataIngestionService:
             # Source breakdown
             source_query = self.db.query(
                 EmissionFactor.source,
-                self.db.func.count(EmissionFactor.id)
+                func.count(EmissionFactor.id)
             ).filter(
                 EmissionFactor.is_current == True
             ).group_by(EmissionFactor.source).all()

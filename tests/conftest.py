@@ -52,8 +52,21 @@ def event_loop():
 @pytest.fixture(scope="function")
 def db_session():
     """Create a fresh database session for each test"""
+    # Create tables
     Base.metadata.create_all(bind=engine)
+    
+    # Create session
     db = TestingSessionLocal()
+    
+    # Override the dependency to use the same session
+    def override_get_db_for_test():
+        try:
+            yield db
+        finally:
+            pass  # Don't close here, let the fixture handle it
+    
+    app.dependency_overrides[get_db] = override_get_db_for_test
+    
     try:
         yield db
     finally:

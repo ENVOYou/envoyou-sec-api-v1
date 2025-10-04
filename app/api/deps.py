@@ -207,29 +207,54 @@ def require_auditor():
 
 
 # Permission-based dependencies
-def require_read_emissions():
+def require_read_emissions(current_user: User = Depends(get_current_user)) -> User:
     """Require permission to read emissions data"""
-    return require_permissions(["read_emissions"])
+    if not current_user.can_read_emissions():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Permission required: read_emissions"
+        )
+    return current_user
 
 
-def require_write_emissions():
+def require_write_emissions(current_user: User = Depends(get_current_user)) -> User:
     """Require permission to write emissions data"""
-    return require_permissions(["write_emissions"])
+    if not current_user.can_write_emissions():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Permission required: write_emissions"
+        )
+    return current_user
 
 
-def require_approve_reports():
+def require_approve_reports(current_user: User = Depends(get_current_user)) -> User:
     """Require permission to approve reports"""
-    return require_permissions(["approve_reports"])
+    if not current_user.can_approve_reports():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Permission required: approve_reports"
+        )
+    return current_user
 
 
-def require_manage_epa_data():
+def require_manage_epa_data(current_user: User = Depends(get_current_user)) -> User:
     """Require permission to manage EPA data"""
-    return require_permissions(["manage_epa_data"])
+    if not current_user.can_manage_epa_data():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Permission required: manage_epa_data"
+        )
+    return current_user
 
 
-def require_access_audit_trails():
+def require_access_audit_trails(current_user: User = Depends(get_current_user)) -> User:
     """Require permission to access audit trails"""
-    return require_permissions(["read_audit_trails"])
+    if not current_user.can_access_audit_trails():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Permission required: access_audit_trails"
+        )
+    return current_user
 
 
 # Optional user dependency (for public endpoints that can work with or without auth)

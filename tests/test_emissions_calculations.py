@@ -101,7 +101,7 @@ class TestEmissionsCalculations:
         db_session.commit()
         return {"natural_gas": ng_factor, "electricity": elec_factor}
     
-    def test_scope1_calculation_natural_gas(self, db_session, test_company, test_emission_factors, test_user):
+    async def test_scope1_calculation_natural_gas(self, db_session, test_company, test_emission_factors, test_user):
         """Test Scope 1 calculation with natural gas"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -128,7 +128,7 @@ class TestEmissionsCalculations:
         )
         
         # Perform calculation
-        result = calculator.calculate_scope1_emissions(request, str(test_user.id))
+        result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
         
         # Verify results
         assert result.status == "completed"
@@ -146,7 +146,7 @@ class TestEmissionsCalculations:
         assert result.calculation_timestamp is not None
         assert result.calculation_duration_seconds is not None
     
-    def test_scope2_calculation_electricity(self, db_session, test_company, test_emission_factors, test_user):
+    async def test_scope2_calculation_electricity(self, db_session, test_company, test_emission_factors, test_user):
         """Test Scope 2 calculation with electricity"""
         calculator = Scope2EmissionsCalculator(db_session)
         
@@ -173,7 +173,7 @@ class TestEmissionsCalculations:
         )
         
         # Perform calculation
-        result = calculator.calculate_scope2_emissions(request, str(test_user.id))
+        result = await calculator.calculate_scope2_emissions(request, str(test_user.id))
         
         # Verify results
         assert result.status == "completed"
@@ -189,7 +189,7 @@ class TestEmissionsCalculations:
         # Verify method
         assert "location_based" in result.method
     
-    def test_scope1_multiple_activities(self, db_session, test_company, test_emission_factors, test_user):
+    async def test_scope1_multiple_activities(self, db_session, test_company, test_emission_factors, test_user):
         """Test Scope 1 calculation with multiple activities"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -220,7 +220,7 @@ class TestEmissionsCalculations:
             ]
         )
         
-        result = calculator.calculate_scope1_emissions(request, str(test_user.id))
+        result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
         
         # Verify results
         assert result.status == "completed"
@@ -244,7 +244,7 @@ class TestEmissionsCalculations:
                 ActivityDataInput(
                     activity_type="stationary_combustion",
                     fuel_type="invalid_fuel",  # Invalid fuel type
-                    quantity=0.0,  # Invalid quantity
+                    quantity=100.0,  # Valid quantity but invalid fuel type
                     unit="MMBtu",
                     data_quality="estimated"
                 )
@@ -255,7 +255,7 @@ class TestEmissionsCalculations:
         with pytest.raises(Exception):
             calculator.calculate_scope1_emissions(request, str(test_user.id))
     
-    def test_data_quality_scoring(self, db_session, test_company, test_emission_factors, test_user):
+    async def test_data_quality_scoring(self, db_session, test_company, test_emission_factors, test_user):
         """Test data quality scoring"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -286,7 +286,7 @@ class TestEmissionsCalculations:
             ]
         )
         
-        result = calculator.calculate_scope1_emissions(request, str(test_user.id))
+        result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
         
         # Verify quality scoring
         assert result.data_quality_score is not None
