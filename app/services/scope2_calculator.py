@@ -6,27 +6,28 @@ Indirect GHG emissions from purchased electricity, steam, heating, and cooling
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from typing import Any, Dict, List, Optional
 
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.audit_logger import AuditLogger
 from app.models.emissions import (
-    EmissionsCalculation,
     ActivityData,
     CalculationAuditTrail,
     Company,
     CompanyEntity,
+    EmissionsCalculation,
 )
-from app.models.epa_data import EmissionFactor, ElectricityRegion
+from app.models.epa_data import ElectricityRegion, EmissionFactor
 from app.models.user import User
 from app.schemas.emissions import (
-    Scope2CalculationRequest,
     ActivityDataInput,
-    EmissionsCalculationResponse,
     CalculationValidationResult,
+    EmissionsCalculationResponse,
+    Scope2CalculationRequest,
 )
 from app.services.epa_cache_service import EPACachedService
-from app.core.audit_logger import AuditLogger
 
 logger = logging.getLogger(__name__)
 

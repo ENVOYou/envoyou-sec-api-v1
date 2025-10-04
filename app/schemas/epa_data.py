@@ -2,11 +2,12 @@
 EPA data schemas for request/response validation
 """
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, validator
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from app.models.epa_data import FuelType, ElectricityRegion, EmissionFactorSource
+from pydantic import BaseModel, validator
+
+from app.models.epa_data import ElectricityRegion, EmissionFactorSource, FuelType
 
 
 class EmissionFactorBase(BaseModel):

@@ -3,16 +3,17 @@ Authentication Service
 Handles user authentication, token management, and security operations
 """
 
-from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 import logging
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
-from app.models.user import User, UserRole, UserStatus
-from app.schemas.auth import UserCredentials, TokenResponse, UserCreate, UserResponse
-from app.core.security import SecurityUtils, JWTManager
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
+from app.core.security import JWTManager, SecurityUtils
+from app.models.user import User, UserRole, UserStatus
+from app.schemas.auth import TokenResponse, UserCreate, UserCredentials, UserResponse
 
 logger = logging.getLogger(__name__)
 

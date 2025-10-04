@@ -6,17 +6,18 @@ Comprehensive audit trail system for SEC compliance and forensic traceability
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, func
+from typing import Any, Dict, List, Optional
+
 from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, func, or_
+from sqlalchemy.orm import Session
 
 from app.models.emissions import (
-    EmissionsCalculation,
     ActivityData,
     CalculationAuditTrail,
     Company,
     CompanyEntity,
+    EmissionsCalculation,
 )
 from app.models.user import User
 from app.schemas.emissions import (

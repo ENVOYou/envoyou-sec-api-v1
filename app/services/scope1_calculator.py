@@ -6,26 +6,27 @@ Direct GHG emissions from sources owned or controlled by the company
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from typing import Any, Dict, List, Optional, Tuple
 
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.audit_logger import AuditLogger
 from app.models.emissions import (
-    EmissionsCalculation,
     ActivityData,
     CalculationAuditTrail,
     Company,
     CompanyEntity,
+    EmissionsCalculation,
 )
 from app.models.epa_data import EmissionFactor
 from app.schemas.emissions import (
-    Scope1CalculationRequest,
     ActivityDataInput,
-    EmissionsCalculationResponse,
     CalculationValidationResult,
+    EmissionsCalculationResponse,
+    Scope1CalculationRequest,
 )
 from app.services.epa_cache_service import EPACachedService
-from app.core.audit_logger import AuditLogger
 
 logger = logging.getLogger(__name__)
 

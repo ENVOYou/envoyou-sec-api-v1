@@ -3,11 +3,12 @@ Authentication and authorization schemas
 Pydantic models for request/response validation
 """
 
+import re
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
+
 from pydantic import BaseModel, EmailStr, validator
-from datetime import datetime
-import re
 
 from app.models.user import UserRole, UserStatus
 

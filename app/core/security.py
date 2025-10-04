@@ -3,21 +3,20 @@ Security utilities for authentication and authorization
 JWT token handling, password hashing, and security functions
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-import secrets
 import hashlib
-
-from app.core.config import settings
-from app.models.user import UserRole
-
 
 # Password hashing context
 # Use pbkdf2_sha256 for testing to avoid bcrypt issues
 import os
+import secrets
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
 from app.core.config import settings
+from app.models.user import UserRole
 
 if settings.ENVIRONMENT == "testing":
     pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")

@@ -3,12 +3,15 @@ User model for authentication and authorization
 Supports role-based access control for SEC compliance
 """
 
-from sqlalchemy import Column, String, Boolean, Enum as SQLEnum, DateTime
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 import enum
 
-from app.models.base import BaseModel, AuditMixin
+from sqlalchemy import Boolean, Column, DateTime
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import String
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from app.models.base import AuditMixin, BaseModel
 
 
 class UserRole(enum.Enum):

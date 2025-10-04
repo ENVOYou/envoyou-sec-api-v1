@@ -2,12 +2,14 @@
 Base model classes and common fields
 """
 
-from sqlalchemy import Column, DateTime, String, Boolean, TypeDecorator, CHAR, Text
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB as PostgresJSONB
-from sqlalchemy.sql import func
-import uuid
 import json
+import uuid
 from datetime import datetime
+
+from sqlalchemy import CHAR, Boolean, Column, DateTime, String, Text, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB as PostgresJSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from sqlalchemy.sql import func
 
 from app.db.database import Base
 

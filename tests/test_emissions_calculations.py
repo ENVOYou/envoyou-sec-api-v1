@@ -3,20 +3,21 @@ Test emissions calculations functionality
 Comprehensive tests for Scope 1 and Scope 2 calculations
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models.emissions import Company, CompanyEntity, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
-from app.services.scope1_calculator import Scope1EmissionsCalculator
-from app.services.scope2_calculator import Scope2EmissionsCalculator
 from app.schemas.emissions import (
+    ActivityDataInput,
     Scope1CalculationRequest,
     Scope2CalculationRequest,
-    ActivityDataInput,
 )
+from app.services.scope1_calculator import Scope1EmissionsCalculator
+from app.services.scope2_calculator import Scope2EmissionsCalculator
 
 
 class TestEmissionsCalculations:

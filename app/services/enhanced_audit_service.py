@@ -3,27 +3,28 @@ Enhanced Audit Trail Service for SEC Climate Disclosure Compliance
 Builds on existing audit system with advanced forensic capabilities and compliance features
 """
 
-import logging
 import hashlib
 import json
+import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, func, text
-from fastapi import HTTPException, status
+from typing import Any, Dict, List, Optional, Tuple
 
-from app.services.emissions_audit_service import EmissionsAuditService
+from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, func, or_, text
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.models.emissions import (
-    EmissionsCalculation,
     ActivityData,
     CalculationAuditTrail,
     Company,
     CompanyEntity,
+    EmissionsCalculation,
 )
 from app.models.epa_data import EmissionFactor
 from app.models.user import User
-from app.core.config import settings
+from app.services.emissions_audit_service import EmissionsAuditService
 
 logger = logging.getLogger(__name__)
 

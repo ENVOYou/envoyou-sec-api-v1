@@ -3,11 +3,12 @@ EPA emission factors and data models
 Stores EPA emission factors with versioning for audit compliance
 """
 
-from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Text, Index
-from sqlalchemy.sql import func
 import enum
 
-from app.models.base import BaseModel, AuditMixin, GUID, JSON
+from sqlalchemy import Boolean, Column, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy.sql import func
+
+from app.models.base import GUID, JSON, AuditMixin, BaseModel
 
 
 class FuelType(enum.Enum):

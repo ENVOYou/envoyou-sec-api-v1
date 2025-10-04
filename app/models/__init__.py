@@ -1,26 +1,26 @@
 # Database models package
 
-from app.models.base import BaseModel, TimestampMixin, UUIDMixin, AuditMixin
-from app.models.user import User, UserRole, UserStatus
-from app.models.epa_data import (
-    EmissionFactor,
-    EPADataUpdate,
-    EPADataValidation,
-    FuelType,
-    ElectricityRegion,
-    EmissionFactorSource,
-)
+from app.core.audit_logger import AuditLog
+from app.models.base import AuditMixin, BaseModel, TimestampMixin, UUIDMixin
 from app.models.emissions import (
+    ActivityData,
+    CalculationAuditTrail,
+    CalculationMethod,
+    CalculationStatus,
     Company,
     CompanyEntity,
     EmissionsCalculation,
-    ActivityData,
-    CalculationAuditTrail,
     EmissionScope,
-    CalculationStatus,
-    CalculationMethod,
 )
-from app.core.audit_logger import AuditLog
+from app.models.epa_data import (
+    ElectricityRegion,
+    EmissionFactor,
+    EmissionFactorSource,
+    EPADataUpdate,
+    EPADataValidation,
+    FuelType,
+)
+from app.models.user import User, UserRole, UserStatus
 
 __all__ = [
     "BaseModel",

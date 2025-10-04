@@ -5,10 +5,11 @@ High-performance caching with TTL and fallback mechanisms
 
 import json
 import logging
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
-import redis
 import pickle
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+import redis
 from fastapi import HTTPException, status
 
 from app.core.config import settings

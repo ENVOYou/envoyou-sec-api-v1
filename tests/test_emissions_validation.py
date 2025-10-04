@@ -4,22 +4,23 @@ Tests cross-validation engine, variance analysis, and confidence scoring
 """
 
 import asyncio
-import sys
 import os
-from datetime import datetime, date
+import sys
+from datetime import date, datetime
 from uuid import uuid4
+
 import pytest
 
 # Add the app directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.db.database import SessionLocal
+from app.models.emissions import Company, EmissionsCalculation
+from app.models.user import User, UserRole, UserStatus
 from app.services.emissions_validation_service import (
     EmissionsValidationService,
     ValidationResult,
 )
-from app.db.database import SessionLocal
-from app.models.emissions import Company, EmissionsCalculation
-from app.models.user import User, UserRole, UserStatus
 
 
 async def test_emissions_validation_service():

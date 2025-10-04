@@ -4,21 +4,22 @@ Integrates with EPA Greenhouse Gas Reporting Program database for data validatio
 and cross-verification of company emissions data
 """
 
-import logging
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, func
+from typing import Any, Dict, List, Optional, Tuple
+
 import httpx
 from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, func, or_
+from sqlalchemy.orm import Session
 
+from app.core.audit_logger import AuditLogger
 from app.core.config import settings
 from app.models.emissions import Company, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
 from app.services.redis_cache import EPACacheService
-from app.core.audit_logger import AuditLogger
 
 logger = logging.getLogger(__name__)
 

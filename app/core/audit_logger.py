@@ -5,13 +5,14 @@ Comprehensive logging of all authentication and authorization events
 
 import json
 import logging
-from datetime import datetime
-from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import Column, String, DateTime, Text, Boolean
 import uuid
+from datetime import datetime
+from typing import Any, Dict, Optional
 
-from app.models.base import BaseModel, GUID, JSON
+from sqlalchemy import Boolean, Column, DateTime, String, Text
+from sqlalchemy.orm import Session
+
+from app.models.base import GUID, JSON, BaseModel
 from app.models.user import User
 
 logger = logging.getLogger(__name__)

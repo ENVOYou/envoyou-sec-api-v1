@@ -4,18 +4,19 @@ Implements comparison logic between company data and EPA GHGRP data
 for SEC Climate Disclosure Rule compliance validation
 """
 
-import logging
 import asyncio
+import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
-from fastapi import HTTPException, status
+from typing import Any, Dict, List, Optional, Tuple
 
-from app.models.emissions import Company, EmissionsCalculation, ActivityData
+from fastapi import HTTPException, status
+from sqlalchemy import and_, func, or_
+from sqlalchemy.orm import Session
+
+from app.core.audit_logger import AuditLogger
+from app.models.emissions import ActivityData, Company, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
 from app.services.epa_ghgrp_service import EPAGHGRPService
-from app.core.audit_logger import AuditLogger
 
 logger = logging.getLogger(__name__)
 

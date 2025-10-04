@@ -4,17 +4,17 @@ Tests cross-validation, benchmarking, and anomaly detection features
 """
 
 import asyncio
-import sys
 import os
-from datetime import datetime, date
+import sys
+from datetime import date, datetime
 from uuid import uuid4
 
 # Add the app directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.epa_ghgrp_service import EPAGHGRPService
-from app.db.database import SessionLocal
 from app.core.config import settings
+from app.db.database import SessionLocal
+from app.services.epa_ghgrp_service import EPAGHGRPService
 
 
 async def test_epa_ghgrp_service():

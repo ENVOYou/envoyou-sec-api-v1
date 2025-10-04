@@ -3,13 +3,13 @@ ENVOYOU SEC API - Main FastAPI Application
 Climate Disclosure Rule Compliance Platform for US Public Companies
 """
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-import uvicorn
 
-from app.core.config import settings
 from app.api.v1.api import api_router
+from app.core.config import settings
 from app.core.middleware import AuditMiddleware, ErrorHandlingMiddleware
 from app.services.background_tasks import task_manager
 

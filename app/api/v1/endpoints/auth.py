@@ -3,26 +3,27 @@ Authentication endpoints
 JWT-based authentication with role-based access control
 """
 
-from typing import Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.audit_logger import AuditLogger
+from app.core.dependencies import get_admin_user, get_current_active_user
+from app.core.security import JWTManager
 from app.db.database import get_db
+from app.models.user import User
 from app.schemas.auth import (
-    UserCredentials,
-    TokenResponse,
-    TokenRefresh,
-    UserCreate,
-    UserResponse,
-    UserPermissions,
     PasswordChange,
+    TokenRefresh,
+    TokenResponse,
+    UserCreate,
+    UserCredentials,
+    UserPermissions,
+    UserResponse,
 )
 from app.services.auth_service import AuthService
-from app.core.security import JWTManager
-from app.core.dependencies import get_current_active_user, get_admin_user
-from app.core.audit_logger import AuditLogger
-from app.models.user import User
 
 router = APIRouter()
 security = HTTPBearer()

@@ -2,12 +2,13 @@
 Test EPA data management functionality
 """
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
-from app.services.epa_service import EPADataIngestionService
 from app.models.epa_data import EmissionFactor
+from app.services.epa_service import EPADataIngestionService
 
 
 class TestEPADataEndpoints:

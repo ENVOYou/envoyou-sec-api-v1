@@ -4,36 +4,37 @@ Handles fetching, validation, and storage of EPA emission factors
 """
 
 import asyncio
+import csv
 import hashlib
+import io
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
-from fastapi import HTTPException, status
-import httpx
-import csv
-import io
+from typing import Any, Dict, List, Optional, Tuple
 
+import httpx
+from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, or_
+from sqlalchemy.orm import Session
+
+from app.core.audit_logger import AuditLogger
 from app.core.config import settings
 from app.models.epa_data import (
+    ElectricityRegion,
     EmissionFactor,
+    EmissionFactorSource,
     EPADataUpdate,
     EPADataValidation,
     FuelType,
-    ElectricityRegion,
-    EmissionFactorSource,
 )
 from app.schemas.epa_data import (
     EmissionFactorCreate,
     EmissionFactorResponse,
-    ValidationResult,
     EPADataUpdateRequest,
     EPADataUpdateResponse,
     EPAFactorSummary,
+    ValidationResult,
 )
-from app.core.audit_logger import AuditLogger
 
 logger = logging.getLogger(__name__)
 

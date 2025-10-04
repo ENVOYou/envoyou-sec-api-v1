@@ -3,14 +3,15 @@ Redis Cache Service for EPA Emission Factors
 Provides caching layer with TTL and automated refresh capabilities
 """
 
+import asyncio
+import hashlib
 import json
 import logging
-import hashlib
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
+
 from redis import Redis
-from redis.exceptions import RedisError, ConnectionError
-import asyncio
+from redis.exceptions import ConnectionError, RedisError
 
 from app.core.config import settings
 

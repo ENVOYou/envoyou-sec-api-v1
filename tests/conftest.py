@@ -2,11 +2,12 @@
 Pytest configuration and fixtures for ENVOYOU SEC API tests
 """
 
-import pytest
 import asyncio
 import os
 from typing import Generator
-from unittest.mock import Mock, AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -15,13 +16,13 @@ from sqlalchemy.pool import StaticPool
 # Set test environment variable before any imports
 os.environ["TESTING"] = "true"
 
-from app.main import app
-from app.db.database import get_db, Base
 from app.core.config import settings
-from app.models.user import User, UserRole, UserStatus
 from app.core.security import SecurityUtils
+from app.db.database import Base, get_db
+from app.main import app
 from app.models.emissions import Company
 from app.models.epa_data import EmissionFactor
+from app.models.user import User, UserRole, UserStatus
 
 # Test database URL
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_envoyou_sec.db"

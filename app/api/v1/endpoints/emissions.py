@@ -4,43 +4,44 @@ GHG emissions calculation with EPA factor integration
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.schemas.epa_data import (
-    EmissionFactorResponse,
-    EmissionFactorQuery,
-    EPAFactorSummary,
-    FuelEmissionFactorRequest,
-    ElectricityEmissionFactorRequest,
-    EPADataUpdateRequest,
-    EPADataUpdateResponse,
-)
-from app.schemas.emissions import (
-    Scope1CalculationRequest,
-    Scope2CalculationRequest,
-    EmissionsCalculationResponse,
-    CalculationSummary,
-    CompanyEmissionsSummary,
-    CalculationAuditTrailResponse,
-    CalculationApprovalRequest,
-    CalculationValidationResult,
-)
-from app.services.epa_service import EPADataIngestionService
-from app.services.epa_scheduler import epa_scheduler
-from app.services.cache_service import cache_service
-from app.services.scope1_calculator import Scope1EmissionsCalculator
-from app.services.scope2_calculator import Scope2EmissionsCalculator
-from app.services.emissions_audit_service import EmissionsAuditService
 from app.core.dependencies import (
     get_current_active_user,
+    require_approve_reports,
     require_manage_epa_data,
     require_read_emissions,
     require_write_emissions,
-    require_approve_reports,
 )
+from app.db.database import get_db
 from app.models.user import User
+from app.schemas.emissions import (
+    CalculationApprovalRequest,
+    CalculationAuditTrailResponse,
+    CalculationSummary,
+    CalculationValidationResult,
+    CompanyEmissionsSummary,
+    EmissionsCalculationResponse,
+    Scope1CalculationRequest,
+    Scope2CalculationRequest,
+)
+from app.schemas.epa_data import (
+    ElectricityEmissionFactorRequest,
+    EmissionFactorQuery,
+    EmissionFactorResponse,
+    EPADataUpdateRequest,
+    EPADataUpdateResponse,
+    EPAFactorSummary,
+    FuelEmissionFactorRequest,
+)
+from app.services.cache_service import cache_service
+from app.services.emissions_audit_service import EmissionsAuditService
+from app.services.epa_scheduler import epa_scheduler
+from app.services.epa_service import EPADataIngestionService
+from app.services.scope1_calculator import Scope1EmissionsCalculator
+from app.services.scope2_calculator import Scope2EmissionsCalculator
 
 router = APIRouter()
 
@@ -445,8 +446,9 @@ async def get_company_emissions_summary(
     """
     Get emissions summary for a company
     """
-    from app.models.emissions import EmissionsCalculation, Company
     from sqlalchemy import func
+
+    from app.models.emissions import Company, EmissionsCalculation
 
     # Verify company exists
     company = db.query(Company).filter(Company.id == company_id).first()

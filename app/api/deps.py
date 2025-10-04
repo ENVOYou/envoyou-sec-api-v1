@@ -5,15 +5,16 @@ authentication, and authorization
 """
 
 from typing import Generator, Optional
-from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from jose import JWTError, jwt
 
-from app.db.database import SessionLocal
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
-from app.models.user import User
 from app.core.security import JWTManager
+from app.db.database import SessionLocal
+from app.models.user import User
 
 # Security scheme for JWT token
 security = HTTPBearer(auto_error=False)

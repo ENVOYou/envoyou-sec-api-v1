@@ -5,9 +5,9 @@ Handles automated refresh and maintenance tasks
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 from app.core.config import settings
 from app.db.database import SessionLocal
@@ -294,7 +294,7 @@ if os.getenv("TESTING") != "true":
     task_manager = BackgroundTaskManager()
 else:
     # Mock task manager for testing
-    from unittest.mock import MagicMock, AsyncMock
+    from unittest.mock import AsyncMock, MagicMock
 
     task_manager = MagicMock()
     task_manager.get_task_status.return_value = {"status": "not_running"}

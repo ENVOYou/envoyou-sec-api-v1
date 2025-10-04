@@ -5,16 +5,17 @@ Automated scheduling for EPA data updates with fallback mechanisms
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, Any, List
-from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from typing import Any, Dict, List
 
-from app.db.database import SessionLocal
-from app.services.epa_service import EPADataIngestionService
-from app.services.cache_service import cache_service
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
+from app.db.database import SessionLocal
 from app.models.epa_data import EPADataUpdate
+from app.services.cache_service import cache_service
+from app.services.epa_service import EPADataIngestionService
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +300,7 @@ if os.getenv("TESTING") != "true":
     epa_scheduler = EPADataScheduler()
 else:
     # Mock scheduler for testing
-    from unittest.mock import MagicMock, AsyncMock
+    from unittest.mock import AsyncMock, MagicMock
 
     epa_scheduler = MagicMock()
     epa_scheduler.get_scheduler_status.return_value = {
