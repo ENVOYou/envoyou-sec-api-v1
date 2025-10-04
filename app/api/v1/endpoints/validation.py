@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
+
 # Placeholder - will be implemented in later tasks
 @router.get("/")
 async def validation_placeholder():

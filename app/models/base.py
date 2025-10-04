@@ -14,6 +14,7 @@ from app.db.database import Base
 
 class DateTimeEncoder(json.JSONEncoder):
     """Custom JSON encoder that handles datetime objects"""
+
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
@@ -25,11 +26,12 @@ class GUID(TypeDecorator):
     Platform-independent GUID type.
     Uses PostgreSQL's UUID type when available, otherwise uses CHAR(36).
     """
+
     impl = CHAR
     cache_ok = True
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(PostgresUUID())
         else:
             return dialect.type_descriptor(CHAR(36))
@@ -37,7 +39,7 @@ class GUID(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
-        elif dialect.name == 'postgresql':
+        elif dialect.name == "postgresql":
             return str(value)
         else:
             # For SQLite and other databases, always return string
@@ -59,7 +61,7 @@ class GUID(TypeDecorator):
             return value
         else:
             # For PostgreSQL, return UUID object
-            if dialect.name == 'postgresql':
+            if dialect.name == "postgresql":
                 if isinstance(value, uuid.UUID):
                     return value
                 else:
@@ -77,17 +79,29 @@ class GUID(TypeDecorator):
 
 class TimestampMixin:
     """Mixin for created_at and updated_at timestamps"""
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
 
 class UUIDMixin:
     """Mixin for UUID primary key"""
-    id = Column(GUID(), primary_key=True, default=lambda: str(uuid.uuid4()), nullable=False)
+
+    id = Column(
+        GUID(), primary_key=True, default=lambda: str(uuid.uuid4()), nullable=False
+    )
 
 
 class BaseModel(Base, UUIDMixin, TimestampMixin):
     """Base model with UUID primary key and timestamps"""
+
     __abstract__ = True
 
 
@@ -96,11 +110,12 @@ class JSON(TypeDecorator):
     Platform-independent JSON type.
     Uses PostgreSQL's JSONB type when available, otherwise uses TEXT.
     """
+
     impl = Text
     cache_ok = True
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(PostgresJSONB())
         else:
             return dialect.type_descriptor(Text())
@@ -108,7 +123,7 @@ class JSON(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
-        elif dialect.name == 'postgresql':
+        elif dialect.name == "postgresql":
             return value  # PostgreSQL handles JSON natively
         else:
             # For SQLite and other databases, serialize to JSON string
@@ -117,7 +132,7 @@ class JSON(TypeDecorator):
     def process_result_value(self, value, dialect):
         if value is None:
             return value
-        elif dialect.name == 'postgresql':
+        elif dialect.name == "postgresql":
             return value  # PostgreSQL returns dict/list directly
         else:
             # For SQLite and other databases, deserialize from JSON string
@@ -135,6 +150,7 @@ class JSON(TypeDecorator):
 
 class AuditMixin:
     """Mixin for audit trail fields"""
+
     created_by = Column(GUID(), nullable=True)
     updated_by = Column(GUID(), nullable=True)
     is_deleted = Column(Boolean, default=False, nullable=False)

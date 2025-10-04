@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Set test environment variable before any imports
-os.environ['TESTING'] = 'true'
+os.environ["TESTING"] = "true"
 
 from app.main import app
 from app.db.database import get_db, Base
@@ -64,7 +64,7 @@ def db_session():
     """Create a fresh database session for each test"""
     # Create session
     db = TestingSessionLocal()
-    
+
     try:
         yield db
     finally:
@@ -87,7 +87,7 @@ def client() -> Generator:
 def test_user(db_session):
     """Create a test user"""
     security = SecurityUtils()
-    
+
     user = User(
         email="test@example.com",
         username="testuser",
@@ -95,13 +95,13 @@ def test_user(db_session):
         hashed_password=security.get_password_hash("TestPass123!"),
         role=UserRole.FINANCE_TEAM,
         status=UserStatus.ACTIVE,
-        is_active=True
+        is_active=True,
     )
-    
+
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
-    
+
     return user
 
 
@@ -109,7 +109,7 @@ def test_user(db_session):
 def admin_user(db_session):
     """Create an admin test user"""
     security = SecurityUtils()
-    
+
     user = User(
         email="admin@example.com",
         username="admin",
@@ -117,13 +117,13 @@ def admin_user(db_session):
         hashed_password=security.get_password_hash("AdminPass123!"),
         role=UserRole.ADMIN,
         status=UserStatus.ACTIVE,
-        is_active=True
+        is_active=True,
     )
-    
+
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
-    
+
     return user
 
 
@@ -131,7 +131,7 @@ def admin_user(db_session):
 def cfo_user(db_session):
     """Create a CFO test user"""
     security = SecurityUtils()
-    
+
     user = User(
         email="cfo@example.com",
         username="cfo",
@@ -139,13 +139,13 @@ def cfo_user(db_session):
         hashed_password=security.get_password_hash("CfoPass123!"),
         role=UserRole.CFO,
         status=UserStatus.ACTIVE,
-        is_active=True
+        is_active=True,
     )
-    
+
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
-    
+
     return user
 
 
@@ -153,7 +153,7 @@ def cfo_user(db_session):
 def auditor_user(db_session):
     """Create an auditor test user"""
     security = SecurityUtils()
-    
+
     user = User(
         email="auditor@example.com",
         username="auditor",
@@ -161,13 +161,13 @@ def auditor_user(db_session):
         hashed_password=security.get_password_hash("AuditorPass123!"),
         role=UserRole.AUDITOR,
         status=UserStatus.ACTIVE,
-        is_active=True
+        is_active=True,
     )
-    
+
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
-    
+
     return user
 
 
@@ -175,16 +175,12 @@ def auditor_user(db_session):
 def auth_headers(client, test_user):
     """Get authentication headers for test user"""
     response = client.post(
-        "/v1/auth/login",
-        json={
-            "email": test_user.email,
-            "password": "TestPass123!"
-        }
+        "/v1/auth/login", json={"email": test_user.email, "password": "TestPass123!"}
     )
-    
+
     assert response.status_code == 200
     token = response.json()["access_token"]
-    
+
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -192,16 +188,12 @@ def auth_headers(client, test_user):
 def admin_auth_headers(client, admin_user):
     """Get authentication headers for admin user"""
     response = client.post(
-        "/v1/auth/login",
-        json={
-            "email": admin_user.email,
-            "password": "AdminPass123!"
-        }
+        "/v1/auth/login", json={"email": admin_user.email, "password": "AdminPass123!"}
     )
-    
+
     assert response.status_code == 200
     token = response.json()["access_token"]
-    
+
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -209,6 +201,7 @@ def admin_auth_headers(client, admin_user):
 def sample_emission_factor():
     """Sample emission factor data for testing"""
     from datetime import datetime
+
     return {
         "factor_name": "Natural Gas Combustion",
         "factor_code": "NG_COMB_001",
@@ -223,7 +216,7 @@ def sample_emission_factor():
         "publication_year": 2023,
         "version": "2023.1",
         "valid_from": datetime(2023, 1, 1),
-        "description": "Emission factor for natural gas combustion"
+        "description": "Emission factor for natural gas combustion",
     }
 
 
@@ -240,13 +233,13 @@ def test_company(db_session):
         fiscal_year_end="12-31",
         reporting_year=2023,
         is_public_company=True,
-        market_cap_category="mid-cap"
+        market_cap_category="mid-cap",
     )
-    
+
     db_session.add(company)
     db_session.commit()
     db_session.refresh(company)
-    
+
     return company
 
 
@@ -254,7 +247,7 @@ def test_company(db_session):
 def test_emission_factors(db_session):
     """Create test emission factors"""
     from datetime import datetime
-    
+
     # Natural gas factor
     ng_factor = EmissionFactor(
         factor_name="Natural Gas Combustion",
@@ -271,9 +264,9 @@ def test_emission_factors(db_session):
         version="2023.1",
         valid_from=datetime(2023, 1, 1),
         is_current=True,
-        description="EPA emission factor for natural gas combustion"
+        description="EPA emission factor for natural gas combustion",
     )
-    
+
     # Electricity factor for California
     elec_factor = EmissionFactor(
         factor_name="California Electricity Grid",
@@ -290,9 +283,9 @@ def test_emission_factors(db_session):
         version="2023.1",
         valid_from=datetime(2023, 1, 1),
         is_current=True,
-        description="EPA eGRID emission factor for California"
+        description="EPA eGRID emission factor for California",
     )
-    
+
     db_session.add_all([ng_factor, elec_factor])
     db_session.commit()
     return {"natural_gas": ng_factor, "electricity": elec_factor}

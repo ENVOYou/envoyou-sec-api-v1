@@ -41,17 +41,19 @@ app.add_middleware(ErrorHandlingMiddleware)
 # Include API routes
 app.include_router(api_router, prefix="/v1")
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
     task_status = task_manager.get_task_status()
-    
+
     return {
         "status": "healthy",
         "service": "envoyou-sec-api",
         "version": "1.0.0",
-        "background_tasks": task_status
+        "background_tasks": task_status,
     }
+
 
 @app.get("/")
 async def root():
@@ -59,7 +61,7 @@ async def root():
     return {
         "message": "ENVOYOU SEC API - Climate Disclosure Compliance Platform",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 
@@ -76,10 +78,11 @@ async def shutdown_event():
     # Stop background task manager
     await task_manager.stop_all_tasks()
 
+
 if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.ENVIRONMENT == "development"
+        reload=settings.ENVIRONMENT == "development",
     )

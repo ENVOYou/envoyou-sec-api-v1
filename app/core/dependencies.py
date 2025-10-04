@@ -22,7 +22,7 @@ from app.api.deps import (
     require_write_emissions,
     require_approve_reports,
     require_manage_epa_data,
-    require_access_audit_trails
+    require_access_audit_trails,
 )
 
 # Legacy aliases for backward compatibility
