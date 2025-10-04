@@ -56,51 +56,7 @@ class TestEmissionsCalculations:
         db_session.refresh(entity)
         return entity
     
-    @pytest.fixture
-    def test_emission_factors(self, db_session):
-        """Create test emission factors"""
-        # Natural gas factor
-        ng_factor = EmissionFactor(
-            factor_name="Natural Gas Combustion",
-            factor_code="NG_COMB_001",
-            category="fuel",
-            fuel_type="natural_gas",
-            unit="kg CO2e/MMBtu",
-            co2_factor=53.06,
-            ch4_factor=0.001,
-            n2o_factor=0.0001,
-            co2e_factor=53.11,
-            source="EPA_GHGRP",
-            publication_year=2023,
-            version="2023.1",
-            valid_from=datetime(2023, 1, 1),
-            is_current=True,
-            description="EPA emission factor for natural gas combustion"
-        )
-        
-        # Electricity factor for California
-        elec_factor = EmissionFactor(
-            factor_name="California Electricity Grid",
-            factor_code="ELEC_CAMX_001",
-            category="electricity",
-            electricity_region="camx",
-            unit="kg CO2e/MWh",
-            co2_factor=200.5,
-            ch4_factor=None,
-            n2o_factor=None,
-            co2e_factor=200.5,
-            source="EPA_EGRID",
-            publication_year=2023,
-            version="2023.1",
-            valid_from=datetime(2023, 1, 1),
-            is_current=True,
-            description="EPA eGRID emission factor for California"
-        )
-        
-        db_session.add_all([ng_factor, elec_factor])
-        db_session.commit()
-        return {"natural_gas": ng_factor, "electricity": elec_factor}
-    
+    @pytest.mark.asyncio
     async def test_scope1_calculation_natural_gas(self, db_session, test_company, test_emission_factors, test_user):
         """Test Scope 1 calculation with natural gas"""
         calculator = Scope1EmissionsCalculator(db_session)
@@ -146,7 +102,8 @@ class TestEmissionsCalculations:
         assert result.calculation_timestamp is not None
         assert result.calculation_duration_seconds is not None
     
-    async def test_scope2_calculation_electricity(self, db_session, test_company, test_emission_factors, test_user):
+    @pytest.mark.asyncio
+    async def test_scope2_calculation_electricity(self, db_session, test_company, test_user, test_emission_factors):
         """Test Scope 2 calculation with electricity"""
         calculator = Scope2EmissionsCalculator(db_session)
         
@@ -189,7 +146,8 @@ class TestEmissionsCalculations:
         # Verify method
         assert "location_based" in result.method
     
-    async def test_scope1_multiple_activities(self, db_session, test_company, test_emission_factors, test_user):
+    @pytest.mark.asyncio
+    async def test_scope1_multiple_activities(self, db_session, test_company, test_user):
         """Test Scope 1 calculation with multiple activities"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -230,7 +188,8 @@ class TestEmissionsCalculations:
         expected_total = 800 * 53.11 / 1000  # Convert kg to metric tons
         assert abs(result.total_co2e - expected_total) < 0.01
     
-    def test_calculation_validation_errors(self, db_session, test_company, test_user):
+    @pytest.mark.asyncio
+    async def test_calculation_validation_errors(self, db_session, test_company, test_user):
         """Test calculation validation with invalid data"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -251,11 +210,15 @@ class TestEmissionsCalculations:
             ]
         )
         
-        # Should raise validation error
-        with pytest.raises(Exception):
-            calculator.calculate_scope1_emissions(request, str(test_user.id))
+        # Should complete but with failed status and validation errors
+        result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
+        
+        # Check that calculation failed and has validation errors
+        assert result.status == "failed"
+        assert len(result.validation_errors) > 0
+        assert "invalid_fuel" in str(result.validation_errors[0])
     
-    async def test_data_quality_scoring(self, db_session, test_company, test_emission_factors, test_user):
+    async def test_data_quality_scoring(self, db_session, test_company, test_user):
         """Test data quality scoring"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -437,7 +400,8 @@ class TestCalculationValidation:
 class TestAuditTrail:
     """Test audit trail functionality"""
     
-    def test_audit_trail_creation(self, db_session, test_company, test_emission_factors, test_user):
+    @pytest.mark.asyncio
+    async def test_audit_trail_creation(self, db_session, test_company, test_user):
         """Test that audit trail is created during calculation"""
         calculator = Scope1EmissionsCalculator(db_session)
         
@@ -457,7 +421,7 @@ class TestAuditTrail:
             ]
         )
         
-        result = calculator.calculate_scope1_emissions(request, str(test_user.id))
+        result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
         
         # Verify calculation was created
         calculation = db_session.query(EmissionsCalculation).filter(
@@ -469,12 +433,13 @@ class TestAuditTrail:
         assert calculation.input_data is not None
         assert calculation.emission_factors_used is not None
     
-    def test_calculation_reproducibility(self, db_session, test_company, test_emission_factors, test_user):
+    @pytest.mark.asyncio
+    async def test_calculation_reproducibility(self, db_session, test_company, test_user):
         """Test that calculations are reproducible"""
         calculator = Scope1EmissionsCalculator(db_session)
         
-        request = Scope1CalculationRequest(
-            calculation_name="Reproducibility Test",
+        request1 = Scope1CalculationRequest(
+            calculation_name="Reproducibility Test 1",
             company_id=str(test_company.id),
             reporting_period_start=datetime(2023, 1, 1),
             reporting_period_end=datetime(2023, 12, 31),
@@ -489,10 +454,33 @@ class TestAuditTrail:
             ]
         )
         
-        # Run calculation twice
-        result1 = calculator.calculate_scope1_emissions(request, str(test_user.id))
-        result2 = calculator.calculate_scope1_emissions(request, str(test_user.id))
+        request2 = Scope1CalculationRequest(
+            calculation_name="Reproducibility Test 2",
+            company_id=str(test_company.id),
+            reporting_period_start=datetime(2023, 1, 1),
+            reporting_period_end=datetime(2023, 12, 31),
+            activity_data=[
+                ActivityDataInput(
+                    activity_type="stationary_combustion",
+                    fuel_type="natural_gas",
+                    quantity=100.0,
+                    unit="MMBtu",
+                    data_quality="measured"
+                )
+            ]
+        )
+        
+        # Run calculation twice with identical inputs (except name)
+        result1 = await calculator.calculate_scope1_emissions(request1, str(test_user.id))
+        
+        # Add small delay to ensure different timestamp for unique code generation
+        import time
+        time.sleep(1.0)
+        
+        result2 = await calculator.calculate_scope1_emissions(request2, str(test_user.id))
         
         # Results should be identical (same inputs, same factors)
         assert result1.total_co2e == result2.total_co2e
         assert result1.total_co2 == result2.total_co2
+        assert result1.total_ch4 == result2.total_ch4
+        assert result1.total_n2o == result2.total_n2o

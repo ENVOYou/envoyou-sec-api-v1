@@ -81,6 +81,7 @@ class Scope1EmissionsCalculator:
                 calculated_by=uuid.UUID(user_id),
                 input_data=request.dict(),
                 calculation_parameters=request.calculation_parameters or {},
+                emission_factors_used={},  # Initialize as empty dict
                 source_documents=request.source_documents or []
             )
             
@@ -131,13 +132,16 @@ class Scope1EmissionsCalculator:
                 total_n2o * self.gwp_values['n2o']
             )
             
+            # Convert from kg to metric tons CO2e
+            calculated_co2e_mt = calculated_co2e / 1000.0
+            
             # Update calculation with results
             calculation_duration = (datetime.utcnow() - start_time).total_seconds()
             
-            calculation.total_co2 = total_co2
-            calculation.total_ch4 = total_ch4
-            calculation.total_n2o = total_n2o
-            calculation.total_co2e = calculated_co2e
+            calculation.total_co2 = total_co2 / 1000.0  # Convert kg to metric tons
+            calculation.total_ch4 = total_ch4 / 1000.0  # Convert kg to metric tons
+            calculation.total_n2o = total_n2o / 1000.0  # Convert kg to metric tons
+            calculation.total_co2e = calculated_co2e_mt
             calculation.emission_factors_used = emission_factors_used
             calculation.calculation_duration_seconds = calculation_duration
             calculation.validation_errors = validation_errors
@@ -158,7 +162,7 @@ class Scope1EmissionsCalculator:
             self._create_audit_trail_entry(
                 calculation.id,
                 "calculation_completed",
-                f"Scope 1 calculation completed: {calculated_co2e:.2f} tCO2e",
+                f"Scope 1 calculation completed: {calculated_co2e_mt:.2f} tCO2e",
                 user_id
             )
             
@@ -168,7 +172,7 @@ class Scope1EmissionsCalculator:
                 calculation_type="scope_1",
                 input_data=request.dict(),
                 output_data={
-                    "total_co2e": calculated_co2e,
+                    "total_co2e": calculated_co2e_mt,
                     "total_co2": total_co2,
                     "total_ch4": total_ch4,
                     "total_n2o": total_n2o
@@ -177,13 +181,13 @@ class Scope1EmissionsCalculator:
                 processing_time_ms=int(calculation_duration * 1000)
             )
             
-            logger.info(f"Scope 1 calculation completed: {calculation_code}, {calculated_co2e:.2f} tCO2e")
+            logger.info(f"Scope 1 calculation completed: {calculation_code}, {calculated_co2e_mt:.2f} tCO2e")
             
             # Return response
             # Generate calculation insights
             calculation_insights = self._generate_calculation_insights(
                 request.activity_data, 
-                calculated_co2e, 
+                calculated_co2e_mt, 
                 emission_factors_used
             )
             

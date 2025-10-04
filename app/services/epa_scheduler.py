@@ -270,5 +270,19 @@ class EPADataScheduler:
         }
 
 
-# Global scheduler instance
-epa_scheduler = EPADataScheduler()
+# Global scheduler instance - lazy initialization to avoid database connection at module load
+import os
+if os.getenv('TESTING') != 'true':
+    epa_scheduler = EPADataScheduler()
+else:
+    # Mock scheduler for testing
+    from unittest.mock import MagicMock, AsyncMock
+    epa_scheduler = MagicMock()
+    epa_scheduler.get_scheduler_status.return_value = {
+        "is_running": False,
+        "refresh_interval_hours": 24,
+        "cache_health": True
+    }
+    epa_scheduler.force_refresh = AsyncMock(return_value={})
+    epa_scheduler.start_scheduler = AsyncMock()
+    epa_scheduler.stop_scheduler = AsyncMock()

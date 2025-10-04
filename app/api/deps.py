@@ -5,7 +5,7 @@ authentication, and authorization
 """
 
 from typing import Generator, Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
@@ -16,7 +16,7 @@ from app.models.user import User
 from app.core.security import JWTManager
 
 # Security scheme for JWT token
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def get_db() -> Generator:
@@ -33,7 +33,7 @@ def get_db() -> Generator:
 
 def get_current_user(
     db: Session = Depends(get_db),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> User:
     """
     Get current authenticated user from JWT token
@@ -53,6 +53,10 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Check if credentials are provided
+    if credentials is None:
+        raise credentials_exception
     
     try:
         # Extract token from credentials
@@ -181,29 +185,54 @@ def require_permissions(required_permissions: list):
 
 
 # Specific role-based dependencies for common use cases
-def require_admin():
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
     """Require admin role"""
-    return require_roles(["admin"])
+    if current_user.role.value != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Admin role required"
+        )
+    return current_user
 
 
-def require_cfo():
+def require_cfo(current_user: User = Depends(get_current_user)) -> User:
     """Require CFO role or higher"""
-    return require_roles(["cfo", "admin"])
+    if current_user.role.value not in ["cfo", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. CFO role required"
+        )
+    return current_user
 
 
-def require_general_counsel():
+def require_general_counsel(current_user: User = Depends(get_current_user)) -> User:
     """Require General Counsel role or higher"""
-    return require_roles(["general_counsel", "admin"])
+    if current_user.role.value not in ["general_counsel", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. General Counsel role required"
+        )
+    return current_user
 
 
-def require_finance_team():
+def require_finance_team(current_user: User = Depends(get_current_user)) -> User:
     """Require Finance Team role or higher"""
-    return require_roles(["finance_team", "cfo", "general_counsel", "admin"])
+    if current_user.role.value not in ["finance_team", "cfo", "general_counsel", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Finance Team role required"
+        )
+    return current_user
 
 
-def require_auditor():
+def require_auditor(current_user: User = Depends(get_current_user)) -> User:
     """Require Auditor role or higher"""
-    return require_roles(["auditor", "admin"])
+    if current_user.role.value not in ["auditor", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Auditor role required"
+        )
+    return current_user
 
 
 # Permission-based dependencies

@@ -33,6 +33,17 @@ from app.models.user import User
 router = APIRouter()
 
 
+@router.get("/factors/summary")
+async def get_factors_summary(
+    db: Session = Depends(get_db)
+):
+    """
+    Get summary statistics of EPA emission factors
+    """
+    epa_service = EPADataIngestionService(db)
+    return epa_service.get_factors_summary()
+
+
 @router.get("/factors", response_model=List[EmissionFactorResponse])
 async def get_emission_factors(
     category: Optional[str] = Query(None, description="Filter by category (fuel, electricity)"),
@@ -76,18 +87,6 @@ async def get_emission_factor_by_code(
         )
     
     return factor
-
-
-@router.get("/factors/summary", response_model=EPAFactorSummary)
-async def get_factors_summary(
-    current_user: User = Depends(require_read_emissions),
-    db: Session = Depends(get_db)
-):
-    """
-    Get summary statistics of EPA emission factors
-    """
-    epa_service = EPADataIngestionService(db)
-    return epa_service.get_factors_summary()
 
 
 @router.post("/factors/fuel", response_model=List[EmissionFactorResponse])

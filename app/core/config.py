@@ -78,9 +78,21 @@ class Settings(BaseSettings):
             return [host.strip() for host in v.split(",")]
         return v
     
+    @validator("DATABASE_URL", pre=True)
+    def override_database_url_for_testing(cls, v):
+        if os.getenv("TESTING") == "true":
+            return "sqlite:///./test_envoyou_sec.db"
+        return v
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Override database URL for testing
+        if os.getenv("TESTING") == "true":
+            self.DATABASE_URL = "sqlite:///./test_envoyou_sec.db"
 
 
 # Global settings instance

@@ -206,6 +206,7 @@ async def change_password(
     """
     Change user password
     """
+    from datetime import datetime
     auth_service = AuthService(db)
     
     # Verify current password
@@ -222,7 +223,7 @@ async def change_password(
     current_user.hashed_password = auth_service.security.get_password_hash(
         password_data.new_password
     )
-    current_user.password_changed_at = auth_service.db.func.now()
+    current_user.password_changed_at = datetime.utcnow()
     
     db.commit()
     

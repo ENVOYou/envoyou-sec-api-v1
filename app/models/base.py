@@ -7,8 +7,17 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB as Postgr
 from sqlalchemy.sql import func
 import uuid
 import json
+from datetime import datetime
 
 from app.db.database import Base
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles datetime objects"""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 class GUID(TypeDecorator):
@@ -49,15 +58,21 @@ class GUID(TypeDecorator):
         if value is None:
             return value
         else:
-            # Always return UUID object for consistency
-            if isinstance(value, uuid.UUID):
-                return value
+            # For PostgreSQL, return UUID object
+            if dialect.name == 'postgresql':
+                if isinstance(value, uuid.UUID):
+                    return value
+                else:
+                    try:
+                        return uuid.UUID(str(value))
+                    except (ValueError, TypeError):
+                        return None
             else:
-                try:
-                    return uuid.UUID(str(value))
-                except (ValueError, TypeError):
-                    # If invalid UUID string, return None or generate new one
-                    return None
+                # For SQLite and other databases, return string to avoid RETURNING issues
+                if isinstance(value, str):
+                    return value
+                else:
+                    return str(value)
 
 
 class TimestampMixin:
@@ -97,7 +112,7 @@ class JSON(TypeDecorator):
             return value  # PostgreSQL handles JSON natively
         else:
             # For SQLite and other databases, serialize to JSON string
-            return json.dumps(value)
+            return json.dumps(value, cls=DateTimeEncoder)
 
     def process_result_value(self, value, dialect):
         if value is None:
@@ -110,6 +125,12 @@ class JSON(TypeDecorator):
                 return json.loads(value)
             except (json.JSONDecodeError, TypeError):
                 return value
+
+    def _json_serial(self, obj):
+        """JSON serializer for objects not serializable by default json code"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError("Type not serializable")
 
 
 class AuditMixin:

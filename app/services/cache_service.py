@@ -328,5 +328,20 @@ class CacheService:
             return False
 
 
-# Global cache service instance
-cache_service = CacheService()
+# Global cache service instance - lazy initialization for testing
+import os
+if os.getenv('TESTING') != 'true':
+    cache_service = CacheService()
+else:
+    # Mock cache service for testing
+    from unittest.mock import MagicMock
+    cache_service = MagicMock()
+    cache_service.health_check.return_value = True
+    cache_service.get_cache_stats.return_value = {"status": "healthy"}
+    cache_service.set_cache_staleness_indicator.return_value = True
+    cache_service.is_data_stale.return_value = False
+    cache_service.set_epa_factors.return_value = True
+    cache_service.set_factor_by_code.return_value = True
+    cache_service.get_epa_factors.return_value = None
+    cache_service.get_factor_by_code.return_value = None
+    cache_service.invalidate_epa_cache.return_value = 0
