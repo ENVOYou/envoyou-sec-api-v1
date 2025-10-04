@@ -4,6 +4,7 @@ Pydantic models for request/response validation
 """
 
 from typing import Optional
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
 import re
@@ -72,7 +73,7 @@ class UserCreate(BaseModel):
 
 class UserResponse(BaseModel):
     """User response schema"""
-    id: str
+    id: UUID
     email: str
     username: str
     full_name: str
@@ -80,7 +81,7 @@ class UserResponse(BaseModel):
     status: UserStatus
     is_active: bool
     last_login: Optional[datetime]
-    company_id: Optional[str]
+    company_id: Optional[UUID]
     created_at: datetime
     updated_at: datetime
     

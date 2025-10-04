@@ -17,7 +17,7 @@ from app.models.user import User, UserRole, UserStatus
 from app.core.security import SecurityUtils
 
 # Test database URL
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test_envoyou_sec.db"
 
 # Create test engine
 engine = create_engine(
@@ -25,6 +25,9 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
+
+# Create all tables once at module load
+Base.metadata.create_all(bind=engine)
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -49,33 +52,25 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 def db_session():
     """Create a fresh database session for each test"""
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-    
     # Create session
     db = TestingSessionLocal()
-    
-    # Override the dependency to use the same session
-    def override_get_db_for_test():
-        try:
-            yield db
-        finally:
-            pass  # Don't close here, let the fixture handle it
-    
-    app.dependency_overrides[get_db] = override_get_db_for_test
     
     try:
         yield db
     finally:
+        # Clean up: delete all data from tables
+        db.rollback()
+        for table in reversed(Base.metadata.sorted_tables):
+            db.execute(table.delete())
+        db.commit()
         db.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
-def client(db_session) -> Generator:
+def client() -> Generator:
     """Create a test client"""
     with TestClient(app) as test_client:
         yield test_client
