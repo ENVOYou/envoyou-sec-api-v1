@@ -195,9 +195,9 @@ class Scope2EmissionsCalculator:
                     logger.warning(f"Skipping electricity data due to error: {str(e)}")
                     continue
             
-            # Update calculation record with totals
-            calculation.total_co2e = total_co2e
-            calculation.total_co2 = total_co2
+            # Update calculation record with totals (convert kg to metric tons)
+            calculation.total_co2e = total_co2e / 1000.0
+            calculation.total_co2 = total_co2 / 1000.0
             calculation.status = "completed"
             calculation.calculation_timestamp = datetime.utcnow()
             calculation.calculation_duration_seconds = (datetime.utcnow() - start_time).total_seconds()
