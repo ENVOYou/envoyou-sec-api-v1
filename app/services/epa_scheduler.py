@@ -6,8 +6,11 @@ Automated scheduling for EPA data updates with fallback mechanisms
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from datetime import datetime
+from datetime import timedelta
+from typing import Any
+from typing import Dict
+from typing import List
 
 from sqlalchemy.orm import Session
 
@@ -300,7 +303,8 @@ if os.getenv("TESTING") != "true":
     epa_scheduler = EPADataScheduler()
 else:
     # Mock scheduler for testing
-    from unittest.mock import AsyncMock, MagicMock
+    from unittest.mock import AsyncMock
+    from unittest.mock import MagicMock
 
     epa_scheduler = MagicMock()
     epa_scheduler.get_scheduler_status.return_value = {

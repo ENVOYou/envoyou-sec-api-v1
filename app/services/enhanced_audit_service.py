@@ -7,21 +7,29 @@ import hashlib
 import json
 import logging
 import uuid
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from datetime import timedelta
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
-from fastapi import HTTPException, status
-from sqlalchemy import and_, desc, func, or_, text
+from fastapi import HTTPException
+from fastapi import status
+from sqlalchemy import and_
+from sqlalchemy import desc
+from sqlalchemy import func
+from sqlalchemy import or_
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.emissions import (
-    ActivityData,
-    CalculationAuditTrail,
-    Company,
-    CompanyEntity,
-    EmissionsCalculation,
-)
+from app.models.emissions import ActivityData
+from app.models.emissions import CalculationAuditTrail
+from app.models.emissions import Company
+from app.models.emissions import CompanyEntity
+from app.models.emissions import EmissionsCalculation
 from app.models.epa_data import EmissionFactor
 from app.models.user import User
 from app.services.emissions_audit_service import EmissionsAuditService

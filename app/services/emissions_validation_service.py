@@ -6,15 +6,25 @@ for SEC Climate Disclosure Rule compliance validation
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from datetime import timedelta
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
-from fastapi import HTTPException, status
-from sqlalchemy import and_, func, or_
+from fastapi import HTTPException
+from fastapi import status
+from sqlalchemy import and_
+from sqlalchemy import func
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
-from app.models.emissions import ActivityData, Company, EmissionsCalculation
+from app.models.emissions import ActivityData
+from app.models.emissions import Company
+from app.models.emissions import EmissionsCalculation
 from app.models.epa_data import EmissionFactor
 from app.services.epa_ghgrp_service import EPAGHGRPService
 

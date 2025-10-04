@@ -5,13 +5,16 @@ Supports role-based access control for SEC compliance
 
 import enum
 
-from sqlalchemy import Boolean, Column, DateTime
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app.models.base import AuditMixin, BaseModel
+from app.models.base import AuditMixin
+from app.models.base import BaseModel
 
 
 class UserRole(enum.Enum):

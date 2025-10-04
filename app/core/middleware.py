@@ -7,7 +7,8 @@ import time
 import uuid
 from typing import Callable
 
-from fastapi import Request, Response
+from fastapi import Request
+from fastapi import Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 

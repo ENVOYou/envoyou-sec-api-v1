@@ -4,7 +4,8 @@ Handles environment variables and application settings
 """
 
 import os
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 from pydantic import validator
 from pydantic_settings import BaseSettings

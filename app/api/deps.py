@@ -4,11 +4,17 @@ Common dependencies for FastAPI endpoints including database sessions,
 authentication, and authorization
 """
 
-from typing import Generator, Optional
+from typing import Generator
+from typing import Optional
 
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from fastapi import Depends
+from fastapi import HTTPException
+from fastapi import Request
+from fastapi import status
+from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
+from jose import JWTError
+from jose import jwt
 from sqlalchemy.orm import Session
 
 from app.core.config import settings

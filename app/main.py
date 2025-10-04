@@ -10,7 +10,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.core.middleware import AuditMiddleware, ErrorHandlingMiddleware
+from app.core.middleware import AuditMiddleware
+from app.core.middleware import ErrorHandlingMiddleware
 from app.services.background_tasks import task_manager
 
 # Create FastAPI application
