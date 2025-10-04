@@ -92,7 +92,7 @@ def test_user(db_session):
         email="test@example.com",
         username="testuser",
         full_name="Test User",
-        hashed_password=security.get_password_hash("testpass123"),
+        hashed_password=security.get_password_hash("TestPass123!"),
         role=UserRole.FINANCE_TEAM,
         status=UserStatus.ACTIVE,
         is_active=True
@@ -114,7 +114,7 @@ def admin_user(db_session):
         email="admin@example.com",
         username="admin",
         full_name="Admin User",
-        hashed_password=security.get_password_hash("adminpass123"),
+        hashed_password=security.get_password_hash("AdminPass123!"),
         role=UserRole.ADMIN,
         status=UserStatus.ACTIVE,
         is_active=True
@@ -136,7 +136,7 @@ def cfo_user(db_session):
         email="cfo@example.com",
         username="cfo",
         full_name="CFO User",
-        hashed_password=security.get_password_hash("cfopass123"),
+        hashed_password=security.get_password_hash("CfoPass123!"),
         role=UserRole.CFO,
         status=UserStatus.ACTIVE,
         is_active=True
@@ -158,7 +158,7 @@ def auditor_user(db_session):
         email="auditor@example.com",
         username="auditor",
         full_name="Auditor User",
-        hashed_password=security.get_password_hash("auditorpass123"),
+        hashed_password=security.get_password_hash("AuditorPass123!"),
         role=UserRole.AUDITOR,
         status=UserStatus.ACTIVE,
         is_active=True
@@ -178,7 +178,7 @@ def auth_headers(client, test_user):
         "/v1/auth/login",
         json={
             "email": test_user.email,
-            "password": "testpass123"
+            "password": "TestPass123!"
         }
     )
     
@@ -195,7 +195,7 @@ def admin_auth_headers(client, admin_user):
         "/v1/auth/login",
         json={
             "email": admin_user.email,
-            "password": "adminpass123"
+            "password": "AdminPass123!"
         }
     )
     

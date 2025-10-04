@@ -210,14 +210,12 @@ class TestEmissionsCalculations:
             ]
         )
         
-        # Should complete but may have warnings for invalid fuel type
+        # Should fail due to invalid fuel type
         result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
         
-        # Check that calculation completed (system handles missing factors gracefully)
-        assert result.status in ["completed", "failed"]
-        # If failed, should have validation errors
-        if result.status == "failed":
-            assert len(result.validation_errors) > 0
+        # Check that calculation failed due to invalid fuel type
+        assert result.status == "failed"
+        assert len(result.validation_errors) > 0
     
     async def test_data_quality_scoring(self, db_session, test_company, test_user):
         """Test data quality scoring"""

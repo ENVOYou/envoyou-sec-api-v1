@@ -17,7 +17,7 @@ class TestAuthentication:
             "/v1/auth/login",
             json={
                 "email": test_user.email,
-                "password": "testpass123"
+                "password": "TestPass123!"
             }
         )
         
@@ -52,7 +52,7 @@ class TestAuthentication:
             "/v1/auth/login",
             json={
                 "email": "nonexistent@example.com",
-                "password": "pass123"
+                "password": "TestPass123!"
             }
         )
         
@@ -103,7 +103,7 @@ class TestAuthentication:
             "/v1/auth/login",
             json={
                 "email": test_user.email,
-                "password": "testpass123"
+                "password": "TestPass123!"
             }
         )
         
@@ -140,7 +140,7 @@ class TestUserRegistration:
             "email": "newuser@example.com",
             "username": "newuser",
             "full_name": "New User",
-            "password": "newpass123",
+            "password": "NewPass123!",
             "role": "finance_team"
         }
         
@@ -163,7 +163,7 @@ class TestUserRegistration:
             "email": "newuser@example.com",
             "username": "newuser",
             "full_name": "New User",
-            "password": "newpass123",
+            "password": "NewPass123!",
             "role": "finance_team"
         }
         
@@ -181,7 +181,7 @@ class TestUserRegistration:
             "email": test_user.email,
             "username": "differentusername",
             "full_name": "Different User",
-            "password": "newpass123",
+            "password": "NewPass123!",
             "role": "finance_team"
         }
         
@@ -201,9 +201,9 @@ class TestPasswordChange:
     def test_change_password_success(self, client: TestClient, auth_headers):
         """Test successful password change"""
         password_data = {
-            "current_password": "testpass123",
-            "new_password": "newpass123",
-            "confirm_password": "newpass123"
+            "current_password": "TestPass123!",
+            "new_password": "NewPass123!",
+            "confirm_password": "NewPass123!"
         }
         
         response = client.post(
@@ -219,8 +219,8 @@ class TestPasswordChange:
         """Test password change with wrong current password"""
         password_data = {
             "current_password": "wrongpassword",
-            "new_password": "newpass123",
-            "confirm_password": "newpass123"
+            "new_password": "NewPass123!",
+            "confirm_password": "NewPass123!"
         }
         
         response = client.post(
@@ -235,9 +235,9 @@ class TestPasswordChange:
     def test_change_password_mismatch(self, client: TestClient, auth_headers):
         """Test password change with mismatched new passwords"""
         password_data = {
-            "current_password": "testpass123",
-            "new_password": "newpass123",
-            "confirm_password": "different123"
+            "current_password": "TestPass123!",
+            "new_password": "NewPass123!",
+            "confirm_password": "Different123!"
         }
         
         response = client.post(
@@ -259,7 +259,7 @@ class TestAuditSession:
             "/v1/auth/login",
             json={
                 "email": auditor_user.email,
-                "password": "auditorpass123"
+                "password": "AuditorPass123!"
             }
         )
         
