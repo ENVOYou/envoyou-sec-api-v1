@@ -24,8 +24,8 @@ def upgrade() -> None:
     op.execute("UPDATE emissions_calculations SET calculation_date = created_at WHERE calculation_date IS NULL")
     op.execute("UPDATE emissions_calculations SET reporting_year = 2024 WHERE reporting_year IS NULL")
     
-    # Update existing entities to be active
-    op.execute("UPDATE company_entities SET is_active = 1 WHERE is_active IS NULL")
+    # Update existing entities to be active (PostgreSQL compatible)
+    op.execute("UPDATE company_entities SET is_active = TRUE WHERE is_active IS NULL")
 
 
 def downgrade() -> None:

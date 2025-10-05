@@ -17,8 +17,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Field already exists in base migration, just update existing records
-    op.execute("UPDATE company_entities SET is_active = 1 WHERE is_active IS NULL")
+    # Field already exists in base migration, just update existing records (PostgreSQL compatible)
+    op.execute("UPDATE company_entities SET is_active = TRUE WHERE is_active IS NULL")
 
 
 def downgrade() -> None:
