@@ -113,20 +113,14 @@
 
   - [x] 6.1 Create company entity management service
 
-
-
-
-
     - Implement entity hierarchy creation and management
     - Build ownership percentage tracking and validation
     - Create entity relationship mapping and storage
 
-
-
-
     - _Requirements: 6.1, 6.3_
 
-  - [ ] 6.2 Implement emissions consolidation engine
+  - [x] 6.2 Implement emissions consolidation engine
+
     - Create consolidation logic for Scope 1 and Scope 2 emissions
     - Implement ownership-based emission adjustments
     - Build entity breakdown reporting capabilities
