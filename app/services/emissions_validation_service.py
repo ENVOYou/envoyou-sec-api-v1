@@ -8,6 +8,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, func, or_
@@ -17,6 +18,7 @@ from app.core.audit_logger import AuditLogger
 from app.models.emissions import ActivityData, Company, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
 from app.services.epa_ghgrp_service import EPAGHGRPService
+from app.services.anomaly_detection_service import AnomalyDetectionService
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,10 @@ class ValidationResult:
         self.ghgrp_comparison: Dict[str, Any] = {}
         self.variance_analysis: Dict[str, Any] = {}
         self.threshold_analysis: Dict[str, Any] = {}
+        
+        # Anomaly detection results
+        self.anomaly_report: Optional[Dict[str, Any]] = None
+        self.anomaly_risk_score: float = 0.0
 
 
 class EmissionsValidationService:
@@ -58,6 +64,7 @@ class EmissionsValidationService:
         self.db = db
         self.ghgrp_service = EPAGHGRPService(db)
         self.audit_logger = AuditLogger(db)
+        self.anomaly_service = AnomalyDetectionService(db)
 
         # Validation thresholds
         self.variance_thresholds = {
@@ -164,7 +171,14 @@ class EmissionsValidationService:
                 confidence_scores, discrepancies, threshold_analysis
             )
 
-            # Generate recommendations
+            # Perform anomaly detection analysis
+            anomaly_analysis = await self._perform_anomaly_detection(
+                company_id, reporting_year
+            )
+            result.anomaly_report = anomaly_analysis["report"]
+            result.anomaly_risk_score = anomaly_analysis["risk_score"]
+
+            # Generate recommendations (including anomaly-based recommendations)
             result.recommendations = self._generate_recommendations(
                 result, company_emissions, ghgrp_validation, discrepancies
             )
