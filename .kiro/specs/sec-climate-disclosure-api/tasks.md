@@ -111,7 +111,11 @@
 
 - [ ] 6. Develop multi-entity and consolidation system
 
-  - [ ] 6.1 Create company entity management service
+  - [x] 6.1 Create company entity management service
+
+
+
+
 
     - Implement entity hierarchy creation and management
     - Build ownership percentage tracking and validation

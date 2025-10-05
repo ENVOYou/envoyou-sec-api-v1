@@ -90,7 +90,7 @@ class Company(BaseModel, AuditMixin):
 
 
 class CompanyEntity(BaseModel, AuditMixin):
-    """Company entities/subsidiaries for consolidated reporting"""
+    """Company entities/subsidiaries for consolidated reporting with hierarchical structure"""
 
     __tablename__ = "company_entities"
 
@@ -98,30 +98,92 @@ class CompanyEntity(BaseModel, AuditMixin):
     company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     entity_type = Column(String(50), nullable=False)  # subsidiary, division, facility
+    
+    # Hierarchical structure
+    parent_id = Column(GUID(), ForeignKey("company_entities.id"), nullable=True, index=True)
+    level = Column(Integer, default=0, nullable=False)  # 0=root, 1=child, 2=grandchild, etc.
+    path = Column(String(500), nullable=True)  # Materialized path for efficient queries
 
     # Ownership and consolidation
     ownership_percentage = Column(Float, default=100.0, nullable=False)
     consolidation_method = Column(
-        String(50), nullable=False
+        String(50), nullable=False, default="full"
     )  # full, equity, proportional
 
     # Location information
     country = Column(String(100), nullable=True)
     state_province = Column(String(100), nullable=True)
     city = Column(String(100), nullable=True)
+    sector = Column(String(100), nullable=True)  # Industry sector
 
     # Operational information
     primary_activity = Column(String(255), nullable=True)
     operational_control = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
 
     # Relationships
     company = relationship("Company", back_populates="entities")
     calculations = relationship(
         "EmissionsCalculation", back_populates="entity", cascade="all, delete-orphan"
     )
+    
+    # Self-referential relationships for hierarchy
+    parent = relationship("CompanyEntity", remote_side="CompanyEntity.id", back_populates="children")
+    children = relationship("CompanyEntity", back_populates="parent", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<CompanyEntity(name='{self.name}', ownership='{self.ownership_percentage}%')>"
+        return f"<CompanyEntity(name='{self.name}', ownership='{self.ownership_percentage}%', level={self.level})>"
+    
+    @property
+    def full_path(self):
+        """Get full hierarchical path"""
+        if self.parent:
+            return f"{self.parent.full_path} > {self.name}"
+        return self.name
+    
+    def get_all_children(self, session):
+        """Recursively get all children entities"""
+        from sqlalchemy import text
+        
+        # Use recursive CTE to get all descendants
+        query = text("""
+            WITH RECURSIVE entity_tree AS (
+                -- Base case: start with current entity
+                SELECT id, name, parent_id, ownership_percentage, level, 
+                       CAST(ownership_percentage AS FLOAT) as effective_ownership
+                FROM company_entities 
+                WHERE id = :entity_id
+                
+                UNION ALL
+                
+                -- Recursive case: get children
+                SELECT ce.id, ce.name, ce.parent_id, ce.ownership_percentage, ce.level,
+                       CAST(et.effective_ownership * ce.ownership_percentage / 100.0 AS FLOAT) as effective_ownership
+                FROM company_entities ce
+                INNER JOIN entity_tree et ON ce.parent_id = et.id
+                WHERE ce.is_active = true
+            )
+            SELECT * FROM entity_tree WHERE id != :entity_id
+        """)
+        
+        result = session.execute(query, {"entity_id": str(self.id)})
+        return result.fetchall()
+    
+    def get_effective_ownership(self):
+        """Calculate effective ownership percentage considering parent chain"""
+        if not self.parent:
+            return self.ownership_percentage
+        
+        parent_effective = self.parent.get_effective_ownership()
+        return (parent_effective * self.ownership_percentage) / 100.0
+    
+    def validate_ownership(self, session):
+        """Validate that total ownership of children doesn't exceed 100%"""
+        if not self.children:
+            return True
+            
+        total_ownership = sum(child.ownership_percentage for child in self.children if child.is_active)
+        return total_ownership <= 100.0
 
 
 class EmissionsCalculation(BaseModel, AuditMixin):
