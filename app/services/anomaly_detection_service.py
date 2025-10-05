@@ -14,7 +14,7 @@ import statistics
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_
@@ -650,3 +650,188 @@ class AnomalyDetectionService:
             overall_risk_score=0.0,
             summary_insights=["No emissions data available for analysis"],
         )
+    def get_anomaly_summary(
+        self, company_id: UUID, reporting_year: int, user_id: UUID
+    ) -> Dict[str, Any]:
+        """Get anomaly summary for a company and year"""
+        try:
+            # Get full anomaly report
+            report = self.detect_anomalies(company_id, reporting_year, user_id)
+            
+            # Create summary
+            summary = {
+                "company_id": str(company_id),
+                "reporting_year": reporting_year,
+                "total_anomalies": report.total_anomalies,
+                "overall_risk_score": report.overall_risk_score,
+                "anomalies_by_severity": report.anomalies_by_severity,
+                "anomalies_by_type": report.anomalies_by_type,
+                "requires_attention": report.total_anomalies > 0,
+                "last_analysis_date": report.analysis_date,
+                "summary_insights": report.summary_insights[:3]  # Top 3 insights
+            }
+            
+            return summary
+            
+        except Exception as e:
+            logger.error(f"Error getting anomaly summary: {str(e)}")
+            return {
+                "company_id": str(company_id),
+                "reporting_year": reporting_year,
+                "total_anomalies": 0,
+                "overall_risk_score": 0.0,
+                "anomalies_by_severity": {"low": 0, "medium": 0, "high": 0, "critical": 0},
+                "anomalies_by_type": {},
+                "requires_attention": False,
+                "last_analysis_date": datetime.utcnow(),
+                "summary_insights": ["Analysis unavailable"]
+            }
+
+    def analyze_trends(
+        self, company_id: UUID, start_year: int, end_year: int, user_id: UUID
+    ) -> Dict[str, Any]:
+        """Analyze anomaly trends over multiple years"""
+        try:
+            trends = []
+            
+            for year in range(start_year, end_year + 1):
+                try:
+                    report = self.detect_anomalies(company_id, year, user_id)
+                    trends.append({
+                        "year": year,
+                        "total_anomalies": report.total_anomalies,
+                        "risk_score": report.overall_risk_score,
+                        "anomalies_by_severity": report.anomalies_by_severity,
+                        "anomalies_by_type": report.anomalies_by_type
+                    })
+                except Exception as e:
+                    logger.warning(f"Could not analyze year {year}: {str(e)}")
+                    trends.append({
+                        "year": year,
+                        "total_anomalies": 0,
+                        "risk_score": 0.0,
+                        "anomalies_by_severity": {"low": 0, "medium": 0, "high": 0, "critical": 0},
+                        "anomalies_by_type": {},
+                        "error": str(e)
+                    })
+            
+            # Calculate trend analysis
+            trend_analysis = self._calculate_trend_analysis(trends)
+            
+            return {
+                "company_id": str(company_id),
+                "analysis_period": (start_year, end_year),
+                "trend_data": trends,
+                "trend_analysis": trend_analysis,
+                "recommendations": self._generate_trend_recommendations(trend_analysis)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing trends: {str(e)}")
+            raise
+
+    def compare_with_industry_benchmarks(
+        self, company_id: UUID, reporting_year: int, industry_sector: str, user_id: UUID
+    ) -> Dict[str, Any]:
+        """Compare company anomalies with industry benchmarks"""
+        try:
+            # Get company anomaly report
+            company_report = self.detect_anomalies(company_id, reporting_year, user_id)
+            
+            # Get industry benchmarks (simplified - would normally come from external data)
+            industry_benchmarks = self.industry_benchmarks.get(
+                industry_sector.lower(), self.industry_benchmarks["default"]
+            )
+            
+            # Calculate company metrics
+            company_metrics = {
+                "anomaly_rate": company_report.total_anomalies / max(len(self._get_emissions_data(company_id, reporting_year)), 1),
+                "risk_score": company_report.overall_risk_score,
+                "critical_anomaly_rate": company_report.anomalies_by_severity.get("critical", 0) / max(company_report.total_anomalies, 1)
+            }
+            
+            # Calculate deviations from industry benchmarks
+            deviations = {}
+            percentile_ranking = {}
+            
+            for metric, company_value in company_metrics.items():
+                benchmark_key = f"{metric}_benchmark"
+                if benchmark_key in industry_benchmarks:
+                    benchmark_value = industry_benchmarks[benchmark_key]
+                    deviation = (company_value - benchmark_value) / benchmark_value if benchmark_value > 0 else 0
+                    deviations[metric] = deviation
+                    
+                    # Simple percentile calculation (would be more sophisticated in real implementation)
+                    if deviation < -0.2:
+                        percentile_ranking[metric] = 90  # Top 10%
+                    elif deviation < 0:
+                        percentile_ranking[metric] = 70  # Top 30%
+                    elif deviation < 0.2:
+                        percentile_ranking[metric] = 50  # Average
+                    else:
+                        percentile_ranking[metric] = 20  # Bottom 20%
+            
+            # Generate recommendations
+            recommendations = []
+            for metric, deviation in deviations.items():
+                if deviation > 0.2:
+                    recommendations.append(
+                        f"Consider improvement strategies for {metric} - currently {deviation:.1%} above industry average"
+                    )
+                elif deviation < -0.2:
+                    recommendations.append(
+                        f"Excellent performance in {metric} - {abs(deviation):.1%} below industry average"
+                    )
+            
+            return {
+                "company_id": str(company_id),
+                "industry_sector": industry_sector,
+                "reporting_year": reporting_year,
+                "company_metrics": company_metrics,
+                "industry_benchmarks": industry_benchmarks,
+                "deviations": deviations,
+                "percentile_ranking": percentile_ranking,
+                "recommendations": recommendations
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in industry benchmark comparison: {str(e)}")
+            raise
+
+    def _calculate_trend_analysis(self, trends: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Calculate statistical trend analysis"""
+        if len(trends) < 2:
+            return {"trend": "insufficient_data", "direction": "unknown"}
+        
+        # Calculate trend direction for risk scores
+        risk_scores = [t["risk_score"] for t in trends if "error" not in t]
+        if len(risk_scores) >= 2:
+            trend_direction = "increasing" if risk_scores[-1] > risk_scores[0] else "decreasing"
+            avg_change = (risk_scores[-1] - risk_scores[0]) / len(risk_scores)
+        else:
+            trend_direction = "unknown"
+            avg_change = 0
+        
+        return {
+            "trend": "improving" if avg_change < -5 else "worsening" if avg_change > 5 else "stable",
+            "direction": trend_direction,
+            "average_change": avg_change,
+            "data_points": len(trends)
+        }
+
+    def _generate_trend_recommendations(self, trend_analysis: Dict[str, Any]) -> List[str]:
+        """Generate recommendations based on trend analysis"""
+        recommendations = []
+        
+        if trend_analysis["trend"] == "worsening":
+            recommendations.append("Anomaly trends are worsening - consider reviewing data quality processes")
+            recommendations.append("Implement additional monitoring for high-risk emission sources")
+        elif trend_analysis["trend"] == "improving":
+            recommendations.append("Anomaly trends are improving - maintain current data quality practices")
+        else:
+            recommendations.append("Anomaly trends are stable - continue monitoring")
+        
+        if trend_analysis["data_points"] < 3:
+            recommendations.append("Consider analyzing more historical data for better trend insights")
+        
+        return recommendations

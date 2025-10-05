@@ -25,6 +25,7 @@ from app.models.emissions import (
 from app.models.epa_data import EmissionFactor
 from app.models.user import User
 from app.services.emissions_audit_service import EmissionsAuditService
+from app.services.anomaly_detection_service import AnomalyDetectionService
 
 logger = logging.getLogger(__name__)
 
@@ -590,3 +591,70 @@ class EnhancedAuditService(EmissionsAuditService):
             if event.get("event_timestamp")
         ]
         return len(timestamps) == len(set(timestamps))  # No duplicate timestamps
+    def create_audit_session(
+        self,
+        company_id: str,
+        auditor_id: str,
+        audit_type: str = "comprehensive",
+        scope: Optional[Dict] = None
+    ) -> Dict[str, Any]:
+        """Create audit session with anomaly detection integration"""
+        try:
+            session_id = str(uuid.uuid4())
+            
+            # Run anomaly detection for audit preparation
+            anomaly_findings = {}
+            try:
+                anomaly_service = AnomalyDetectionService(self.db)
+                
+                # Get recent years for trend analysis
+                current_year = datetime.utcnow().year
+                for year in range(current_year - 2, current_year + 1):
+                    try:
+                        anomaly_report = anomaly_service.detect_anomalies(
+                            company_id=company_id,
+                            reporting_year=year,
+                            user_id=auditor_id
+                        )
+                        
+                        if anomaly_report.total_anomalies > 0:
+                            anomaly_findings[str(year)] = {
+                                "total_anomalies": anomaly_report.total_anomalies,
+                                "risk_score": anomaly_report.overall_risk_score,
+                                "critical_count": anomaly_report.anomalies_by_severity.get("critical", 0),
+                                "high_count": anomaly_report.anomalies_by_severity.get("high", 0),
+                                "key_insights": anomaly_report.summary_insights[:3]  # Top 3 insights
+                            }
+                    except Exception as e:
+                        logger.warning(f"Could not run anomaly detection for year {year}: {str(e)}")
+                        
+            except Exception as e:
+                logger.warning(f"Anomaly detection failed during audit session creation: {str(e)}")
+            
+            # Create audit session with anomaly findings
+            audit_session = {
+                "session_id": session_id,
+                "company_id": company_id,
+                "auditor_id": auditor_id,
+                "audit_type": audit_type,
+                "status": "active",
+                "scope": scope or {},
+                "created_at": datetime.utcnow().isoformat(),
+                "metadata": {
+                    "session_id": session_id,
+                    "initial_scope": scope,
+                    "audit_framework": "SEC_Climate_Disclosure",
+                    "anomaly_findings": anomaly_findings,
+                    "anomaly_detection_enabled": True
+                }
+            }
+            
+            logger.info(f"Created audit session {session_id} with anomaly integration")
+            return audit_session
+            
+        except Exception as e:
+            logger.error(f"Error creating audit session: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create audit session: {str(e)}"
+            )

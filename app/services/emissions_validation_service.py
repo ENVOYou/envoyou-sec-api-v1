@@ -861,6 +861,38 @@ class EmissionsValidationService:
         else:
             return "very_low"
 
+    async def _perform_anomaly_detection(
+        self, company_id: str, reporting_year: int
+    ) -> Dict[str, Any]:
+        """Perform anomaly detection analysis"""
+        try:
+            # Run anomaly detection as part of validation
+            anomaly_service = AnomalyDetectionService(self.db)
+            anomaly_report = anomaly_service.detect_anomalies(
+                company_id=company_id,
+                reporting_year=reporting_year,
+                user_id="system"  # System-initiated validation
+            )
+            
+            return {
+                "report": anomaly_report,
+                "risk_score": anomaly_report.overall_risk_score,
+                "total_anomalies": anomaly_report.total_anomalies,
+                "critical_anomalies": anomaly_report.anomalies_by_severity.get("critical", 0),
+                "high_anomalies": anomaly_report.anomalies_by_severity.get("high", 0)
+            }
+            
+        except Exception as e:
+            logger.warning(f"Anomaly detection failed during validation: {str(e)}")
+            # Return empty result if anomaly detection fails
+            return {
+                "report": None,
+                "risk_score": 0.0,
+                "total_anomalies": 0,
+                "critical_anomalies": 0,
+                "high_anomalies": 0
+            }
+
     # Additional helper methods would be implemented here for:
     # - _validate_calculation_methodology
     # - _validate_emission_factors

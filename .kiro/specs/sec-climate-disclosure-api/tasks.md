@@ -38,7 +38,8 @@
     - Build versioning system for historical EPA data tracking
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 3.2 Implement EPA data caching and refresh mechanism
+  - [x] 3.2 Implement EPA data caching and refresh mechanism
+
     - Set up Redis caching for EPA emission factors with TTL
     - Create automated refresh schedule for EPA data updates
     - Implement fallback mechanism when EPA API is unavailable
@@ -47,7 +48,7 @@
 
 - [ ] 4. Develop core GHG emissions calculation engine
 
-  - [ ] 4.1 Implement Scope 1 emissions calculator
+  - [x] 4.1 Implement Scope 1 emissions calculator
 
     - Create calculation logic for fuel consumption data using EPA factors
     - Implement input validation for fuel consumption data

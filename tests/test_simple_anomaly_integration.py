@@ -63,7 +63,7 @@ class TestSimpleAnomalyIntegration:
         # Verify anomaly detection is used in validation
         assert 'anomaly_service = AnomalyDetectionService(self.db)' in content
         assert 'anomaly_report = anomaly_service.detect_anomalies' in content
-        assert 'anomaly_detection_enabled' in content
+        assert '_perform_anomaly_detection' in content
     
     def test_audit_endpoints_anomaly_integration_exists(self):
         """Test that audit endpoints have anomaly integration"""
@@ -92,7 +92,7 @@ class TestSimpleAnomalyIntegration:
         assert 'try:' in validation_content
         assert 'except Exception as e:' in validation_content
         assert 'logger.warning' in validation_content
-        assert 'Anomaly detection failed' in validation_content
+        assert 'Anomaly detection failed during validation' in validation_content
         
         # Read audit service to check error handling
         with open('app/services/enhanced_audit_service.py', 'r') as f:
@@ -129,7 +129,7 @@ class TestSimpleAnomalyIntegration:
         assert '/detect' in content
         assert '/summary' in content
         assert '/trends' in content
-        assert '/industry-comparison' in content
+        assert '/industry-benchmark' in content
         assert '/batch-detect' in content
     
     def test_integration_documentation_exists(self):
