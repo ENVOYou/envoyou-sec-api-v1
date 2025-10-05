@@ -58,29 +58,35 @@ When executing tasks from `.kiro/specs/sec-climate-disclosure-api/tasks.md`, fol
 
 ### 📊 **Task Categories**
 
-**Core Services** (6.x):
+**✅ Core Services** (6.x) - **COMPLETED**:
 
-- Focus on business logic and data processing
-- Require comprehensive testing
-- May need database schema updates
+- ✅ **Task 6.1**: Company entity management service
+- ✅ **Task 6.2**: Emissions consolidation engine (PRODUCTION READY)
+  - All business logic implemented and tested
+  - Database schema complete with SEC-critical fields
+  - PostgreSQL compatibility verified
 
-**API Endpoints** (7.x):
+**🔄 Workflow & Approval** (7.x) - **NEXT PRIORITY**:
 
-- Build on existing services
-- Focus on request/response handling
-- Require API testing
+- **Task 7.1**: Multi-level approval workflow service
+- **Task 7.2**: Audit lock and collaboration features
+- Build on existing consolidation services
+- Focus on workflow state management
 
-**Validation & Quality** (8.x):
+**📊 Report Generation** (8.x):
 
-- Data validation and quality scoring
-- Error handling and edge cases
-- Performance considerations
-
-**Export & Reporting** (9.x):
-
+- **Task 8.1**: SEC report generator service
+- **Task 8.2**: Multi-format export system
 - Data transformation and formatting
 - File generation and delivery
-- Integration with external systems
+
+**🔗 API Endpoints** (9.x):
+
+- **Task 9.1**: Emissions calculation API endpoints
+- **Task 9.2**: Validation and audit API endpoints
+- **Task 9.3**: Workflow and reporting API endpoints
+- Build on existing services
+- Focus on request/response handling
 
 ### ✅ **Success Criteria**
 

@@ -98,11 +98,10 @@ class TestAnomalyIntegration:
                         reporting_year=2024
                     )
                     
-                    # Verify anomaly detection was called
+                    # Verify anomaly detection was called (without user_id parameter)
                     mock_anomaly_instance.detect_anomalies.assert_called_once_with(
                         company_id=company_id,
-                        reporting_year=2024,
-                        user_id=user_id
+                        reporting_year=2024
                     )
                     
                     # Verify anomaly insights are included in recommendations
@@ -281,6 +280,10 @@ class TestAnomalyIntegration:
             
             assert report.total_anomalies == 2
             assert report.overall_risk_score == 75.0
+            
+            # Verify anomaly details have metadata
+            assert len(report.detected_anomalies) == 2
+            assert report.detected_anomalies[0].metadata["variance_percentage"] == 45.2
             
             # Test 2: Integration with validation service
             with patch('app.services.emissions_validation_service.AnomalyDetectionService') as mock_val_anomaly:

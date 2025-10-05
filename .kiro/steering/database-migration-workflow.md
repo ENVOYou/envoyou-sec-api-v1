@@ -47,11 +47,17 @@
 
 ### 📁 **Project Context**
 
-- **Database**: SQLite (development)
+- **Database**:
+  - SQLite (development/testing)
+  - PostgreSQL (staging/production) - fully compatible
 - **ORM**: SQLAlchemy with Alembic migrations
 - **Models Location**: `app/models/`
 - **Migration Location**: `alembic/versions/`
-- **Current Schema**: Includes consolidated_emissions, consolidation_audit_trail
+- **Current Schema**:
+  - ✅ All base tables with SEC-critical fields
+  - ✅ `consolidated_emissions`, `consolidation_audit_trail`
+  - ✅ Scope-specific emissions fields (`total_scope1_co2e`, etc.)
+  - ✅ PostgreSQL-compatible migrations
 
 ### 🎯 **Success Criteria**
 
@@ -62,10 +68,19 @@
 
 ### ⚠️ **Common Issues to Avoid**
 
-- SQLite doesn't support ALTER COLUMN TYPE - create new migration instead
-- Always check if tables already exist before creating
-- Use `alembic stamp head` if migration already applied manually
-- Test with actual data, not just empty tables
+- **SQLite Limitations**: No ALTER COLUMN TYPE support - create new migration instead
+- **PostgreSQL Compatibility**: Use `TRUE`/`FALSE` for Boolean fields, not `1`/`0`
+- **Base Tables**: Ensure base migration creates all tables before adding columns
+- **Migration Order**: Check migration chain dependencies
+- **Testing**: Always test migrations on both SQLite and PostgreSQL if possible
+- **Rollback**: Use `alembic stamp head` if migration already applied manually
+
+### ✅ **Recent Fixes Applied**
+
+- ✅ **PostgreSQL Boolean Compatibility**: Fixed `SET is_active = TRUE` instead of `= 1`
+- ✅ **Base Migration**: Created comprehensive base tables migration
+- ✅ **SEC Fields**: Added all critical fields for SEC compliance
+- ✅ **Migration Chain**: Fixed dependency order for clean deployment
 
 ## Implementation Note
 
