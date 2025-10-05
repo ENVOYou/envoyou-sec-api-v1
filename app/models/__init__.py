@@ -1,6 +1,6 @@
 # Database models package
 
-from app.core.audit_logger import AuditLog
+# AuditLog imported separately to avoid circular imports
 from app.models.base import AuditMixin, BaseModel, TimestampMixin, UUIDMixin
 from app.models.emissions import (
     ActivityData,
@@ -44,5 +44,5 @@ __all__ = [
     "EmissionScope",
     "CalculationStatus",
     "CalculationMethod",
-    "AuditLog",
+    # "AuditLog",  # Imported separately to avoid circular imports
 ]

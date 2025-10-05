@@ -5,16 +5,23 @@ Stores emissions data, calculations, and audit trails for SEC compliance
 
 import enum
 import uuid
+from datetime import datetime
+from typing import Any, Dict, Optional
+from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -84,6 +91,7 @@ class Company(BaseModel, AuditMixin):
     calculations = relationship(
         "EmissionsCalculation", back_populates="company", cascade="all, delete-orphan"
     )
+    consolidated_emissions = relationship("ConsolidatedEmissions", back_populates="company")
 
     def __repr__(self):
         return f"<Company(name='{self.name}', ticker='{self.ticker}')>"
@@ -95,8 +103,8 @@ class CompanyEntity(BaseModel, AuditMixin):
     __tablename__ = "company_entities"
 
     # Entity information
-    company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
-    name = Column(String(255), nullable=False)
+    parent_company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
+    entity_name = Column(String(255), nullable=False)
     entity_type = Column(String(50), nullable=False)  # subsidiary, division, facility
     
     # Hierarchical structure
@@ -105,7 +113,10 @@ class CompanyEntity(BaseModel, AuditMixin):
     path = Column(String(500), nullable=True)  # Materialized path for efficient queries
 
     # Ownership and consolidation
-    ownership_percentage = Column(Float, default=100.0, nullable=False)
+    ownership_percentage = Column(Numeric(5, 2), default=100.0, nullable=False)
+    equity_share_percentage = Column(Numeric(5, 2), nullable=True)
+    has_operational_control = Column(Boolean, default=True, nullable=False)
+    has_financial_control = Column(Boolean, default=True, nullable=False)
     consolidation_method = Column(
         String(50), nullable=False, default="full"
     )  # full, equity, proportional
@@ -122,7 +133,7 @@ class CompanyEntity(BaseModel, AuditMixin):
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Relationships
-    company = relationship("Company", back_populates="entities")
+    company = relationship("Company", back_populates="entities", foreign_keys=[parent_company_id])
     calculations = relationship(
         "EmissionsCalculation", back_populates="entity", cascade="all, delete-orphan"
     )
@@ -204,6 +215,7 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     # Calculation details
     scope = Column(String(20), nullable=False, index=True)  # scope_1, scope_2, scope_3
     method = Column(String(50), nullable=False)  # calculation methodology
+    reporting_year = Column(Integer, nullable=False, index=True)
     reporting_period_start = Column(DateTime(timezone=True), nullable=False, index=True)
     reporting_period_end = Column(DateTime(timezone=True), nullable=False, index=True)
 
@@ -214,10 +226,13 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     approved_by = Column(GUID(), nullable=True)  # User ID
 
     # Calculation results (in metric tons CO2e)
-    total_co2e = Column(Float, nullable=True)
-    total_co2 = Column(Float, nullable=True)
-    total_ch4 = Column(Float, nullable=True)
-    total_n2o = Column(Float, nullable=True)
+    total_co2e = Column(Numeric(15, 3), nullable=True)
+    total_scope1_co2e = Column(Numeric(15, 3), nullable=True)
+    total_scope2_co2e = Column(Numeric(15, 3), nullable=True)
+    total_scope3_co2e = Column(Numeric(15, 3), nullable=True)
+    total_co2 = Column(Numeric(15, 3), nullable=True)
+    total_ch4 = Column(Numeric(15, 3), nullable=True)
+    total_n2o = Column(Numeric(15, 3), nullable=True)
 
     # Calculation metadata
     input_data = Column(JSON, nullable=False)  # Original input data
@@ -241,6 +256,8 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     # External references
     source_documents = Column(JSON, nullable=True)  # References to source documents
     third_party_verification = Column(Boolean, default=False, nullable=False)
+    validation_status = Column(String(50), nullable=True)
+    calculation_date = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
     company = relationship("Company", back_populates="calculations")
@@ -346,3 +363,143 @@ class CalculationAuditTrail(BaseModel):
 
     def __repr__(self):
         return f"<CalculationAuditTrail(event='{self.event_type}', timestamp='{self.event_timestamp}')>"
+
+
+class ConsolidatedEmissions(BaseModel, AuditMixin):
+    """Consolidated emissions data for multi-entity companies"""
+    
+    __tablename__ = "consolidated_emissions"
+    
+    # Primary identification
+    id = Column(GUID(), primary_key=True, default=uuid4)
+    company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
+    reporting_year = Column(Integer, nullable=False, index=True)
+    reporting_period_start = Column(Date, nullable=False)
+    reporting_period_end = Column(Date, nullable=False)
+    
+    # Consolidation metadata
+    consolidation_method = Column(String(50), nullable=False, default="ownership_based")
+    consolidation_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    consolidation_version = Column(Integer, nullable=False, default=1)
+    
+    # Consolidated emissions data (in metric tons CO2e)
+    total_scope1_co2e = Column(Numeric(15, 3), nullable=True)
+    total_scope2_co2e = Column(Numeric(15, 3), nullable=True)
+    total_scope3_co2e = Column(Numeric(15, 3), nullable=True)
+    total_co2e = Column(Numeric(15, 3), nullable=True)
+    
+    # Breakdown by gas type
+    total_co2 = Column(Numeric(15, 3), nullable=True)
+    total_ch4_co2e = Column(Numeric(15, 3), nullable=True)
+    total_n2o_co2e = Column(Numeric(15, 3), nullable=True)
+    total_other_ghg_co2e = Column(Numeric(15, 3), nullable=True)
+    
+    # Entity coverage statistics
+    total_entities_included = Column(Integer, nullable=False, default=0)
+    entities_with_scope1 = Column(Integer, nullable=False, default=0)
+    entities_with_scope2 = Column(Integer, nullable=False, default=0)
+    entities_with_scope3 = Column(Integer, nullable=False, default=0)
+    
+    # Data quality metrics
+    data_completeness_score = Column(Numeric(5, 2), nullable=True)  # 0-100%
+    consolidation_confidence_score = Column(Numeric(5, 2), nullable=True)  # 0-100%
+    
+    # Consolidation details (JSON)
+    entity_contributions = Column(JSON, nullable=True)  # Detailed breakdown per entity
+    consolidation_adjustments = Column(JSON, nullable=True)  # Any adjustments made
+    exclusions = Column(JSON, nullable=True)  # Entities excluded and reasons
+    
+    # Status and validation
+    status = Column(String(50), nullable=False, default="draft")
+    is_final = Column(Boolean, nullable=False, default=False)
+    validation_status = Column(String(50), nullable=True)
+    validation_notes = Column(Text, nullable=True)
+    
+    # Approval workflow
+    approved_by = Column(GUID(), ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    approval_notes = Column(Text, nullable=True)
+    
+    # Relationships
+    company = relationship("Company", back_populates="consolidated_emissions")
+    approver = relationship("User", foreign_keys=[approved_by])
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index("idx_consolidated_company_year", "company_id", "reporting_year"),
+        Index("idx_consolidated_status", "status"),
+        Index("idx_consolidated_date", "consolidation_date"),
+        UniqueConstraint(
+            "company_id", "reporting_year", "consolidation_version",
+            name="uq_consolidated_company_year_version"
+        ),
+    )
+    
+    def __repr__(self):
+        return f"<ConsolidatedEmissions(company_id={self.company_id}, year={self.reporting_year}, total_co2e={self.total_co2e})>"
+    
+    @property
+    def entity_count(self) -> int:
+        """Total number of entities included in consolidation"""
+        return self.total_entities_included
+    
+    @property
+    def scope_coverage(self) -> Dict[str, bool]:
+        """Which scopes are covered in this consolidation"""
+        return {
+            "scope1": self.total_scope1_co2e is not None and self.total_scope1_co2e > 0,
+            "scope2": self.total_scope2_co2e is not None and self.total_scope2_co2e > 0,
+            "scope3": self.total_scope3_co2e is not None and self.total_scope3_co2e > 0
+        }
+    
+    def get_entity_contribution(self, entity_id: UUID) -> Optional[Dict[str, Any]]:
+        """Get contribution details for a specific entity"""
+        if not self.entity_contributions:
+            return None
+        return self.entity_contributions.get(str(entity_id))
+    
+    def calculate_total_co2e(self) -> float:
+        """Calculate total CO2e from all scopes"""
+        total = 0.0
+        if self.total_scope1_co2e:
+            total += float(self.total_scope1_co2e)
+        if self.total_scope2_co2e:
+            total += float(self.total_scope2_co2e)
+        if self.total_scope3_co2e:
+            total += float(self.total_scope3_co2e)
+        return total
+
+
+class ConsolidationAuditTrail(BaseModel, AuditMixin):
+    """Audit trail for consolidation processes"""
+    
+    __tablename__ = "consolidation_audit_trail"
+    
+    id = Column(GUID(), primary_key=True, default=uuid4)
+    consolidation_id = Column(GUID(), ForeignKey("consolidated_emissions.id"), nullable=False)
+    event_type = Column(String(100), nullable=False)
+    event_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=True)
+    
+    # Event details
+    event_description = Column(Text, nullable=True)
+    before_values = Column(JSON, nullable=True)
+    after_values = Column(JSON, nullable=True)
+    affected_entities = Column(JSON, nullable=True)  # List of entity IDs affected
+    
+    # System information
+    system_info = Column(JSON, nullable=True)
+    processing_time_ms = Column(Integer, nullable=True)
+    
+    # Relationships
+    consolidation = relationship("ConsolidatedEmissions")
+    user = relationship("User")
+    
+    __table_args__ = (
+        Index("idx_consolidation_audit_consolidation", "consolidation_id"),
+        Index("idx_consolidation_audit_timestamp", "event_timestamp"),
+        Index("idx_consolidation_audit_type", "event_type"),
+    )
+    
+    def __repr__(self):
+        return f"<ConsolidationAuditTrail(consolidation_id={self.consolidation_id}, event={self.event_type})>"

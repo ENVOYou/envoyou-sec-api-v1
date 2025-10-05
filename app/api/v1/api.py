@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     validation,
     workflow,
 )
+from app.api.v1 import consolidation
 
 # Create main API router
 api_router = APIRouter()
@@ -50,3 +51,4 @@ api_router.include_router(
     company_entities.router, prefix="/entities", tags=["Company Entities"]
 )
 api_router.include_router(workflow.router, prefix="/workflow", tags=["Workflow"])
+api_router.include_router(consolidation.router, tags=["Emissions Consolidation"])

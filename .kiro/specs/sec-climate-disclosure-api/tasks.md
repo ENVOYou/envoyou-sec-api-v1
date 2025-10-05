@@ -120,6 +120,10 @@
     - Implement entity hierarchy creation and management
     - Build ownership percentage tracking and validation
     - Create entity relationship mapping and storage
+
+
+
+
     - _Requirements: 6.1, 6.3_
 
   - [ ] 6.2 Implement emissions consolidation engine
