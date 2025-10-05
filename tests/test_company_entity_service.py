@@ -6,7 +6,7 @@ Tests hierarchical structure, ownership validation, and CRUD operations
 import pytest
 from datetime import datetime
 from uuid import uuid4
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, AsyncMock, patch
 
 from app.services.company_entity_service import CompanyEntityService
 from app.schemas.company_entity import (
@@ -42,13 +42,12 @@ class TestCompanyEntityService:
         """Sample entity creation data"""
         return CompanyEntityCreate(
             company_id=sample_company.id,
-            parent_id=None,
             name="Manufacturing Division",
             entity_type=EntityType.DIVISION,
             ownership_percentage=100.0,
             consolidation_method=ConsolidationMethod.FULL,
             country="United States",
-            sector="Manufacturing",
+            primary_activity="Manufacturing",
             operational_control=True
         )
     
@@ -60,16 +59,11 @@ class TestCompanyEntityService:
             company_id=sample_company.id,
             name="Manufacturing Division",
             entity_type="division",
-            parent_id=None,
-            level=0,
-            path="Manufacturing Division",
             ownership_percentage=100.0,
-            has_operational_control=True,
-            has_financial_control=True,
+            operational_control=True,
             consolidation_method="full",
             country="United States",
-            sector="Manufacturing",
-            is_active=True,
+            primary_activity="Manufacturing",
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
@@ -86,7 +80,7 @@ class TestCompanyEntityService:
         # Mock audit logger
         with patch('app.services.company_entity_service.AuditLogger') as mock_audit:
             mock_audit_instance = Mock()
-            mock_audit_instance.log_event = Mock()
+            mock_audit_instance.log_event = AsyncMock()
             mock_audit.return_value = mock_audit_instance
             
             service = CompanyEntityService(mock_db)
@@ -112,7 +106,6 @@ class TestCompanyEntityService:
         # Create child entity data
         child_data = CompanyEntityCreate(
             company_id=sample_company.id,
-            parent_id=sample_entity.id,
             name="Production Facility",
             entity_type=EntityType.FACILITY,
             ownership_percentage=75.0,
@@ -132,7 +125,10 @@ class TestCompanyEntityService:
         mock_db.commit = Mock()
         
         # Mock ownership validation
-        with patch('app.services.company_entity_service.AuditLogger'):
+        with patch('app.services.company_entity_service.AuditLogger') as mock_audit:
+            mock_audit_instance = Mock()
+            mock_audit_instance.log_event = AsyncMock()
+            mock_audit.return_value = mock_audit_instance
             service = CompanyEntityService(mock_db)
             
             # Mock the validation method
@@ -188,7 +184,11 @@ class TestCompanyEntityService:
             ownership_percentage=90.0
         )
         
-        with patch('app.services.company_entity_service.AuditLogger'):
+        with patch('app.services.company_entity_service.AuditLogger') as mock_audit:
+            mock_audit_instance = Mock()
+            mock_audit_instance.log_event = AsyncMock()
+            mock_audit.return_value = mock_audit_instance
+            
             service = CompanyEntityService(mock_db)
             
             result = await service.update_entity(sample_entity.id, update_data, "user123")
@@ -206,7 +206,11 @@ class TestCompanyEntityService:
         mock_db.query.return_value.filter.return_value.first.return_value = sample_entity
         mock_db.commit = Mock()
         
-        with patch('app.services.company_entity_service.AuditLogger'):
+        with patch('app.services.company_entity_service.AuditLogger') as mock_audit:
+            mock_audit_instance = Mock()
+            mock_audit_instance.log_event = AsyncMock()
+            mock_audit.return_value = mock_audit_instance
+            
             service = CompanyEntityService(mock_db)
             
             result = await service.delete_entity(sample_entity.id, "user123")
@@ -236,9 +240,9 @@ class TestCompanyEntityService:
         """Test getting all entities for a company"""
         # Mock entities
         entities = [
-            Mock(id=uuid4(), name="Division A", level=0, is_active=True),
-            Mock(id=uuid4(), name="Division B", level=0, is_active=True),
-            Mock(id=uuid4(), name="Facility A", level=1, is_active=True)
+            Mock(id=uuid4(), name="Division A", is_active=True),
+            Mock(id=uuid4(), name="Division B", is_active=True),
+            Mock(id=uuid4(), name="Facility A", is_active=True)
         ]
         
         mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = entities
@@ -289,13 +293,13 @@ class TestCompanyEntityService:
         """Test ownership structure validation - valid case"""
         # Mock entities with valid ownership
         entities = [
-            Mock(id=uuid4(), parent_id=None, ownership_percentage=100.0),
-            Mock(id=uuid4(), parent_id=uuid4(), ownership_percentage=60.0),
-            Mock(id=uuid4(), parent_id=uuid4(), ownership_percentage=40.0)
+            Mock(id=uuid4(), ownership_percentage=100.0),
+            Mock(id=uuid4(), ownership_percentage=60.0),
+            Mock(id=uuid4(), ownership_percentage=40.0)
         ]
         
         service = CompanyEntityService(mock_db)
-        service.get_company_entities = Mock(return_value=entities)
+        service.get_company_entities = AsyncMock(return_value=entities)
         
         result = await service.validate_ownership_structure(sample_company.id)
         
@@ -309,13 +313,13 @@ class TestCompanyEntityService:
         
         # Mock entities with invalid ownership (exceeds 100%)
         entities = [
-            Mock(id=parent_id, parent_id=None, ownership_percentage=100.0, name="Parent"),
-            Mock(id=uuid4(), parent_id=parent_id, ownership_percentage=60.0),
-            Mock(id=uuid4(), parent_id=parent_id, ownership_percentage=50.0)  # Total = 110%
+            Mock(id=parent_id, ownership_percentage=100.0, name="Parent"),
+            Mock(id=uuid4(), ownership_percentage=60.0),
+            Mock(id=uuid4(), ownership_percentage=50.0)  # Total = 110%
         ]
         
         service = CompanyEntityService(mock_db)
-        service.get_company_entities = Mock(return_value=entities)
+        service.get_company_entities = AsyncMock(return_value=entities)
         
         result = await service.validate_ownership_structure(sample_company.id)
         

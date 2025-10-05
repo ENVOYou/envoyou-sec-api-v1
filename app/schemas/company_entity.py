@@ -48,7 +48,7 @@ class CompanyEntityBase(BaseModel):
     country: Optional[str] = Field(None, max_length=100, description="Country location")
     state_province: Optional[str] = Field(None, max_length=100, description="State or province")
     city: Optional[str] = Field(None, max_length=100, description="City location")
-    sector: Optional[str] = Field(None, max_length=100, description="Industry sector")
+
     primary_activity: Optional[str] = Field(None, max_length=255, description="Primary business activity")
     operational_control: bool = Field(default=True, description="Whether company has operational control")
 
@@ -63,13 +63,11 @@ class CompanyEntityCreate(CompanyEntityBase):
     """Schema for creating a company entity"""
     
     company_id: UUID = Field(..., description="Parent company ID")
-    parent_id: Optional[UUID] = Field(None, description="Parent entity ID (null for root entities)")
 
     class Config:
         schema_extra = {
             "example": {
                 "company_id": "123e4567-e89b-12d3-a456-426614174000",
-                "parent_id": None,
                 "name": "Manufacturing Division",
                 "entity_type": "division",
                 "ownership_percentage": 100.0,
@@ -77,7 +75,6 @@ class CompanyEntityCreate(CompanyEntityBase):
                 "country": "United States",
                 "state_province": "California",
                 "city": "San Francisco",
-                "sector": "Manufacturing",
                 "primary_activity": "Electronics manufacturing",
                 "operational_control": True
             }
@@ -94,10 +91,8 @@ class CompanyEntityUpdate(BaseModel):
     country: Optional[str] = Field(None, max_length=100)
     state_province: Optional[str] = Field(None, max_length=100)
     city: Optional[str] = Field(None, max_length=100)
-    sector: Optional[str] = Field(None, max_length=100)
     primary_activity: Optional[str] = Field(None, max_length=255)
     operational_control: Optional[bool] = None
-    is_active: Optional[bool] = None
 
     @validator("ownership_percentage")
     def validate_ownership_percentage(cls, v):
@@ -111,12 +106,8 @@ class CompanyEntityResponse(CompanyEntityBase):
     
     id: UUID
     company_id: UUID
-    parent_id: Optional[UUID]
-    level: int = Field(..., description="Hierarchy level (0=root, 1=child, etc.)")
-    path: Optional[str] = Field(None, description="Materialized path in hierarchy")
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     # Computed fields
     effective_ownership: Optional[float] = Field(None, description="Effective ownership considering parent chain")
@@ -128,20 +119,15 @@ class CompanyEntityResponse(CompanyEntityBase):
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "company_id": "123e4567-e89b-12d3-a456-426614174001",
-                "parent_id": None,
                 "name": "Manufacturing Division",
                 "entity_type": "division",
-                "level": 0,
-                "path": "Manufacturing Division",
                 "ownership_percentage": 100.0,
                 "consolidation_method": "full",
                 "country": "United States",
                 "state_province": "California",
                 "city": "San Francisco",
-                "sector": "Manufacturing",
                 "primary_activity": "Electronics manufacturing",
                 "operational_control": True,
-                "is_active": True,
                 "created_at": "2024-01-01T00:00:00Z",
                 "updated_at": "2024-01-01T00:00:00Z",
                 "effective_ownership": 100.0,

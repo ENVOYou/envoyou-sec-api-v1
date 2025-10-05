@@ -120,12 +120,11 @@ class CompanyEntity(BaseModel, AuditMixin):
     country = Column(String(100), nullable=True)
     state_province = Column(String(100), nullable=True)
     city = Column(String(100), nullable=True)
-    sector = Column(String(100), nullable=True)  # Industry sector
 
     # Operational information
     primary_activity = Column(String(255), nullable=True)
     operational_control = Column(Boolean, default=True, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=True)  # Added back - now exists in database
 
     # Relationships
     company = relationship("Company", back_populates="entities")
@@ -206,9 +205,9 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     # Calculation details
     scope = Column(String(20), nullable=False, index=True)  # scope_1, scope_2, scope_3
     method = Column(String(50), nullable=False)  # calculation methodology
-    reporting_year = Column(Integer, nullable=False, index=True)
-    reporting_period_start = Column(DateTime(timezone=True), nullable=False, index=True)
-    reporting_period_end = Column(DateTime(timezone=True), nullable=False, index=True)
+    reporting_year = Column(Integer, nullable=True, index=True)  # Added back - exists in database
+    reporting_period_start = Column(Date, nullable=True)  # Keep existing field
+    reporting_period_end = Column(Date, nullable=True)  # Keep existing field
 
     # Calculation status and workflow
     status = Column(String(20), default="pending", nullable=False, index=True)

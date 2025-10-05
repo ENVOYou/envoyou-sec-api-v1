@@ -105,10 +105,10 @@ class ConsolidationResponse(BaseModel):
     total_co2e: Optional[float]
     
     # Gas breakdown
-    total_co2: Optional[float]
-    total_ch4_co2e: Optional[float]
-    total_n2o_co2e: Optional[float]
-    total_other_ghg_co2e: Optional[float]
+    total_co2: Optional[float] = None
+    total_ch4_co2e: Optional[float] = None
+    total_n2o_co2e: Optional[float] = None
+    total_other_ghg_co2e: Optional[float] = None
     
     # Coverage statistics
     total_entities_included: int
