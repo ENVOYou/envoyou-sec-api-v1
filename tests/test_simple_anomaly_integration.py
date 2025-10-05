@@ -167,27 +167,22 @@ class TestSimpleAnomalyIntegration:
     async def test_mock_integration_workflow(self, mock_db):
         """Test a mock integration workflow"""
         
-        # Mock the anomaly detection service
-        with patch('app.services.anomaly_detection_service.AnomalyDetectionService') as mock_anomaly_service:
-            mock_anomaly_instance = Mock()
-            mock_anomaly_instance.detect_anomalies.return_value = Mock(
-                total_anomalies=2,
-                overall_risk_score=75.0,
-                detected_anomalies=[],
-                anomalies_by_severity={"high": 1, "medium": 1},
-                summary_insights=["Test insight"]
-            )
-            mock_anomaly_service.return_value = mock_anomaly_instance
-            
+        # Create mock result
+        mock_result = Mock()
+        mock_result.total_anomalies = 2
+        mock_result.overall_risk_score = 75.0
+        mock_result.detected_anomalies = []
+        mock_result.anomalies_by_severity = {"high": 1, "medium": 1}
+        mock_result.summary_insights = ["Test insight"]
+        
+        # Mock the detect_anomalies method directly
+        with patch.object(AnomalyDetectionService, 'detect_anomalies', return_value=mock_result) as mock_detect:
             # Test that we can create the service and call methods
             anomaly_service = AnomalyDetectionService(mock_db)
             
-            # Mock database queries
-            mock_db.query.return_value.filter.return_value.all.return_value = []
-            
             # Test detection call
-            company_id = str(uuid4())
-            user_id = str(uuid4())
+            company_id = uuid4()
+            user_id = uuid4()
             
             result = anomaly_service.detect_anomalies(
                 company_id=company_id,
@@ -196,7 +191,7 @@ class TestSimpleAnomalyIntegration:
             )
             
             # Verify the mock was called
-            mock_anomaly_instance.detect_anomalies.assert_called_once_with(
+            mock_detect.assert_called_once_with(
                 company_id=company_id,
                 reporting_year=2024,
                 user_id=user_id
