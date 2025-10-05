@@ -17,13 +17,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Add is_active field to company_entities
-    op.add_column('company_entities', sa.Column('is_active', sa.Boolean(), nullable=True, default=True))
-    
-    # Update existing entities to be active
+    # Field already exists in base migration, just update existing records
     op.execute("UPDATE company_entities SET is_active = 1 WHERE is_active IS NULL")
 
 
 def downgrade() -> None:
-    # Remove is_active field
-    op.drop_column('company_entities', 'is_active')
+    # Field is part of base migration, no action needed
+    pass

@@ -121,6 +121,8 @@
 
   - [x] 6.2 Implement emissions consolidation engine
 
+
+
     - Create consolidation logic for Scope 1 and Scope 2 emissions
     - Implement ownership-based emission adjustments
     - Build entity breakdown reporting capabilities
