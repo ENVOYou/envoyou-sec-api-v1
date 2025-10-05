@@ -220,7 +220,7 @@ class EmissionsConsolidationService:
         """Get entities that should be included in consolidation"""
         query = self.db.query(CompanyEntity).filter(
             and_(
-                CompanyEntity.parent_company_id == request.company_id,
+                CompanyEntity.company_id == request.company_id,
                 CompanyEntity.is_active == True
             )
         )
@@ -293,7 +293,7 @@ class EmissionsConsolidationService:
             # Create contribution record
             contribution = EntityContribution(
                 entity_id=entity.id,
-                entity_name=entity.entity_name,
+                entity_name=entity.name,
                 ownership_percentage=float(entity.ownership_percentage or 0.0),
                 consolidation_factor=consolidation_factor,
                 
@@ -324,11 +324,12 @@ class EmissionsConsolidationService:
         if method == ConsolidationMethod.OWNERSHIP_BASED:
             return (entity.ownership_percentage or 0.0) / 100.0
         elif method == ConsolidationMethod.OPERATIONAL_CONTROL:
-            return 1.0 if entity.has_operational_control else 0.0
+            return 1.0 if entity.operational_control else 0.0
         elif method == ConsolidationMethod.FINANCIAL_CONTROL:
-            return 1.0 if entity.has_financial_control else 0.0
+            # Use operational_control as proxy for financial_control since field doesn't exist
+            return 1.0 if entity.operational_control else 0.0
         elif method == ConsolidationMethod.EQUITY_SHARE:
-            return (entity.equity_share_percentage or entity.ownership_percentage or 0.0) / 100.0
+            return (entity.ownership_percentage or 0.0) / 100.0
         else:
             return (entity.ownership_percentage or 0.0) / 100.0
 

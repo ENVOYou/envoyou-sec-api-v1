@@ -103,20 +103,15 @@ class CompanyEntity(BaseModel, AuditMixin):
     __tablename__ = "company_entities"
 
     # Entity information
-    parent_company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
-    entity_name = Column(String(255), nullable=False)
+    company_id = Column(GUID(), ForeignKey("companies.id"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
     entity_type = Column(String(50), nullable=False)  # subsidiary, division, facility
     
-    # Hierarchical structure
-    parent_id = Column(GUID(), ForeignKey("company_entities.id"), nullable=True, index=True)
-    level = Column(Integer, default=0, nullable=False)  # 0=root, 1=child, 2=grandchild, etc.
-    path = Column(String(500), nullable=True)  # Materialized path for efficient queries
+    # Hierarchical structure (simplified for existing database)
+    # parent_id, level, path fields removed to match existing schema
 
     # Ownership and consolidation
-    ownership_percentage = Column(Numeric(5, 2), default=100.0, nullable=False)
-    equity_share_percentage = Column(Numeric(5, 2), nullable=True)
-    has_operational_control = Column(Boolean, default=True, nullable=False)
-    has_financial_control = Column(Boolean, default=True, nullable=False)
+    ownership_percentage = Column(Float, default=100.0, nullable=False)
     consolidation_method = Column(
         String(50), nullable=False, default="full"
     )  # full, equity, proportional
@@ -133,14 +128,10 @@ class CompanyEntity(BaseModel, AuditMixin):
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Relationships
-    company = relationship("Company", back_populates="entities", foreign_keys=[parent_company_id])
+    company = relationship("Company", back_populates="entities")
     calculations = relationship(
         "EmissionsCalculation", back_populates="entity", cascade="all, delete-orphan"
     )
-    
-    # Self-referential relationships for hierarchy
-    parent = relationship("CompanyEntity", remote_side="CompanyEntity.id", back_populates="children")
-    children = relationship("CompanyEntity", back_populates="parent", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<CompanyEntity(name='{self.name}', ownership='{self.ownership_percentage}%', level={self.level})>"

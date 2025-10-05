@@ -405,7 +405,7 @@ async def check_consolidation_readiness(
     for entity in entities:
         entity_status = {
             "entity_id": str(entity.id),
-            "entity_name": entity.entity_name,
+            "entity_name": entity.name,
             "ownership_percentage": float(entity.ownership_percentage) if entity.ownership_percentage else None,
             "has_operational_control": entity.has_operational_control,
             "has_financial_control": entity.has_financial_control,
@@ -577,7 +577,7 @@ async def optimize_for_consolidation(
         if entity.ownership_percentage and entity.ownership_percentage >= 10.0:
             recommendations["priority_entities"].append({
                 "entity_id": str(entity.id),
-                "entity_name": entity.entity_name,
+                "entity_name": entity.name,
                 "ownership_percentage": float(entity.ownership_percentage),
                 "priority_reason": "High ownership percentage - critical for consolidation"
             })

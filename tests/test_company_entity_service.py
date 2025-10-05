@@ -64,10 +64,11 @@ class TestCompanyEntityService:
             level=0,
             path="Manufacturing Division",
             ownership_percentage=100.0,
+            has_operational_control=True,
+            has_financial_control=True,
             consolidation_method="full",
             country="United States",
             sector="Manufacturing",
-            operational_control=True,
             is_active=True,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()

@@ -284,6 +284,8 @@ class TestAnomalyIntegration:
             
             # Test 2: Integration with validation service
             with patch('app.services.emissions_validation_service.AnomalyDetectionService') as mock_val_anomaly:
+                mock_anomaly_instance = Mock()
+                mock_anomaly_instance.detect_anomalies.return_value = sample_anomaly_report
                 mock_val_anomaly.return_value = mock_anomaly_instance
                 
                 with patch('app.services.emissions_validation_service.EPAGHGRPService') as mock_epa:

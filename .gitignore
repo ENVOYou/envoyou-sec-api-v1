@@ -178,3 +178,6 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# log test error
+log_error.txt

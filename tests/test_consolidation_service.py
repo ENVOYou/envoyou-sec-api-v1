@@ -34,11 +34,11 @@ class TestEmissionsConsolidationService:
         """Create sample company for testing"""
         company = Company(
             id=uuid4(),
-            company_name="Test Corporation",
-            ticker_symbol="TEST",
+            name="Test Corporation",
+            ticker="TEST",
             cik="0001234567",
-            industry_sector="Technology",
-            is_active=True
+            industry="Technology",
+            reporting_year=2024
         )
         db_session.add(company)
         db_session.commit()
@@ -53,12 +53,11 @@ class TestEmissionsConsolidationService:
         # Entity 1: 100% owned subsidiary
         entity1 = CompanyEntity(
             id=uuid4(),
-            parent_company_id=sample_company.id,
-            entity_name="Subsidiary A",
+            company_id=sample_company.id,
+            name="Subsidiary A",
             entity_type="subsidiary",
             ownership_percentage=Decimal("100.0"),
-            has_operational_control=True,
-            has_financial_control=True,
+            operational_control=True,
             is_active=True
         )
         entities.append(entity1)
@@ -66,12 +65,11 @@ class TestEmissionsConsolidationService:
         # Entity 2: 75% owned subsidiary
         entity2 = CompanyEntity(
             id=uuid4(),
-            parent_company_id=sample_company.id,
-            entity_name="Subsidiary B",
+            company_id=sample_company.id,
+            name="Subsidiary B",
             entity_type="subsidiary",
             ownership_percentage=Decimal("75.0"),
-            has_operational_control=True,
-            has_financial_control=False,
+            operational_control=True,
             is_active=True
         )
         entities.append(entity2)
@@ -79,12 +77,11 @@ class TestEmissionsConsolidationService:
         # Entity 3: 25% owned joint venture
         entity3 = CompanyEntity(
             id=uuid4(),
-            parent_company_id=sample_company.id,
-            entity_name="Joint Venture C",
+            company_id=sample_company.id,
+            name="Joint Venture C",
             entity_type="joint_venture",
             ownership_percentage=Decimal("25.0"),
-            has_operational_control=False,
-            has_financial_control=False,
+            operational_control=False,
             is_active=True
         )
         entities.append(entity3)
@@ -108,6 +105,11 @@ class TestEmissionsConsolidationService:
         emission1 = EmissionsCalculation(
             id=uuid4(),
             entity_id=sample_entities[0].id,
+            company_id=sample_entities[0].company_id,
+            calculation_name="Test Calculation 1",
+            calculation_code="TEST-001",
+            scope="scope_1",
+            method="fuel_combustion",
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
@@ -116,7 +118,10 @@ class TestEmissionsConsolidationService:
             total_scope3_co2e=Decimal("200.0"),
             total_co2e=Decimal("1700.0"),
             status="approved",
-            validation_status="approved"
+            validation_status="approved",
+            calculated_by=uuid4(),
+            input_data={},
+            emission_factors_used={}
         )
         emissions.append(emission1)
         
@@ -124,6 +129,11 @@ class TestEmissionsConsolidationService:
         emission2 = EmissionsCalculation(
             id=uuid4(),
             entity_id=sample_entities[1].id,
+            company_id=sample_entities[1].company_id,
+            calculation_name="Test Calculation 2",
+            calculation_code="TEST-002",
+            scope="scope_2",
+            method="electricity_consumption",
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
@@ -132,7 +142,10 @@ class TestEmissionsConsolidationService:
             total_scope3_co2e=None,  # No Scope 3 data
             total_co2e=Decimal("1200.0"),
             status="approved",
-            validation_status="approved"
+            validation_status="approved",
+            calculated_by=uuid4(),
+            input_data={},
+            emission_factors_used={}
         )
         emissions.append(emission2)
         
@@ -140,6 +153,11 @@ class TestEmissionsConsolidationService:
         emission3 = EmissionsCalculation(
             id=uuid4(),
             entity_id=sample_entities[2].id,
+            company_id=sample_entities[2].company_id,
+            calculation_name="Test Calculation 3",
+            calculation_code="TEST-003",
+            scope="scope_3",
+            method="process_emissions",
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
@@ -148,7 +166,10 @@ class TestEmissionsConsolidationService:
             total_scope3_co2e=Decimal("100.0"),
             total_co2e=Decimal("700.0"),
             status="approved",
-            validation_status="approved"
+            validation_status="approved",
+            calculated_by=uuid4(),
+            input_data={},
+            emission_factors_used={}
         )
         emissions.append(emission3)
         

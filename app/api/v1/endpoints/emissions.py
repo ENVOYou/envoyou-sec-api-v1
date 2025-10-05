@@ -595,7 +595,7 @@ async def get_entities_with_emissions(
     # Get all entities for the company
     entities = db.query(CompanyEntity).filter(
         and_(
-            CompanyEntity.parent_company_id == company_uuid,
+            CompanyEntity.company_id == company_uuid,
             CompanyEntity.is_active == True
         )
     ).all()
@@ -620,7 +620,7 @@ async def get_entities_with_emissions(
         
         entity_data = {
             "entity_id": str(entity.id),
-            "entity_name": entity.entity_name,
+            "entity_name": entity.name,
             "entity_type": entity.entity_type,
             "ownership_percentage": float(entity.ownership_percentage) if entity.ownership_percentage else None,
             "has_operational_control": entity.has_operational_control,
