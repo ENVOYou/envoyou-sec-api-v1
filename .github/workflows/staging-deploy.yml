@@ -59,14 +59,14 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/envoyou-sec-api:staging
 
             echo "Restarting services with docker-compose..."
-            docker-compose -f docker-compose.staging.yml down
-            docker-compose -f docker-compose.staging.yml up -d
+            docker compose -f docker-compose.staging.yml down
+            docker compose -f docker-compose.staging.yml up -d
 
             echo "Waiting for services to be ready..."
             sleep 15 
 
             echo "Running database migrations..."
-            docker-compose -f docker-compose.staging.yml exec -T api alembic upgrade head
+            docker compose -f docker-compose.staging.yml exec -T api alembic upgrade head
 
             echo "Final health check..."
             sleep 5
@@ -81,4 +81,4 @@ jobs:
           status: ${{ job.status }}
 
         env:
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
