@@ -280,7 +280,7 @@ class TestAnomalyIntegration:
             
             # Verify anomaly details have metadata
             assert len(report.detected_anomalies) == 2
-            assert report.detected_anomalies[0]["metadata"]["variance_percentage"] == 45.2
+            assert report.detected_anomalies[0].metadata["variance_percentage"] == 45.2
             
             # Test 2: Integration with validation service
             with patch('app.services.emissions_validation_service.AnomalyDetectionService') as mock_val_anomaly:
