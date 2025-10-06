@@ -95,13 +95,13 @@ class WorkflowService:
             self.db.refresh(workflow)
             
             # Create workflow history entry
-            await self._create_history_entry(
+            await self._log_workflow_history(
                 workflow_id=workflow.id,
                 from_state=None,
                 to_state=WorkflowState.DRAFT,
                 action="workflow_created",
                 actor_id=initiator_id,
-                actor_role=UserRole.SUBMITTER,
+                actor_role="submitter",
                 comments="Workflow created"
             )
             
@@ -199,13 +199,13 @@ class WorkflowService:
             self.db.commit()
             
             # Create history entry
-            await self._create_history_entry(
+            await self._log_workflow_history(
                 workflow_id=workflow.id,
                 from_state=WorkflowState.DRAFT,
                 to_state=new_state,
                 action="submitted_for_approval",
                 actor_id=submitter_id,
-                actor_role=UserRole.SUBMITTER,
+                actor_role="submitter",
                 comments="Workflow submitted for approval"
             )
             
@@ -624,3 +624,191 @@ class WorkflowService:
             delivery_method="email"
         )
         self.db.add(notification)
+    
+    async def _log_workflow_history(
+        self,
+        workflow_id: UUID,
+        from_state: WorkflowState,
+        to_state: WorkflowState,
+        action: str,
+        actor_id: UUID,
+        actor_role: str,
+        comments: str = None,
+        metadata: dict = None
+    ):
+        """Log workflow state change to history"""
+        from app.models.workflow import WorkflowHistory
+        
+        history_entry = WorkflowHistory(
+            id=uuid4(),
+            workflow_id=workflow_id,
+            from_state=from_state.value if from_state else None,
+            to_state=to_state.value if to_state else None,
+            action=action,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            comments=comments,
+            metadata=metadata or {},
+            timestamp=datetime.utcnow()
+        )
+        
+        self.db.add(history_entry)
+    
+    async def _send_approval_notification(
+        self,
+        workflow_id: UUID,
+        recipient_id: UUID,
+        notification_type: str,
+        subject: str,
+        message: str
+    ):
+        """Send approval notification to recipient"""
+        from app.models.workflow import NotificationQueue
+        
+        notification = NotificationQueue(
+            id=uuid4(),
+            workflow_id=workflow_id,
+            recipient_id=recipient_id,
+            notification_type=notification_type,
+            subject=subject,
+            message=message,
+            delivery_method="email",
+            status="pending",
+            created_at=datetime.utcnow()
+        )
+        
+        self.db.add(notification)
+    
+    async def _handle_approval(self, approval_request: ApprovalRequest, actor_id: UUID):
+        """Handle approval action"""
+        workflow = self.db.query(Workflow).filter(
+            Workflow.id == approval_request.workflow_id
+        ).first()
+        
+        if not workflow:
+            return
+        
+        # Log history
+        await self._log_workflow_history(
+            workflow_id=workflow.id,
+            from_state=workflow.current_state,
+            to_state=workflow.current_state,  # Will be updated by next step logic
+            action="approved",
+            actor_id=actor_id,
+            actor_role=approval_request.assigned_role.value,
+            comments=approval_request.comments
+        )
+        
+        # Check if this was the final approval step
+        if approval_request.step_name == "cfo_approval":
+            workflow.current_state = WorkflowState.APPROVED
+            workflow.current_step = "completed"
+            workflow.completed_at = datetime.utcnow()
+        else:
+            # Move to next approval step
+            await self._advance_to_next_step(workflow, approval_request.step_name)
+    
+    async def _handle_rejection(self, approval_request: ApprovalRequest, actor_id: UUID):
+        """Handle rejection action"""
+        workflow = self.db.query(Workflow).filter(
+            Workflow.id == approval_request.workflow_id
+        ).first()
+        
+        if not workflow:
+            return
+        
+        # Update workflow state to rejected
+        workflow.current_state = WorkflowState.REJECTED
+        workflow.current_step = "rejected"
+        workflow.completed_at = datetime.utcnow()
+        
+        # Log history
+        await self._log_workflow_history(
+            workflow_id=workflow.id,
+            from_state=workflow.current_state,
+            to_state=WorkflowState.REJECTED,
+            action="rejected",
+            actor_id=actor_id,
+            actor_role=approval_request.assigned_role.value,
+            comments=approval_request.comments
+        )
+    
+    async def _handle_change_request(self, approval_request: ApprovalRequest, actor_id: UUID):
+        """Handle change request action"""
+        workflow = self.db.query(Workflow).filter(
+            Workflow.id == approval_request.workflow_id
+        ).first()
+        
+        if not workflow:
+            return
+        
+        # Update workflow state to changes requested
+        workflow.current_state = WorkflowState.CHANGES_REQUESTED
+        workflow.current_step = "changes_requested"
+        
+        # Log history
+        await self._log_workflow_history(
+            workflow_id=workflow.id,
+            from_state=workflow.current_state,
+            to_state=WorkflowState.CHANGES_REQUESTED,
+            action="changes_requested",
+            actor_id=actor_id,
+            actor_role=approval_request.assigned_role.value,
+            comments=approval_request.comments
+        )
+    
+    async def _handle_delegation(self, approval_request: ApprovalRequest, actor_id: UUID):
+        """Handle delegation action"""
+        # Send notification to delegated user
+        await self._send_delegation_notification(approval_request)
+        
+        # Log history
+        await self._log_workflow_history(
+            workflow_id=approval_request.workflow_id,
+            from_state=None,  # No state change for delegation
+            to_state=None,
+            action="delegated",
+            actor_id=actor_id,
+            actor_role=approval_request.assigned_role.value,
+            comments=f"Delegated to user {approval_request.delegated_to}: {approval_request.delegation_reason}"
+        )
+    
+    async def _advance_to_next_step(self, workflow: Workflow, current_step: str):
+        """Advance workflow to next approval step"""
+        step_sequence = {
+            "finance_approval": ("legal_approval", WorkflowState.PENDING_LEGAL_APPROVAL),
+            "legal_approval": ("cfo_approval", WorkflowState.PENDING_CFO_APPROVAL)
+        }
+        
+        if current_step in step_sequence:
+            next_step, next_state = step_sequence[current_step]
+            workflow.current_step = next_step
+            workflow.current_state = next_state
+            
+            # Create next approval request
+            assignee = await self._find_assignee_for_role(
+                "legal_team" if next_step == "legal_approval" else "cfo"
+            )
+            
+            if assignee:
+                next_approval = ApprovalRequest(
+                    id=uuid4(),
+                    workflow_id=workflow.id,
+                    step_name=next_step,
+                    sequence_order=2 if next_step == "legal_approval" else 3,
+                    assigned_to=assignee,
+                    assigned_role=UserRole.LEGAL_TEAM if next_step == "legal_approval" else UserRole.CFO,
+                    status="pending",
+                    assigned_at=datetime.utcnow(),
+                    due_date=datetime.utcnow() + timedelta(days=3)
+                )
+                self.db.add(next_approval)
+                
+                # Send notification
+                await self._send_approval_notification(
+                    workflow_id=workflow.id,
+                    recipient_id=assignee,
+                    notification_type="approval_request",
+                    subject=f"Approval Required: {next_step}",
+                    message=f"A workflow requires your approval at step: {next_step}"
+                )

@@ -33,16 +33,16 @@ class TestEmissionsConsolidationService:
     @pytest.fixture
     def sample_company(self, db_session):
         """Create sample company for testing"""
-        # Check if company already exists
-        existing_company = db_session.query(Company).filter(Company.cik == "0001234567").first()
-        if existing_company:
-            return existing_company
-            
+        import uuid
+        
+        # Use unique CIK to avoid conflicts
+        unique_cik = f"CS{uuid.uuid4().hex[:8].upper()}"
+        
         company = Company(
             id=uuid4(),
             name="Test Corporation",
             ticker="TEST",
-            cik="0001234567",
+            cik=unique_cik,
             industry="Technology",
             reporting_year=2024
         )

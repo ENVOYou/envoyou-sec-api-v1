@@ -26,10 +26,17 @@ class TestEmissionsCalculations:
     @pytest.fixture
     def test_company(self, db_session):
         """Create test company"""
+        import uuid
+        
+        # Use unique CIK and ticker to avoid conflicts
+        unique_suffix = uuid.uuid4().hex[:6].upper()
+        unique_cik = f"EC{unique_suffix}"
+        unique_ticker = f"TEC{unique_suffix[:3]}"
+        
         company = Company(
             name="Test Energy Corp",
-            ticker="TEC",
-            cik="0001234567",
+            ticker=unique_ticker,
+            cik=unique_cik,
             industry="Energy",
             sector="Oil & Gas",
             reporting_year=2023,

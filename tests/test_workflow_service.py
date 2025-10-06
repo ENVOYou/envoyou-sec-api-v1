@@ -13,14 +13,14 @@ from app.schemas.workflow import (
     WorkflowCreate,
     ApprovalActionRequest,
     ApprovalAction,
-    WorkflowState,
     UserRole
 )
 from app.models.workflow import (
     Workflow,
     WorkflowTemplate,
     ApprovalRequest,
-    WorkflowHistory
+    WorkflowHistory,
+    WorkflowState
 )
 
 
@@ -89,14 +89,21 @@ class TestWorkflowService:
             subject_id=sample_workflow_data.subject_id,
             current_state=WorkflowState.DRAFT,
             initiated_by=uuid4(),
-            priority=sample_workflow_data.priority
+            priority=sample_workflow_data.priority,
+            initiated_at=datetime.utcnow(),
+            workflow_metadata={}
         )
         
         mock_db.add = Mock()
         mock_db.commit = Mock()
-        mock_db.refresh = Mock(side_effect=lambda obj: setattr(obj, 'id', created_workflow.id))
+        mock_db.refresh = Mock(side_effect=lambda obj: [
+            setattr(obj, 'id', created_workflow.id),
+            setattr(obj, 'initiated_at', created_workflow.initiated_at),
+            setattr(obj, 'workflow_metadata', created_workflow.workflow_metadata)
+        ])
         
         service = WorkflowService(mock_db)
+        service._log_workflow_history = AsyncMock()  # Mock the history logging method
         initiator_id = uuid4()
         
         result = await service.create_workflow(sample_workflow_data, initiator_id)
@@ -119,7 +126,7 @@ class TestWorkflowService:
         with pytest.raises(Exception) as exc_info:
             await service.create_workflow(sample_workflow_data, initiator_id)
         
-        assert "template not found" in str(exc_info.value).lower()
+        assert "template not found" in str(exc_info.value.detail).lower()
     
     @pytest.mark.asyncio
     async def test_submit_for_approval_success(self, mock_db, sample_template):
@@ -175,7 +182,7 @@ class TestWorkflowService:
         with pytest.raises(Exception) as exc_info:
             await service.submit_for_approval(workflow_id, submitter_id)
         
-        assert "cannot submit" in str(exc_info.value).lower()
+        assert "cannot submit" in str(exc_info.value.detail).lower()
     
     @pytest.mark.asyncio
     async def test_process_approval_action_approve(self, mock_db):
@@ -274,7 +281,7 @@ class TestWorkflowService:
         with pytest.raises(Exception) as exc_info:
             await service.process_approval_action(approval_request_id, action_data, actor_id)
         
-        assert "not authorized" in str(exc_info.value).lower()
+        assert "not authorized" in str(exc_info.value.detail).lower()
     
     @pytest.mark.asyncio
     async def test_get_pending_approvals(self, mock_db):

@@ -169,14 +169,22 @@ class TestEPADataService:
         assert result.records_failed == 1
         assert len(result.errors) > 0
 
-    def test_get_current_factors_empty(self, epa_service):
+    def test_get_current_factors_empty(self, epa_service, db_session):
         """Test getting current factors when none exist"""
+        # Clean up any existing emission factors first
+        db_session.query(EmissionFactor).delete()
+        db_session.commit()
+        
         factors = epa_service.get_current_factors()
         assert isinstance(factors, list)
         assert len(factors) == 0
 
-    def test_get_factors_summary_empty(self, epa_service):
+    def test_get_factors_summary_empty(self, epa_service, db_session):
         """Test getting factors summary when none exist"""
+        # Clean up any existing emission factors first
+        db_session.query(EmissionFactor).delete()
+        db_session.commit()
+        
         summary = epa_service.get_factors_summary()
 
         assert summary.total_factors == 0
