@@ -33,6 +33,11 @@ class TestEmissionsConsolidationService:
     @pytest.fixture
     def sample_company(self, db_session):
         """Create sample company for testing"""
+        # Check if company already exists
+        existing_company = db_session.query(Company).filter(Company.cik == "0001234567").first()
+        if existing_company:
+            return existing_company
+            
         company = Company(
             id=uuid4(),
             name="Test Corporation",

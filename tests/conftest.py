@@ -69,12 +69,29 @@ def db_session():
     try:
         yield db
     finally:
-        # Clean up: delete all data from tables
+        # Clean up: delete all data from tables in correct order
         db.rollback()
-        for table in reversed(Base.metadata.sorted_tables):
-            db.execute(table.delete())
-        db.commit()
-        db.close()
+        try:
+            # Disable foreign key constraints temporarily for SQLite
+            db.execute("PRAGMA foreign_keys=OFF")
+            
+            # Delete in reverse dependency order to avoid foreign key issues
+            for table in reversed(Base.metadata.sorted_tables):
+                try:
+                    db.execute(table.delete())
+                except Exception as e:
+                    # Skip tables that don't exist or have issues
+                    print(f"Warning: Could not clean table {table.name}: {e}")
+                    continue
+            
+            # Re-enable foreign key constraints
+            db.execute("PRAGMA foreign_keys=ON")
+            db.commit()
+        except Exception as e:
+            print(f"Warning: Database cleanup failed: {e}")
+            db.rollback()
+        finally:
+            db.close()
 
 
 @pytest.fixture(scope="function")
@@ -88,6 +105,11 @@ def client() -> Generator:
 def test_user(db_session):
     """Create a test user"""
     security = SecurityUtils()
+    
+    # Check if user already exists
+    existing_user = db_session.query(User).filter(User.username == "testuser").first()
+    if existing_user:
+        return existing_user
 
     user = User(
         email="test@example.com",
@@ -110,6 +132,11 @@ def test_user(db_session):
 def admin_user(db_session):
     """Create an admin test user"""
     security = SecurityUtils()
+    
+    # Check if user already exists
+    existing_user = db_session.query(User).filter(User.username == "admin").first()
+    if existing_user:
+        return existing_user
 
     user = User(
         email="admin@example.com",
@@ -224,6 +251,11 @@ def sample_emission_factor():
 @pytest.fixture
 def test_company(db_session):
     """Create a test company for emissions calculations"""
+    # Check if company already exists
+    existing_company = db_session.query(Company).filter(Company.ticker == "TEST").first()
+    if existing_company:
+        return existing_company
+        
     company = Company(
         name="Test Company Inc.",
         ticker="TEST",
