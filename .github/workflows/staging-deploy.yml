@@ -40,12 +40,10 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-            
             PROJECT_DIR="$HOME/envoyou-staging"
             REPO_URL="git@github.com:ENVOYou/envoyou-sec-api-v1.git"
 
-            # Cek jika folder sudah ada (untuk git pull) atau belum (untuk git clone)
+            # Cek jika folder sudah ada atau belum
             if [ -d "$PROJECT_DIR" ]; then
               echo "Project directory exists. Pulling latest changes..."
               cd $PROJECT_DIR
@@ -53,12 +51,11 @@ jobs:
             else
               echo "Project directory does not exist. Cloning repository..."
               git clone $REPO_URL $PROJECT_DIR
-              cd $PROJECT_DIR
             fi
-            
-            # --- Lanjutan skrip Anda untuk membuat .env, docker compose, dll. ---
+     
+            # Buat file .env di LOKASI YANG PASTI
             echo "Creating .env file..."
-            cat <<EOF > .env
+            cat <<EOF > "$PROJECT_DIR/.env"
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
             REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
@@ -69,14 +66,16 @@ jobs:
             JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
             EOF
 
+            # Jalankan docker compose dengan path absolut ke file dan direktori proyek
             echo "Restarting services with docker compose..."
-            docker compose -f docker-compose.staging.yml up -d --pull always --force-recreate
+            docker compose --project-directory "$PROJECT_DIR" -f "$PROJECT_DIR/docker-compose.staging.yml" up -d --pull always --force-recreate
 
             echo "Waiting for services to be ready..."
             sleep 15 
 
+            # Jalankan migrasi dengan path absolut juga
             echo "Running database migrations..."
-            docker compose -f docker-compose.staging.yml exec -T api alembic upgrade head
+            docker compose --project-directory "$PROJECT_DIR" -f "$PROJECT_DIR/docker-compose.staging.yml" exec -T api alembic upgrade head
 
             echo "Final health check..."
             sleep 5
