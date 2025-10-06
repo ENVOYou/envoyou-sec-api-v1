@@ -40,27 +40,35 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            # Create a .env file with secrets
+            PROJECT_DIR="~/envoyou-staging"
+            REPO_URL="git@github.com:ENVOYou/envoyou-sec-api-v1.git"
+
+            # Cek jika folder sudah ada (untuk git pull) atau belum (untuk git clone)
+            if [ -d "$PROJECT_DIR" ]; then
+              echo "Project directory exists. Pulling latest changes..."
+              cd $PROJECT_DIR
+              git pull origin staging
+            else
+              echo "Project directory does not exist. Cloning repository..."
+              git clone $REPO_URL $PROJECT_DIR
+              cd $PROJECT_DIR
+            fi
+            
+            # --- Lanjutan skrip Anda untuk membuat .env, docker compose, dll. ---
             echo "Creating .env file..."
             cat <<EOF > .env
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-            # Gunakan DATABASE_URL lengkap dari Supabase
             DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
             REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
             SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
             CORS_ORIGINS=${{ secrets.STAGING_CORS_ORIGINS }}
             EPA_API_KEY=${{ secrets.EPA_API_KEY }}
             GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-            # Tambahkan JWT Algorithm
             JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
             EOF
 
-            echo "Pulling latest image..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/envoyou-sec-api:staging
-
-            echo "Restarting services with docker-compose..."
-            docker compose -f docker-compose.staging.yml down
-            docker compose -f docker-compose.staging.yml up -d
+            echo "Restarting services with docker compose..."
+            docker compose -f docker-compose.staging.yml up -d --pull always --force-recreate
 
             echo "Waiting for services to be ready..."
             sleep 15 
