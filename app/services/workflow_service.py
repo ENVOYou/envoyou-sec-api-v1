@@ -648,8 +648,7 @@ class WorkflowService:
             actor_id=actor_id,
             actor_role=actor_role,
             comments=comments,
-            metadata=metadata or {},
-            timestamp=datetime.utcnow()
+            change_metadata=metadata or {}
         )
         
         self.db.add(history_entry)
