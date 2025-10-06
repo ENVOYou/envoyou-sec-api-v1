@@ -45,9 +45,10 @@ jobs:
 
             # Cek jika folder sudah ada atau belum
             if [ -d "$PROJECT_DIR" ]; then
-              echo "Project directory exists. Pulling latest changes..."
-              cd $PROJECT_DIR
-              git pull origin staging
+                echo "Project directory exists. Forcing update to match remote..."
+                cd $PROJECT_DIR
+                git fetch --all
+                git reset --hard origin/staging
             else
               echo "Project directory does not exist. Cloning repository..."
               git clone $REPO_URL $PROJECT_DIR
