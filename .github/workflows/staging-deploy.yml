@@ -1,0 +1,82 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push staging image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/envoyou-sec-api:staging
+            ${{ secrets.DOCKER_USERNAME }}/envoyou-sec-api:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            # Create a .env file with secrets
+            echo "Creating .env file..."
+            cat <<EOF > .env
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            # Gunakan DATABASE_URL lengkap dari Supabase
+            DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+            REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
+            SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+            CORS_ORIGINS=${{ secrets.STAGING_CORS_ORIGINS }}
+            EPA_API_KEY=${{ secrets.EPA_API_KEY }}
+            GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+            # Tambahkan JWT Algorithm
+            JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
+            EOF
+
+            echo "Pulling latest image..."
+            docker pull ${{ secrets.DOCKER_USERNAME }}/envoyou-sec-api:staging
+
+            echo "Restarting services with docker-compose..."
+            docker-compose -f docker-compose.staging.yml down
+            docker-compose -f docker-compose.staging.yml up -d
+
+            echo "Waiting for services to be ready..."
+            sleep 15 
+
+            echo "Running database migrations..."
+            docker-compose -f docker-compose.staging.yml exec -T api alembic upgrade head
+
+            echo "Final health check..."
+            sleep 5
+            curl -f http://localhost:8000/health || exit 1
+
+            echo "Deployment successful!"
+
+      - name: Notify deployment status
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}

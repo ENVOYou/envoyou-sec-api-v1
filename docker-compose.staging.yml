@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # FastAPI application - Staging
+  api:
+    image: ${DOCKER_USERNAME}/envoyou-sec-api:staging
+    ports:
+      - "8000:8000"
+    # Env vars will be loaded from the .env file
+    volumes:
+      - ./storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Anda tidak perlu 'depends_on' lagi jika db dan redis tidak ada di sini
+
+  # Prometheus monitoring - Staging
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.staging.yml:/etc/prometheus/prometheus.yml
+      - prometheus_staging_data:/prometheus
+    restart: unless-stopped
+
+  # Grafana dashboards - Staging
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_staging_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    restart: unless-stopped
+
+volumes:
+  prometheus_staging_data:
+  grafana_staging_data:
