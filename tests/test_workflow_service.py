@@ -112,7 +112,7 @@ class TestWorkflowService:
         mock_db.add.assert_called_once()
         mock_db.commit.assert_called_once()
         assert result.subject_type == sample_workflow_data.subject_type
-        assert result.current_state == WorkflowState.DRAFT
+        assert result.current_state.value == WorkflowState.DRAFT.value
     
     @pytest.mark.asyncio
     async def test_create_workflow_template_not_found(self, mock_db, sample_workflow_data):

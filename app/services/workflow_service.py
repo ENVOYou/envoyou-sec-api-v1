@@ -8,7 +8,7 @@ for SEC compliance report approval process.
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import and_, desc, func, or_
