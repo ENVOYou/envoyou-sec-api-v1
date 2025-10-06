@@ -40,6 +40,8 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            
             PROJECT_DIR="~/envoyou-staging"
             REPO_URL="git@github.com:ENVOYou/envoyou-sec-api-v1.git"
 
