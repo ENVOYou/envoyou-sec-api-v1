@@ -134,11 +134,17 @@ class TestWorkflowService:
         workflow_id = uuid4()
         submitter_id = uuid4()
         
-        # Mock workflow
+        # Mock workflow with all required fields
         workflow = Workflow(
             id=workflow_id,
             template_id=sample_template.id,
+            subject_type="consolidated_emissions",
+            subject_id=uuid4(),
             current_state=WorkflowState.DRAFT,
+            initiated_by=submitter_id,
+            initiated_at=datetime.utcnow(),
+            priority="normal",
+            workflow_metadata={},
             template=sample_template
         )
         
@@ -152,7 +158,7 @@ class TestWorkflowService:
         # Mock _find_assignee_for_role method
         service._find_assignee_for_role = AsyncMock(return_value=uuid4())
         service._send_approval_notifications = AsyncMock()
-        service._create_history_entry = AsyncMock()
+        service._log_workflow_history = AsyncMock()
         
         result = await service.submit_for_approval(workflow_id, submitter_id)
         

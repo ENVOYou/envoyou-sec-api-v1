@@ -639,6 +639,21 @@ class WorkflowService:
         """Log workflow state change to history"""
         from app.models.workflow import WorkflowHistory
         
+        from app.models.workflow import UserRole as ModelUserRole
+        
+        # Convert string role to enum if needed
+        if isinstance(actor_role, str):
+            role_mapping = {
+                "submitter": ModelUserRole.SUBMITTER,
+                "finance_team": ModelUserRole.FINANCE_TEAM,
+                "legal_team": ModelUserRole.LEGAL_TEAM,
+                "cfo": ModelUserRole.CFO,
+                "admin": ModelUserRole.ADMIN
+            }
+            actor_role_enum = role_mapping.get(actor_role, ModelUserRole.SUBMITTER)
+        else:
+            actor_role_enum = actor_role
+        
         history_entry = WorkflowHistory(
             id=uuid4(),
             workflow_id=workflow_id,
@@ -646,7 +661,7 @@ class WorkflowService:
             to_state=to_state.value if to_state else None,
             action=action,
             actor_id=actor_id,
-            actor_role=actor_role,
+            actor_role=actor_role_enum,
             comments=comments,
             change_metadata=metadata or {}
         )

@@ -38,10 +38,13 @@ class TestEmissionsConsolidationService:
         # Use unique CIK to avoid conflicts
         unique_cik = f"CS{uuid.uuid4().hex[:8].upper()}"
         
+        # Use unique ticker to avoid conflicts
+        unique_ticker = f"TST{uuid.uuid4().hex[:4].upper()}"
+        
         company = Company(
             id=uuid4(),
             name="Test Corporation",
-            ticker="TEST",
+            ticker=unique_ticker,
             cik=unique_cik,
             industry="Technology",
             reporting_year=2024
