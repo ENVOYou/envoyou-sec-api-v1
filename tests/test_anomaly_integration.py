@@ -105,7 +105,7 @@ class TestAnomalyIntegration:
                     assert any("Anomaly Detection:" in rec for rec in result.recommendations)
                     
                     # Verify confidence score was adjusted for anomalies
-                    assert result.metadata.get("anomaly_detection_enabled") is True
+                    assert result["metadata"].get("anomaly_detection_enabled") is True
                     
                 except Exception as e:
                     # If validation fails due to missing data, that's expected in test
@@ -143,8 +143,8 @@ class TestAnomalyIntegration:
             assert mock_anomaly_instance.detect_anomalies.call_count >= 1
             
             # Verify anomaly findings are included in session metadata
-            assert "anomaly_findings" in audit_session.metadata
-            assert audit_session.metadata.get("anomaly_detection_enabled") is True
+            assert "anomaly_findings" in audit_session["metadata"]
+            assert audit_session["metadata"].get("anomaly_detection_enabled") is True
     
     def test_anomaly_detection_error_handling(self, mock_db):
         """Test that services handle anomaly detection failures gracefully"""
@@ -180,7 +180,7 @@ class TestAnomalyIntegration:
                     
                     # Validation should continue despite anomaly detection failure
                     # The method should not include anomaly-specific metadata
-                    assert result.metadata.get("anomaly_detection_enabled") != True
+                    assert result["metadata"].get("anomaly_detection_enabled") != True
                     
                 except Exception:
                     # If validation fails for other reasons, that's acceptable
@@ -280,7 +280,7 @@ class TestAnomalyIntegration:
             
             # Verify anomaly details have metadata
             assert len(report.detected_anomalies) == 2
-            assert report.detected_anomalies[0].metadata["variance_percentage"] == 45.2
+            assert report.detected_anomalies[0]["metadata"]["variance_percentage"] == 45.2
             
             # Test 2: Integration with validation service
             with patch('app.services.emissions_validation_service.AnomalyDetectionService') as mock_val_anomaly:
@@ -306,7 +306,7 @@ class TestAnomalyIntegration:
                         )
                         
                         # Verify anomaly integration in validation
-                        assert validation_result.metadata.get("anomaly_detection_enabled") is True
+                        assert validation_result["metadata"].get("anomaly_detection_enabled") is True
                         
                     except Exception:
                         # Expected due to missing test data
@@ -330,5 +330,5 @@ class TestAnomalyIntegration:
                 )
                 
                 # Verify anomaly integration in audit
-                assert audit_session.metadata.get("anomaly_detection_enabled") is True
-                assert "anomaly_findings" in audit_session.metadata
+                assert audit_session["metadata"].get("anomaly_detection_enabled") is True
+                assert "anomaly_findings" in audit_session["metadata"]
