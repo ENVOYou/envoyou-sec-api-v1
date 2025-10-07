@@ -1088,10 +1088,12 @@ class Scope1EmissionsCalculator:
         return entity
 
     def _generate_calculation_code(self, prefix: str, company_identifier: str) -> str:
-        """Generate unique calculation code"""
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        """Generate unique calculation code with microseconds and UUID for CI/CD safety"""
+        import uuid as uuid_lib
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")  # Include microseconds
         company_code = company_identifier[:3].upper() if company_identifier else "UNK"
-        return f"{prefix}-{company_code}-{timestamp}"
+        unique_suffix = str(uuid_lib.uuid4())[:8]  # Add 8-char UUID for extra uniqueness
+        return f"{prefix}-{company_code}-{timestamp}-{unique_suffix}"
 
     def _create_audit_trail_entry(
         self, calculation_id: uuid.UUID, event_type: str, description: str, user_id: str
