@@ -1,12 +1,11 @@
-version: '3.8'
-
 services:
   # FastAPI application - Staging
   api:
     image: ${DOCKER_USERNAME}/envoyou-sec-api:staging
     ports:
       - "8000:8000"
-    # Env vars will be loaded from the .env file
+    env_file:
+      - .env
     volumes:
       - ./storage:/app/storage
     restart: unless-stopped
@@ -15,7 +14,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # Anda tidak perlu 'depends_on' lagi jika db dan redis tidak ada di sini
 
   # Prometheus monitoring - Staging
   prometheus:
