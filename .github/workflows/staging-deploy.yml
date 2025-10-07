@@ -40,23 +40,78 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
+            #!/bin/bash
+            set -euo pipefail
+
+            # --- Konfigurasi ---
             PROJECT_DIR="$HOME/envoyou-staging"
             REPO_URL="git@github.com:ENVOYou/envoyou-sec-api-v1.git"
+            COMPOSE_FILE="docker-compose.staging.yml"
 
-            # Cek jika folder sudah ada atau belum
-            if [ -d "$PROJECT_DIR" ]; then
-                echo "Project directory exists. Forcing update to match remote..."
-                cd $PROJECT_DIR
-                git fetch --all
-                git reset --hard origin/staging
-            else
-              echo "Project directory does not exist. Cloning repository..."
-              git clone $REPO_URL $PROJECT_DIR
-            fi
+            # --- Fungsi Bantuan ---
+            log() {
+                echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+            }
 
-            # Buat file .env di LOKASI YANG PASTI
-            echo "Creating .env file..."
-            cat <<EOF > "$PROJECT_DIR/.env"
+            retry() {
+                local max_attempts=5
+                local timeout=2
+                local attempt=0
+                local exitCode=0
+
+                while (( attempt < max_attempts )); do
+                    if "$@"; then
+                        return 0
+                    fi
+                    exitCode=$?
+                    log "⚠️ Perintah gagal! Mencoba lagi dalam $timeout detik..."
+                    sleep $timeout
+                    attempt=$((attempt + 1))
+                    timeout=$((timeout * 2))
+                done
+                return $exitCode
+            }
+
+            wait_for_health() {
+                local service_name=$1
+                local health_url=$2
+                local max_attempts=30
+                local attempt=0
+
+                log "⏳ Menunggu $service_name agar siap..."
+                while (( attempt < max_attempts )); do
+                    if curl -fsS --max-time 10 "$health_url" > /dev/null 2>&1; then
+                        log "✅ $service_name sudah sehat!"
+                        return 0
+                    fi
+                    sleep 10
+                    attempt=$((attempt + 1))
+                done
+                log "❌ $service_name gagal menjadi sehat setelah beberapa kali percobaan."
+                return 1
+            }
+
+            # --- Fungsi Utama ---
+            main() {
+                log "🚀 Memulai proses deployment..."
+
+                # 1. Login ke Docker Hub
+                log "🔐 Melakukan login ke Docker Hub..."
+                echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+                # 2. Update repository
+                log "📥 Mengupdate repository dari Git..."
+                if [[ -d "$PROJECT_DIR" ]]; then
+                    cd "$PROJECT_DIR"
+                    git fetch --all && git reset --hard origin/staging
+                else
+                    git clone "$REPO_URL" "$PROJECT_DIR"
+                    cd "$PROJECT_DIR"
+                fi
+
+                # 3. Buat file .env
+                log "📝 Membuat file .env..."
+                cat <<EOF > .env
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
             REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
@@ -67,22 +122,37 @@ jobs:
             JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
             EOF
 
-            # Jalankan docker compose dengan path absolut ke file dan direktori proyek
-            echo "Restarting services with docker compose..."
-            docker compose --project-directory "$PROJECT_DIR" -f "$PROJECT_DIR/docker-compose.staging.yml" up -d --pull always --force-recreate
+                # 4. Hentikan dan bersihkan kontainer lama
+                log "🛑 Menghentikan dan membersihkan kontainer lama..."
+                docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans || true
 
-            echo "Waiting for services to be ready..."
-            sleep 15
+                # 5. Tarik image baru dengan retry
+                log "📦 Menarik image Docker terbaru..."
+                retry docker compose -f "$COMPOSE_FILE" pull
 
-            # Jalankan migrasi dengan path absolut juga
-            echo "Running database migrations..."
-            docker compose --project-directory "$PROJECT_DIR" -f "$PROJECT_DIR/docker-compose.staging.yml" exec -T api alembic upgrade head
+                # 6. Jalankan layanan
+                log "🔄 Menjalankan layanan baru..."
+                docker compose -f "$COMPOSE_FILE" up -d --force-recreate
 
-            echo "Final health check..."
-            sleep 5
-            curl -f http://localhost:8000/health || exit 1
+                # 7. Tunggu API siap
+                wait_for_health "API" "http://localhost:8000/health"
 
-            echo "Deployment successful!"
+                # 8. Jalankan migrasi database
+                log "🗄️ Menjalankan migrasi database..."
+                retry docker compose -f "$COMPOSE_FILE" exec -T api alembic upgrade head
+
+                # 9. Lakukan pengecekan kesehatan akhir
+                log "🏥 Melakukan pengecekan kesehatan akhir untuk semua layanan..."
+                wait_for_health "API" "http://localhost:8000/health"
+                wait_for_health "Prometheus" "http://localhost:9090/-/healthy"
+                wait_for_health "Grafana" "http://localhost:3000/api/health"
+
+                log "✅ Deployment selesai dengan sukses!"
+            }
+
+            # --- Eksekusi ---
+            trap 'log "❌ Deployment gagal di baris $LINENO"' ERR
+            main
 
       - name: Notify deployment status
         if: always()
