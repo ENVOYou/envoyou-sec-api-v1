@@ -38,11 +38,11 @@ from app.schemas.epa_data import (
 )
 from app.services.cache_service import cache_service
 from app.services.emissions_audit_service import EmissionsAuditService
+from app.services.emissions_consolidation_service import EmissionsConsolidationService
 from app.services.epa_scheduler import epa_scheduler
 from app.services.epa_service import EPADataIngestionService
 from app.services.scope1_calculator import Scope1EmissionsCalculator
 from app.services.scope2_calculator import Scope2EmissionsCalculator
-from app.services.emissions_consolidation_service import EmissionsConsolidationService
 
 router = APIRouter()
 
@@ -392,9 +392,11 @@ async def approve_calculation(
         "message": f"Calculation {approval_request.approval_status}",
         "calculation_id": calculation_id,
         "new_status": calculation.status,
-        "approved_by": str(current_user.id)
-        if approval_request.approval_status == "approved"
-        else None,
+        "approved_by": (
+            str(current_user.id)
+            if approval_request.approval_status == "approved"
+            else None
+        ),
     }
 
 
@@ -502,9 +504,11 @@ async def get_company_emissions_summary(
         total_scope1_co2e=scope1_total if scope1_total > 0 else None,
         total_scope2_co2e=scope2_total if scope2_total > 0 else None,
         total_scope3_co2e=scope3_total if scope3_total > 0 else None,
-        total_co2e=(scope1_total + scope2_total + scope3_total)
-        if any([scope1_total, scope2_total, scope3_total])
-        else None,
+        total_co2e=(
+            (scope1_total + scope2_total + scope3_total)
+            if any([scope1_total, scope2_total, scope3_total])
+            else None
+        ),
         calculations_count=len(calculations),
         last_calculation=last_calc,
         data_quality_average=avg_quality,
@@ -527,6 +531,7 @@ async def get_company_audit_summary(
 
 # Consolidation Integration Endpoints
 
+
 @router.get("/companies/{company_id}/consolidated-summary")
 async def get_consolidated_emissions_summary(
     company_id: str,
@@ -536,14 +541,14 @@ async def get_consolidated_emissions_summary(
 ):
     """
     Get consolidated emissions summary for multi-entity company
-    
+
     This endpoint integrates with the consolidation engine to provide
     a unified view of company-wide emissions across all entities.
     """
     from uuid import UUID
-    
+
     consolidation_service = EmissionsConsolidationService(db)
-    
+
     try:
         company_uuid = UUID(company_id)
         summary = await consolidation_service.get_consolidation_summary(
@@ -552,18 +557,17 @@ async def get_consolidated_emissions_summary(
         return summary
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid company ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid company ID format"
         )
     except Exception as e:
         if "not found" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No consolidations found for company {company_id} in year {reporting_year}"
+                detail=f"No consolidations found for company {company_id} in year {reporting_year}",
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving consolidated summary"
+            detail="Error retrieving consolidated summary",
         )
 
 
@@ -571,84 +575,120 @@ async def get_consolidated_emissions_summary(
 async def get_entities_with_emissions(
     company_id: str,
     reporting_year: int = Query(..., description="Reporting year"),
-    include_consolidated: bool = Query(False, description="Include consolidated totals"),
+    include_consolidated: bool = Query(
+        False, description="Include consolidated totals"
+    ),
     current_user: User = Depends(require_read_emissions),
     db: Session = Depends(get_db),
 ):
     """
     Get all entities with their individual emissions data
-    
+
     Useful for understanding entity-level contributions before consolidation.
     """
     from uuid import UUID
-    from app.models.emissions import CompanyEntity, EmissionsCalculation
+
     from sqlalchemy import and_
-    
+
+    from app.models.emissions import CompanyEntity, EmissionsCalculation
+
     try:
         company_uuid = UUID(company_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid company ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid company ID format"
         )
-    
+
     # Get all entities for the company
-    entities = db.query(CompanyEntity).filter(
-        and_(
-            CompanyEntity.company_id == company_uuid,
-            CompanyEntity.is_active == True
+    entities = (
+        db.query(CompanyEntity)
+        .filter(
+            and_(
+                CompanyEntity.company_id == company_uuid,
+                CompanyEntity.is_active == True,
+            )
         )
-    ).all()
-    
+        .all()
+    )
+
     if not entities:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No entities found for company {company_id}"
+            detail=f"No entities found for company {company_id}",
         )
-    
+
     # Get emissions data for each entity
     entity_emissions = []
     for entity in entities:
         # Get latest approved emissions for this entity and year
-        emissions = db.query(EmissionsCalculation).filter(
-            and_(
-                EmissionsCalculation.entity_id == entity.id,
-                EmissionsCalculation.reporting_year == reporting_year,
-                EmissionsCalculation.status == "approved"
+        emissions = (
+            db.query(EmissionsCalculation)
+            .filter(
+                and_(
+                    EmissionsCalculation.entity_id == entity.id,
+                    EmissionsCalculation.reporting_year == reporting_year,
+                    EmissionsCalculation.status == "approved",
+                )
             )
-        ).order_by(EmissionsCalculation.calculation_date.desc()).first()
-        
+            .order_by(EmissionsCalculation.calculation_date.desc())
+            .first()
+        )
+
         entity_data = {
             "entity_id": str(entity.id),
             "entity_name": entity.name,
             "entity_type": entity.entity_type,
-            "ownership_percentage": float(entity.ownership_percentage) if entity.ownership_percentage else None,
+            "ownership_percentage": (
+                float(entity.ownership_percentage)
+                if entity.ownership_percentage
+                else None
+            ),
             "has_operational_control": entity.has_operational_control,
             "has_financial_control": entity.has_financial_control,
-            "emissions_data": None
+            "emissions_data": None,
         }
-        
+
         if emissions:
             entity_data["emissions_data"] = {
                 "calculation_id": str(emissions.id),
-                "total_scope1_co2e": float(emissions.total_scope1_co2e) if emissions.total_scope1_co2e else None,
-                "total_scope2_co2e": float(emissions.total_scope2_co2e) if emissions.total_scope2_co2e else None,
-                "total_scope3_co2e": float(emissions.total_scope3_co2e) if emissions.total_scope3_co2e else None,
-                "total_co2e": float(emissions.total_co2e) if emissions.total_co2e else None,
+                "total_scope1_co2e": (
+                    float(emissions.total_scope1_co2e)
+                    if emissions.total_scope1_co2e
+                    else None
+                ),
+                "total_scope2_co2e": (
+                    float(emissions.total_scope2_co2e)
+                    if emissions.total_scope2_co2e
+                    else None
+                ),
+                "total_scope3_co2e": (
+                    float(emissions.total_scope3_co2e)
+                    if emissions.total_scope3_co2e
+                    else None
+                ),
+                "total_co2e": (
+                    float(emissions.total_co2e) if emissions.total_co2e else None
+                ),
                 "calculation_date": emissions.calculation_date,
-                "data_quality_score": float(emissions.data_quality_score) if emissions.data_quality_score else None
+                "data_quality_score": (
+                    float(emissions.data_quality_score)
+                    if emissions.data_quality_score
+                    else None
+                ),
             }
-        
+
         entity_emissions.append(entity_data)
-    
+
     result = {
         "company_id": company_id,
         "reporting_year": reporting_year,
         "total_entities": len(entities),
-        "entities_with_emissions": len([e for e in entity_emissions if e["emissions_data"]]),
-        "entities": entity_emissions
+        "entities_with_emissions": len(
+            [e for e in entity_emissions if e["emissions_data"]]
+        ),
+        "entities": entity_emissions,
     }
-    
+
     # Add consolidated totals if requested
     if include_consolidated:
         try:
@@ -662,11 +702,11 @@ async def get_entities_with_emissions(
                 "latest_scope2_co2e": summary.latest_scope2_co2e,
                 "latest_scope3_co2e": summary.latest_scope3_co2e,
                 "consolidation_count": summary.consolidation_count,
-                "coverage_percentage": summary.coverage_percentage
+                "coverage_percentage": summary.coverage_percentage,
             }
         except:
             result["consolidated_totals"] = None
-    
+
     return result
 
 
@@ -674,38 +714,40 @@ async def get_entities_with_emissions(
 async def trigger_consolidation_from_emissions(
     company_id: str,
     reporting_year: int = Query(..., description="Reporting year"),
-    consolidation_method: str = Query("ownership_based", description="Consolidation method"),
+    consolidation_method: str = Query(
+        "ownership_based", description="Consolidation method"
+    ),
     include_scope3: bool = Query(False, description="Include Scope 3 emissions"),
     current_user: User = Depends(require_write_emissions),
     db: Session = Depends(get_db),
 ):
     """
     Trigger consolidation process from emissions endpoint
-    
+
     This is a convenience endpoint that creates a consolidation
     using the latest approved emissions data for all entities.
     """
-    from uuid import UUID
     from datetime import date
-    from app.schemas.consolidation import ConsolidationRequest, ConsolidationMethod
-    
+    from uuid import UUID
+
+    from app.schemas.consolidation import ConsolidationMethod, ConsolidationRequest
+
     try:
         company_uuid = UUID(company_id)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid company ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid company ID format"
         )
-    
+
     # Validate consolidation method
     try:
         method = ConsolidationMethod(consolidation_method)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid consolidation method: {consolidation_method}"
+            detail=f"Invalid consolidation method: {consolidation_method}",
         )
-    
+
     # Create consolidation request
     consolidation_request = ConsolidationRequest(
         company_id=company_uuid,
@@ -715,27 +757,27 @@ async def trigger_consolidation_from_emissions(
         consolidation_method=method,
         include_scope3=include_scope3,
         minimum_ownership_threshold=0.0,
-        minimum_data_quality_score=0.0
+        minimum_data_quality_score=0.0,
     )
-    
+
     # Execute consolidation
     consolidation_service = EmissionsConsolidationService(db)
     try:
         result = await consolidation_service.create_consolidation(
             consolidation_request, str(current_user.id)
         )
-        
+
         return {
             "message": "Consolidation completed successfully",
             "consolidation_id": str(result.id),
             "total_entities_included": result.total_entities_included,
             "total_co2e": result.total_co2e,
             "consolidation_method": result.consolidation_method.value,
-            "status": result.status.value
+            "status": result.status.value,
         }
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Consolidation failed: {str(e)}"
+            detail=f"Consolidation failed: {str(e)}",
         )

@@ -74,23 +74,23 @@ def db_session():
         try:
             # Disable foreign key constraints temporarily for SQLite
             db.execute("PRAGMA foreign_keys=OFF")
-            
+
             # Define cleanup order to handle foreign key dependencies
             cleanup_tables = [
-                'notification_queue',
-                'workflow_history', 
-                'approval_requests',
-                'workflows',
-                'workflow_templates',
-                'consolidation_audit_trail',
-                'consolidated_emissions',
-                'emissions_calculations',
-                'company_entities',
-                'emission_factors',
-                'companies',
-                'users'
+                "notification_queue",
+                "workflow_history",
+                "approval_requests",
+                "workflows",
+                "workflow_templates",
+                "consolidation_audit_trail",
+                "consolidated_emissions",
+                "emissions_calculations",
+                "company_entities",
+                "emission_factors",
+                "companies",
+                "users",
             ]
-            
+
             # Clean up specific tables first
             for table_name in cleanup_tables:
                 try:
@@ -98,7 +98,7 @@ def db_session():
                 except Exception as e:
                     # Skip tables that don't exist
                     continue
-            
+
             # Clean up any remaining tables
             for table in reversed(Base.metadata.sorted_tables):
                 if table.name not in cleanup_tables:
@@ -106,10 +106,10 @@ def db_session():
                         db.execute(table.delete())
                     except Exception as e:
                         continue
-            
+
             # Reset sequences for SQLite
             db.execute("DELETE FROM sqlite_sequence")
-            
+
             # Re-enable foreign key constraints
             db.execute("PRAGMA foreign_keys=ON")
             db.commit()
@@ -131,7 +131,7 @@ def client() -> Generator:
 def test_user(db_session):
     """Create a test user"""
     security = SecurityUtils()
-    
+
     # Check if user already exists
     existing_user = db_session.query(User).filter(User.username == "testuser").first()
     if existing_user:
@@ -158,7 +158,7 @@ def test_user(db_session):
 def admin_user(db_session):
     """Create an admin test user"""
     security = SecurityUtils()
-    
+
     # Check if user already exists
     existing_user = db_session.query(User).filter(User.username == "admin").first()
     if existing_user:
@@ -207,6 +207,7 @@ def cfo_user(db_session):
 def auditor_user(db_session):
     """Create an auditor test user"""
     import uuid
+
     security = SecurityUtils()
     unique_id = str(uuid.uuid4())[:8]
 
@@ -280,12 +281,12 @@ def sample_emission_factor():
 def test_company(db_session):
     """Create a test company for emissions calculations"""
     import uuid
-    
+
     # Use unique CIK and ticker based on UUID to avoid conflicts
     unique_suffix = uuid.uuid4().hex[:6].upper()
     unique_cik = f"{unique_suffix}"
     unique_ticker = f"TST{unique_suffix[:3]}"
-    
+
     company = Company(
         name="Test Company Inc.",
         ticker=unique_ticker,

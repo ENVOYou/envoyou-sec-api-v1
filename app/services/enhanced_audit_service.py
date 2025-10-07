@@ -24,8 +24,8 @@ from app.models.emissions import (
 )
 from app.models.epa_data import EmissionFactor
 from app.models.user import User
-from app.services.emissions_audit_service import EmissionsAuditService
 from app.services.anomaly_detection_service import AnomalyDetectionService
+from app.services.emissions_audit_service import EmissionsAuditService
 
 logger = logging.getLogger(__name__)
 
@@ -186,11 +186,11 @@ class EnhancedAuditService(EmissionsAuditService):
                         "source": "epa_databases",
                         "factor_count": len(emission_factors),
                         "sources_used": list(set(ef.source for ef in emission_factors)),
-                        "latest_factor_year": max(
-                            [ef.publication_year for ef in emission_factors]
-                        )
-                        if emission_factors
-                        else None,
+                        "latest_factor_year": (
+                            max([ef.publication_year for ef in emission_factors])
+                            if emission_factors
+                            else None
+                        ),
                     },
                 },
                 "processing_steps": [
@@ -215,9 +215,11 @@ class EnhancedAuditService(EmissionsAuditService):
                     {
                         "step": 4,
                         "description": "Results aggregation and quality scoring",
-                        "timestamp": calculation.calculation_timestamp.isoformat()
-                        if calculation.calculation_timestamp
-                        else None,
+                        "timestamp": (
+                            calculation.calculation_timestamp.isoformat()
+                            if calculation.calculation_timestamp
+                            else None
+                        ),
                         "status": "completed",
                     },
                 ],
@@ -285,9 +287,11 @@ class EnhancedAuditService(EmissionsAuditService):
                     "report_version": "2.0",
                 },
                 "executive_summary": {
-                    "compliance_status": "COMPLIANT"
-                    if compliance_score >= self.compliance_threshold
-                    else "NON_COMPLIANT",
+                    "compliance_status": (
+                        "COMPLIANT"
+                        if compliance_score >= self.compliance_threshold
+                        else "NON_COMPLIANT"
+                    ),
                     "compliance_score": compliance_score,
                     "compliance_threshold": self.compliance_threshold,
                     "key_findings": self._generate_key_findings(compliance_checks),
@@ -317,9 +321,9 @@ class EnhancedAuditService(EmissionsAuditService):
                         forensic_report["audit_trail"]["events"]
                     ),
                 },
-                "technical_details": forensic_report
-                if include_technical_details
-                else None,
+                "technical_details": (
+                    forensic_report if include_technical_details else None
+                ),
                 "attestation": {
                     "calculation_accurate": compliance_checks["calculation_accuracy"][
                         "passed"
@@ -591,22 +595,23 @@ class EnhancedAuditService(EmissionsAuditService):
             if event.get("event_timestamp")
         ]
         return len(timestamps) == len(set(timestamps))  # No duplicate timestamps
+
     def create_audit_session(
         self,
         company_id: str,
         auditor_id: str,
         audit_type: str = "comprehensive",
-        scope: Optional[Dict] = None
+        scope: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """Create audit session with anomaly detection integration"""
         try:
             session_id = str(uuid.uuid4())
-            
+
             # Run anomaly detection for audit preparation
             anomaly_findings = {}
             try:
                 anomaly_service = AnomalyDetectionService(self.db)
-                
+
                 # Get recent years for trend analysis
                 current_year = datetime.utcnow().year
                 for year in range(current_year - 2, current_year + 1):
@@ -614,23 +619,33 @@ class EnhancedAuditService(EmissionsAuditService):
                         anomaly_report = anomaly_service.detect_anomalies(
                             company_id=company_id,
                             reporting_year=year,
-                            user_id=auditor_id
+                            user_id=auditor_id,
                         )
-                        
+
                         if anomaly_report.total_anomalies > 0:
                             anomaly_findings[str(year)] = {
                                 "total_anomalies": anomaly_report.total_anomalies,
                                 "risk_score": anomaly_report.overall_risk_score,
-                                "critical_count": anomaly_report.anomalies_by_severity.get("critical", 0),
-                                "high_count": anomaly_report.anomalies_by_severity.get("high", 0),
-                                "key_insights": anomaly_report.summary_insights[:3]  # Top 3 insights
+                                "critical_count": anomaly_report.anomalies_by_severity.get(
+                                    "critical", 0
+                                ),
+                                "high_count": anomaly_report.anomalies_by_severity.get(
+                                    "high", 0
+                                ),
+                                "key_insights": anomaly_report.summary_insights[
+                                    :3
+                                ],  # Top 3 insights
                             }
                     except Exception as e:
-                        logger.warning(f"Could not run anomaly detection for year {year}: {str(e)}")
-                        
+                        logger.warning(
+                            f"Could not run anomaly detection for year {year}: {str(e)}"
+                        )
+
             except Exception as e:
-                logger.warning(f"Anomaly detection failed during audit session creation: {str(e)}")
-            
+                logger.warning(
+                    f"Anomaly detection failed during audit session creation: {str(e)}"
+                )
+
             # Create audit session with anomaly findings
             audit_session = {
                 "session_id": session_id,
@@ -645,16 +660,16 @@ class EnhancedAuditService(EmissionsAuditService):
                     "initial_scope": scope,
                     "audit_framework": "SEC_Climate_Disclosure",
                     "anomaly_findings": anomaly_findings,
-                    "anomaly_detection_enabled": True
-                }
+                    "anomaly_detection_enabled": True,
+                },
             }
-            
+
             logger.info(f"Created audit session {session_id} with anomaly integration")
             return audit_session
-            
+
         except Exception as e:
             logger.error(f"Error creating audit session: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to create audit session: {str(e)}"
+                detail=f"Failed to create audit session: {str(e)}",
             )

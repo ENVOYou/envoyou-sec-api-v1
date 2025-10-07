@@ -1096,9 +1096,9 @@ class Scope2EmissionsCalculator:
         insights["summary"] = {
             "total_consumption_items": len(electricity_data),
             "total_co2e_tonnes": round(total_co2e, 2),
-            "average_co2e_per_item": round(total_co2e / len(electricity_data), 2)
-            if electricity_data
-            else 0,
+            "average_co2e_per_item": (
+                round(total_co2e / len(electricity_data), 2) if electricity_data else 0
+            ),
             "regions_count": len(
                 set(
                     self._determine_electricity_region(item.location)
@@ -1170,9 +1170,12 @@ class Scope2EmissionsCalculator:
     def _generate_calculation_code(self, prefix: str, company_identifier: str) -> str:
         """Generate unique calculation code with microseconds and UUID for CI/CD safety"""
         import uuid as uuid_lib
+
         timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")  # Include microseconds
         company_code = company_identifier[:3].upper() if company_identifier else "UNK"
-        unique_suffix = str(uuid_lib.uuid4())[:8]  # Add 8-char UUID for extra uniqueness
+        unique_suffix = str(uuid_lib.uuid4())[
+            :8
+        ]  # Add 8-char UUID for extra uniqueness
         return f"{prefix}-{company_code}-{timestamp}-{unique_suffix}"
 
     def _create_audit_trail_entry(
@@ -1218,12 +1221,12 @@ class Scope2EmissionsCalculator:
             data_quality_score=calculation.data_quality_score,
             uncertainty_percentage=calculation.uncertainty_percentage,
             calculated_by=str(calculation.calculated_by),
-            reviewed_by=str(calculation.reviewed_by)
-            if calculation.reviewed_by
-            else None,
-            approved_by=str(calculation.approved_by)
-            if calculation.approved_by
-            else None,
+            reviewed_by=(
+                str(calculation.reviewed_by) if calculation.reviewed_by else None
+            ),
+            approved_by=(
+                str(calculation.approved_by) if calculation.approved_by else None
+            ),
             calculation_timestamp=calculation.calculation_timestamp,
             calculation_duration_seconds=calculation.calculation_duration_seconds,
             activity_data=[

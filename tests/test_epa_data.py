@@ -174,7 +174,7 @@ class TestEPADataService:
         # Clean up any existing emission factors first
         db_session.query(EmissionFactor).delete()
         db_session.commit()
-        
+
         factors = epa_service.get_current_factors()
         assert isinstance(factors, list)
         assert len(factors) == 0
@@ -184,7 +184,7 @@ class TestEPADataService:
         # Clean up any existing emission factors first
         db_session.query(EmissionFactor).delete()
         db_session.commit()
-        
+
         summary = epa_service.get_factors_summary()
 
         assert summary.total_factors == 0

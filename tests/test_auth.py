@@ -124,6 +124,7 @@ class TestUserRegistration:
     def test_register_user_as_admin(self, client: TestClient, admin_auth_headers):
         """Test user registration by admin"""
         import uuid
+
         unique_id = str(uuid.uuid4())[:8]
         user_data = {
             "email": f"newuser{unique_id}@example.com",
