@@ -17,54 +17,54 @@ graph TB
         API_CLIENT[API Clients]
         AUDIT[Auditor Portal]
     end
-    
+
     subgraph "API Gateway"
         GATEWAY[FastAPI Gateway]
         AUTH[Authentication Service]
         RATE[Rate Limiting]
     end
-    
+
     subgraph "Core Services"
         CALC[Emissions Calculator]
         VALID[Data Validator]
         REPORT[Report Generator]
         AUDIT_SVC[Audit Service]
     end
-    
+
     subgraph "Data Layer"
         EPA_DB[(EPA Factors DB)]
         COMPANY_DB[(Company Data DB)]
         AUDIT_DB[(Audit Trail DB)]
         CACHE[(Redis Cache)]
     end
-    
+
     subgraph "External APIs"
         EPA_API[EPA GHGRP API]
         SEC_API[SEC EDGAR API]
     end
-    
+
     WEB --> GATEWAY
     API_CLIENT --> GATEWAY
     AUDIT --> GATEWAY
-    
+
     GATEWAY --> AUTH
     GATEWAY --> RATE
     GATEWAY --> CALC
     GATEWAY --> VALID
     GATEWAY --> REPORT
     GATEWAY --> AUDIT_SVC
-    
+
     CALC --> EPA_DB
     CALC --> COMPANY_DB
     CALC --> AUDIT_DB
-    
+
     VALID --> EPA_API
     VALID --> COMPANY_DB
     VALID --> CACHE
-    
+
     REPORT --> COMPANY_DB
     REPORT --> AUDIT_DB
-    
+
     AUDIT_SVC --> AUDIT_DB
 ```
 
@@ -367,7 +367,7 @@ class ErrorResponse(BaseModel):
 ### Unit Testing
 - **Coverage Target**: 90%+ code coverage
 - **Framework**: pytest with fixtures for database and external API mocking
-- **Focus Areas**: 
+- **Focus Areas**:
   - Emissions calculation accuracy
   - Data validation logic
   - Report generation formatting

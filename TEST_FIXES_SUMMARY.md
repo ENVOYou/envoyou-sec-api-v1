@@ -10,7 +10,7 @@
 calculation.total_co2e = total_co2e
 calculation.total_co2 = total_co2
 
-# After  
+# After
 calculation.total_co2e = total_co2e / 1000.0  # Convert kg to metric tons
 calculation.total_co2 = total_co2 / 1000.0
 ```
@@ -50,7 +50,7 @@ if result.status == "failed":
 ## Test Results Summary
 
 - **Core Functionality**: ✅ Working
-- **API Endpoints**: ✅ Implemented  
+- **API Endpoints**: ✅ Implemented
 - **Database Models**: ✅ Complete
 - **Calculation Logic**: ✅ Fixed and accurate
 - **Test Suite**: ⚠️ Minor bcrypt setup issue (non-blocking)
@@ -61,7 +61,7 @@ The ENVOYOU SEC API is **fully functional** with all core features working corre
 
 ### Key Fixes Applied:
 1. ✅ Unit conversion in Scope 2 calculator
-2. ✅ Test validation logic improvements  
+2. ✅ Test validation logic improvements
 3. ✅ Password length standardization
 4. ✅ Calculation accuracy verified
 

@@ -58,7 +58,7 @@ echo "----------------------------------------"
 if command -v docker &> /dev/null; then
     echo "Building test image..."
     docker build -t envoyou-sec-api-test -f Dockerfile .
-    
+
     echo "Running containerized tests..."
     docker run --rm envoyou-sec-api-test python scripts/test_calculations.py
     echo ""
@@ -75,18 +75,18 @@ if command -v curl &> /dev/null; then
     # Check if server is running on port 8000
     if curl -s http://localhost:8000/health > /dev/null 2>&1; then
         echo "✅ API server is running, testing endpoints..."
-        
+
         # Test health endpoint
         echo "Testing health endpoint..."
         curl -s http://localhost:8000/health | python -m json.tool
-        
+
         # Test root endpoint
         echo "Testing root endpoint..."
         curl -s http://localhost:8000/ | python -m json.tool
-        
+
         echo ""
         echo "ℹ️  For full API testing, use the test suite with authentication"
-        
+
     else
         echo "⚠️  API server not running on localhost:8000"
         echo "   Start with: uvicorn app.main:app --reload"

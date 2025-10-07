@@ -103,12 +103,12 @@ class EPAGHGRPService:
                 "total_matches": len(ghgrp_matches),
                 "ranked_matches": ranked_matches[:5],  # Top 5 matches
                 "best_match": best_match,
-                "match_confidence": ranked_matches[0]["confidence_score"]
-                if ranked_matches
-                else 0,
-                "ghgrp_reporting_years": best_match.get("reporting_years", [])
-                if best_match
-                else [],
+                "match_confidence": (
+                    ranked_matches[0]["confidence_score"] if ranked_matches else 0
+                ),
+                "ghgrp_reporting_years": (
+                    best_match.get("reporting_years", []) if best_match else []
+                ),
             }
 
             # Cache the search result
@@ -580,9 +580,12 @@ class EPAGHGRPService:
             "monitoring_methods": quality_metrics.get("monitoring_methods", []),
             "data_age_days": 0,  # Would calculate based on reporting date
             "reliability_factors": [
-                "Third-party verified"
-                if quality_metrics.get("verification_status") == "third_party_verified"
-                else "Self-reported",
+                (
+                    "Third-party verified"
+                    if quality_metrics.get("verification_status")
+                    == "third_party_verified"
+                    else "Self-reported"
+                ),
                 f"Completeness: {quality_metrics.get('completeness', 0)}%",
                 f"Monitoring: {', '.join(quality_metrics.get('monitoring_methods', []))}",
             ],

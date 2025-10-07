@@ -1,5 +1,5 @@
 # Prometheus configuration for ENVOYOU SEC API monitoring
-# Datbase PostgreSQL menggunakan supabase 
+# Datbase PostgreSQL menggunakan supabase
 
 global:
   scrape_interval: 15s

@@ -320,15 +320,19 @@ async def analyze_anomaly_trends(
         total_anomalies = [point["total_anomalies"] for point in trend_data]
 
         trend_analysis = {
-            "average_risk_score": sum(risk_scores) / len(risk_scores)
-            if risk_scores
-            else 0,
-            "risk_score_trend": "increasing"
-            if len(risk_scores) > 1 and risk_scores[-1] > risk_scores[0]
-            else "stable",
-            "total_anomalies_trend": "increasing"
-            if len(total_anomalies) > 1 and total_anomalies[-1] > total_anomalies[0]
-            else "stable",
+            "average_risk_score": (
+                sum(risk_scores) / len(risk_scores) if risk_scores else 0
+            ),
+            "risk_score_trend": (
+                "increasing"
+                if len(risk_scores) > 1 and risk_scores[-1] > risk_scores[0]
+                else "stable"
+            ),
+            "total_anomalies_trend": (
+                "increasing"
+                if len(total_anomalies) > 1 and total_anomalies[-1] > total_anomalies[0]
+                else "stable"
+            ),
             "years_analyzed": len(trend_data),
         }
 

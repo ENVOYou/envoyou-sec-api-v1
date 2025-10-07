@@ -30,7 +30,7 @@ $changes = git diff --staged --name-only
 if ($changes) {
     # Commit initial files
     Write-Host "💾 Creating initial commit..." -ForegroundColor Yellow
-    
+
     $commitMessage = @"
 🎉 Initial commit: ENVOYOU SEC API
 
