@@ -9,7 +9,7 @@ The EPA Data Caching and Refresh System provides a comprehensive solution for ma
 ### **Core Components**
 
 1. **RedisCacheService** - Low-level Redis operations
-2. **EPACacheService** - EPA-specific caching logic  
+2. **EPACacheService** - EPA-specific caching logic
 3. **EPACachedService** - High-level service with database integration
 4. **BackgroundTaskManager** - Automated refresh and maintenance
 5. **API Endpoints** - RESTful interface for cache management
@@ -66,7 +66,7 @@ EPA API → Database → Redis Cache → Application
 REDIS_URL=redis://localhost:6379/0
 REDIS_EXPIRE_SECONDS=3600
 
-# EPA Configuration  
+# EPA Configuration
 EPA_DATA_CACHE_HOURS=24
 EPA_API_BASE_URL=https://api.epa.gov
 EPA_REQUEST_TIMEOUT=30
@@ -254,7 +254,7 @@ redis-server --port 6379 --daemonize yes
 # Frequent updates: Short TTL
 EPA_DATA_CACHE_HOURS = 6
 
-# Stable data: Long TTL  
+# Stable data: Long TTL
 EPA_DATA_CACHE_HOURS = 48
 ```
 

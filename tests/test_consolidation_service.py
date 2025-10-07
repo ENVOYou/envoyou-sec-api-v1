@@ -2,10 +2,11 @@
 Tests for Emissions Consolidation Service
 """
 
-import pytest
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
+
+import pytest
 from fastapi import HTTPException
 
 from app.models.emissions import (
@@ -33,18 +34,21 @@ class TestEmissionsConsolidationService:
     @pytest.fixture
     def sample_company(self, db_session):
         """Create sample company for testing"""
-        # Check if company already exists
-        existing_company = db_session.query(Company).filter(Company.cik == "0001234567").first()
-        if existing_company:
-            return existing_company
-            
+        import uuid
+
+        # Use unique CIK to avoid conflicts
+        unique_cik = f"CS{uuid.uuid4().hex[:8].upper()}"
+
+        # Use unique ticker to avoid conflicts
+        unique_ticker = f"TST{uuid.uuid4().hex[:4].upper()}"
+
         company = Company(
             id=uuid4(),
             name="Test Corporation",
-            ticker="TEST",
-            cik="0001234567",
+            ticker=unique_ticker,
+            cik=unique_cik,
             industry="Technology",
-            reporting_year=2024
+            reporting_year=2024,
         )
         db_session.add(company)
         db_session.commit()
@@ -55,7 +59,7 @@ class TestEmissionsConsolidationService:
     def sample_entities(self, db_session, sample_company):
         """Create sample entities for testing"""
         entities = []
-        
+
         # Entity 1: 100% owned subsidiary
         entity1 = CompanyEntity(
             id=uuid4(),
@@ -64,10 +68,10 @@ class TestEmissionsConsolidationService:
             entity_type="subsidiary",
             ownership_percentage=100.0,
             consolidation_method="full",
-            operational_control=True
+            operational_control=True,
         )
         entities.append(entity1)
-        
+
         # Entity 2: 75% owned subsidiary
         entity2 = CompanyEntity(
             id=uuid4(),
@@ -76,10 +80,10 @@ class TestEmissionsConsolidationService:
             entity_type="subsidiary",
             ownership_percentage=75.0,
             consolidation_method="full",
-            operational_control=True
+            operational_control=True,
         )
         entities.append(entity2)
-        
+
         # Entity 3: 25% owned joint venture
         entity3 = CompanyEntity(
             id=uuid4(),
@@ -88,18 +92,18 @@ class TestEmissionsConsolidationService:
             entity_type="joint_venture",
             ownership_percentage=25.0,
             consolidation_method="full",
-            operational_control=False
+            operational_control=False,
         )
         entities.append(entity3)
-        
+
         for entity in entities:
             db_session.add(entity)
-        
+
         db_session.commit()
-        
+
         for entity in entities:
             db_session.refresh(entity)
-        
+
         return entities
 
     @pytest.fixture
@@ -121,28 +125,28 @@ class TestEmissionsConsolidationService:
             reporting_period_end=date(2024, 12, 31),
             consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
             include_scope3=False,
-            minimum_ownership_threshold=0.0
+            minimum_ownership_threshold=0.0,
         )
-        
+
         result = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Verify consolidation was created
         assert result.id is not None
         assert str(result.company_id) == str(sample_company.id)
         assert result.reporting_year == 2024
         assert result.consolidation_method == ConsolidationMethod.OWNERSHIP_BASED
         assert result.status == ConsolidationStatus.COMPLETED
-        
+
         # Since we don't have actual emissions data in test database,
         # verify that consolidation process completes successfully
         # and entities are processed correctly
         assert result.total_scope1_co2e is None  # No emissions data available
         assert result.total_scope2_co2e is None  # No emissions data available
         assert result.total_scope3_co2e is None  # No emissions data available
-        
+
         # Verify entity contributions - should be 3 entities processed
         assert len(result.entity_contributions) == 3
-        
+
         # Since no emissions data is available, contributions should exist but with None values
         for contrib in result.entity_contributions:
             assert contrib.consolidated_scope1_co2e is None
@@ -160,23 +164,23 @@ class TestEmissionsConsolidationService:
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
             consolidation_method=ConsolidationMethod.OPERATIONAL_CONTROL,
-            include_scope3=False
+            include_scope3=False,
         )
-        
+
         result = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Verify consolidation method
         assert result.consolidation_method == ConsolidationMethod.OPERATIONAL_CONTROL
-        
+
         # Only entities with operational control should be fully included
         # Entity 1: has operational control -> factor = 1.0
         # Entity 2: has operational control -> factor = 1.0
         # Entity 3: no operational control -> factor = 0.0
-        
+
         # No emissions data available in test database
         assert result.total_scope1_co2e is None
         assert result.total_scope2_co2e is None
-        
+
         # Check consolidation factors - simplified for testing
         # Since no emissions data is available, just verify contributions exist
         assert len(result.entity_contributions) == 3
@@ -195,17 +199,17 @@ class TestEmissionsConsolidationService:
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
             consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
-            minimum_ownership_threshold=50.0  # Exclude entities with <50% ownership
+            minimum_ownership_threshold=50.0,  # Exclude entities with <50% ownership
         )
-        
+
         result = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Only entities with >=50% ownership should be included
         # Entity 1: 100% -> included
         # Entity 2: 75% -> included
         # Entity 3: 25% -> excluded
         assert result.total_entities_included == 2
-        
+
         # No emissions data available in test database
         assert result.total_scope1_co2e is None
         assert result.total_scope2_co2e is None
@@ -221,14 +225,14 @@ class TestEmissionsConsolidationService:
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
             consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
-            include_scope3=True
+            include_scope3=True,
         )
-        
+
         result = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Verify Scope 3 is included but no data available
         assert result.total_scope3_co2e is None  # No emissions data available
-        
+
         # Verify entities with Scope 3 count
         assert result.entities_with_scope3 == 0  # No emissions data available
 
@@ -243,14 +247,14 @@ class TestEmissionsConsolidationService:
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
-            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED
+            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
         )
-        
+
         created = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Retrieve the consolidation
         retrieved = await consolidation_service.get_consolidation(created.id)
-        
+
         # Verify data matches
         assert retrieved.id == created.id
         assert retrieved.company_id == created.company_id
@@ -269,23 +273,25 @@ class TestEmissionsConsolidationService:
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
-            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED
+            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
         )
-        
+
         request2 = ConsolidationRequest(
             company_id=sample_company.id,
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
-            consolidation_method=ConsolidationMethod.OPERATIONAL_CONTROL
+            consolidation_method=ConsolidationMethod.OPERATIONAL_CONTROL,
         )
-        
+
         await consolidation_service.create_consolidation(request1, "test_user")
         await consolidation_service.create_consolidation(request2, "test_user")
-        
+
         # List consolidations
-        consolidations = await consolidation_service.list_consolidations(sample_company.id)
-        
+        consolidations = await consolidation_service.list_consolidations(
+            sample_company.id
+        )
+
         # Verify results
         assert len(consolidations) == 2
         assert all(str(c.company_id) == str(sample_company.id) for c in consolidations)
@@ -302,16 +308,16 @@ class TestEmissionsConsolidationService:
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
-            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED
+            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
         )
-        
+
         created = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Approve consolidation
         approved = await consolidation_service.approve_consolidation(
             created.id, "approver_user", "Approved for SEC filing"
         )
-        
+
         # Verify approval
         assert approved.status == ConsolidationStatus.APPROVED
         assert approved.is_final == True
@@ -330,16 +336,16 @@ class TestEmissionsConsolidationService:
             reporting_year=2024,
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
-            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED
+            consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
         )
-        
+
         created = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Get summary
         summary = await consolidation_service.get_consolidation_summary(
             sample_company.id, 2024
         )
-        
+
         # Verify summary
         assert str(summary.company_id) == str(sample_company.id)
         assert summary.reporting_year == 2024
@@ -359,13 +365,13 @@ class TestEmissionsConsolidationService:
             reporting_period_start=date(2024, 1, 1),
             reporting_period_end=date(2024, 12, 31),
             consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
-            minimum_ownership_threshold=99.0  # Very high threshold
+            minimum_ownership_threshold=99.0,  # Very high threshold
         )
-        
+
         # Should raise exception when no entities found
         with pytest.raises(HTTPException) as exc_info:
             await consolidation_service.create_consolidation(request, "test_user")
-        
+
         assert exc_info.value.status_code == 400
         assert "No entities found" in str(exc_info.value.detail)
 
@@ -381,11 +387,11 @@ class TestEmissionsConsolidationService:
             reporting_period_end=date(2024, 12, 31),
             consolidation_method=ConsolidationMethod.OWNERSHIP_BASED,
             minimum_data_quality_score=95.0,  # Very high quality requirement
-            require_complete_data=True
+            require_complete_data=True,
         )
-        
+
         result = await consolidation_service.create_consolidation(request, "test_user")
-        
+
         # Some entities might be excluded due to quality requirements
         # The exact behavior depends on the quality scoring implementation
         assert result.total_entities_included <= 3

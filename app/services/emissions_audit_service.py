@@ -240,9 +240,11 @@ class EmissionsAuditService:
                 "audit_coverage": self._calculate_audit_coverage(
                     calculations, audit_events
                 ),
-                "last_audit_activity": max([e.event_timestamp for e in audit_events])
-                if audit_events
-                else None,
+                "last_audit_activity": (
+                    max([e.event_timestamp for e in audit_events])
+                    if audit_events
+                    else None
+                ),
             }
 
         except Exception as e:
@@ -452,50 +454,56 @@ class EmissionsAuditService:
                     "cik": company.cik,
                     "reporting_year": company.reporting_year,
                 },
-                "entity_information": {
-                    "entity_id": str(entity.id) if entity else None,
-                    "entity_name": entity.name if entity else None,
-                    "ownership_percentage": entity.ownership_percentage
+                "entity_information": (
+                    {
+                        "entity_id": str(entity.id) if entity else None,
+                        "entity_name": entity.name if entity else None,
+                        "ownership_percentage": (
+                            entity.ownership_percentage if entity else None
+                        ),
+                    }
                     if entity
-                    else None,
-                }
-                if entity
-                else None,
+                    else None
+                ),
                 "audit_trail": {
                     "total_events": len(audit_trail),
                     "events": [event.dict() for event in audit_trail],
                 },
                 "activity_data": {
                     "total_activities": len(activity_data),
-                    "activities": [
-                        {
-                            "id": str(ad.id),
-                            "activity_type": ad.activity_type,
-                            "fuel_type": ad.fuel_type,
-                            "quantity": ad.quantity,
-                            "unit": ad.unit,
-                            "location": ad.location,
-                            "emission_factor": {
-                                "id": str(ad.emission_factor_id)
-                                if ad.emission_factor_id
-                                else None,
-                                "value": ad.emission_factor_value,
-                                "unit": ad.emission_factor_unit,
-                                "source": ad.emission_factor_source,
-                            },
-                            "emissions": {
-                                "co2": ad.co2_emissions,
-                                "ch4": ad.ch4_emissions,
-                                "n2o": ad.n2o_emissions,
-                                "co2e": ad.co2e_emissions,
-                            },
-                            "data_quality": ad.data_quality,
-                            "data_source": ad.data_source,
-                        }
-                        for ad in activity_data
-                    ]
-                    if include_raw_data
-                    else [],
+                    "activities": (
+                        [
+                            {
+                                "id": str(ad.id),
+                                "activity_type": ad.activity_type,
+                                "fuel_type": ad.fuel_type,
+                                "quantity": ad.quantity,
+                                "unit": ad.unit,
+                                "location": ad.location,
+                                "emission_factor": {
+                                    "id": (
+                                        str(ad.emission_factor_id)
+                                        if ad.emission_factor_id
+                                        else None
+                                    ),
+                                    "value": ad.emission_factor_value,
+                                    "unit": ad.emission_factor_unit,
+                                    "source": ad.emission_factor_source,
+                                },
+                                "emissions": {
+                                    "co2": ad.co2_emissions,
+                                    "ch4": ad.ch4_emissions,
+                                    "n2o": ad.n2o_emissions,
+                                    "co2e": ad.co2e_emissions,
+                                },
+                                "data_quality": ad.data_quality,
+                                "data_source": ad.data_source,
+                            }
+                            for ad in activity_data
+                        ]
+                        if include_raw_data
+                        else []
+                    ),
                 },
                 "integrity_verification": integrity_check,
                 "user_information": user_details if include_user_details else {},

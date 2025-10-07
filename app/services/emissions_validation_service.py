@@ -17,8 +17,8 @@ from sqlalchemy.orm import Session
 from app.core.audit_logger import AuditLogger
 from app.models.emissions import ActivityData, Company, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
-from app.services.epa_ghgrp_service import EPAGHGRPService
 from app.services.anomaly_detection_service import AnomalyDetectionService
+from app.services.epa_ghgrp_service import EPAGHGRPService
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class ValidationResult:
         self.ghgrp_comparison: Dict[str, Any] = {}
         self.variance_analysis: Dict[str, Any] = {}
         self.threshold_analysis: Dict[str, Any] = {}
-        
+
         # Anomaly detection results
         self.anomaly_report: Optional[Dict[str, Any]] = None
         self.anomaly_risk_score: float = 0.0
@@ -527,9 +527,9 @@ class EmissionsValidationService:
                 # This would need GHGRP scope breakdown - simplified for now
                 scope_variances[scope] = {
                     "company_total": total,
-                    "variance_from_total": (total / company_total * 100)
-                    if company_total > 0
-                    else 0,
+                    "variance_from_total": (
+                        (total / company_total * 100) if company_total > 0 else 0
+                    ),
                 }
 
             return {
@@ -539,9 +539,9 @@ class EmissionsValidationService:
                 "company_total": company_total,
                 "ghgrp_total": ghgrp_total,
                 "scope_variances": scope_variances,
-                "variance_direction": "higher"
-                if company_total > ghgrp_total
-                else "lower",
+                "variance_direction": (
+                    "higher" if company_total > ghgrp_total else "lower"
+                ),
             }
 
         except Exception as e:
@@ -871,17 +871,19 @@ class EmissionsValidationService:
             anomaly_report = anomaly_service.detect_anomalies(
                 company_id=company_id,
                 reporting_year=reporting_year,
-                user_id="system"  # System-initiated validation
+                user_id="system",  # System-initiated validation
             )
-            
+
             return {
                 "report": anomaly_report,
                 "risk_score": anomaly_report.overall_risk_score,
                 "total_anomalies": anomaly_report.total_anomalies,
-                "critical_anomalies": anomaly_report.anomalies_by_severity.get("critical", 0),
-                "high_anomalies": anomaly_report.anomalies_by_severity.get("high", 0)
+                "critical_anomalies": anomaly_report.anomalies_by_severity.get(
+                    "critical", 0
+                ),
+                "high_anomalies": anomaly_report.anomalies_by_severity.get("high", 0),
             }
-            
+
         except Exception as e:
             logger.warning(f"Anomaly detection failed during validation: {str(e)}")
             # Return empty result if anomaly detection fails
@@ -890,7 +892,7 @@ class EmissionsValidationService:
                 "risk_score": 0.0,
                 "total_anomalies": 0,
                 "critical_anomalies": 0,
-                "high_anomalies": 0
+                "high_anomalies": 0,
             }
 
     # Additional helper methods would be implemented here for:

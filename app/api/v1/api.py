@@ -5,6 +5,7 @@ Aggregates all API endpoints for version 1
 
 from fastapi import APIRouter
 
+from app.api.v1 import consolidation
 from app.api.v1.endpoints import (
     anomaly_detection,
     audit,
@@ -19,7 +20,6 @@ from app.api.v1.endpoints import (
     validation,
     workflow,
 )
-from app.api.v1 import consolidation
 
 # Create main API router
 api_router = APIRouter()

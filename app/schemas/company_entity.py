@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, validator
 
 class EntityType(str, Enum):
     """Types of company entities"""
-    
+
     SUBSIDIARY = "subsidiary"
     DIVISION = "division"
     FACILITY = "facility"
@@ -24,7 +24,7 @@ class EntityType(str, Enum):
 
 class ConsolidationMethod(str, Enum):
     """Consolidation methods for financial reporting"""
-    
+
     FULL = "full"  # Full consolidation (>50% ownership)
     EQUITY = "equity"  # Equity method (20-50% ownership)
     PROPORTIONAL = "proportional"  # Proportional consolidation
@@ -32,25 +32,28 @@ class ConsolidationMethod(str, Enum):
 
 class CompanyEntityBase(BaseModel):
     """Base schema for company entity"""
-    
+
     name: str = Field(..., min_length=1, max_length=255, description="Entity name")
     entity_type: EntityType = Field(..., description="Type of entity")
     ownership_percentage: float = Field(
-        default=100.0, 
-        ge=0.0, 
-        le=100.0, 
-        description="Ownership percentage (0-100)"
+        default=100.0, ge=0.0, le=100.0, description="Ownership percentage (0-100)"
     )
     consolidation_method: ConsolidationMethod = Field(
         default=ConsolidationMethod.FULL,
-        description="Consolidation method for reporting"
+        description="Consolidation method for reporting",
     )
     country: Optional[str] = Field(None, max_length=100, description="Country location")
-    state_province: Optional[str] = Field(None, max_length=100, description="State or province")
+    state_province: Optional[str] = Field(
+        None, max_length=100, description="State or province"
+    )
     city: Optional[str] = Field(None, max_length=100, description="City location")
 
-    primary_activity: Optional[str] = Field(None, max_length=255, description="Primary business activity")
-    operational_control: bool = Field(default=True, description="Whether company has operational control")
+    primary_activity: Optional[str] = Field(
+        None, max_length=255, description="Primary business activity"
+    )
+    operational_control: bool = Field(
+        default=True, description="Whether company has operational control"
+    )
 
     @validator("ownership_percentage")
     def validate_ownership_percentage(cls, v):
@@ -61,7 +64,7 @@ class CompanyEntityBase(BaseModel):
 
 class CompanyEntityCreate(CompanyEntityBase):
     """Schema for creating a company entity"""
-    
+
     company_id: UUID = Field(..., description="Parent company ID")
 
     class Config:
@@ -76,14 +79,14 @@ class CompanyEntityCreate(CompanyEntityBase):
                 "state_province": "California",
                 "city": "San Francisco",
                 "primary_activity": "Electronics manufacturing",
-                "operational_control": True
+                "operational_control": True,
             }
         }
 
 
 class CompanyEntityUpdate(BaseModel):
     """Schema for updating a company entity"""
-    
+
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     entity_type: Optional[EntityType] = None
     ownership_percentage: Optional[float] = Field(None, ge=0.0, le=100.0)
@@ -103,14 +106,16 @@ class CompanyEntityUpdate(BaseModel):
 
 class CompanyEntityResponse(CompanyEntityBase):
     """Schema for company entity response"""
-    
+
     id: UUID
     company_id: UUID
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    
+
     # Computed fields
-    effective_ownership: Optional[float] = Field(None, description="Effective ownership considering parent chain")
+    effective_ownership: Optional[float] = Field(
+        None, description="Effective ownership considering parent chain"
+    )
     full_path: Optional[str] = Field(None, description="Full hierarchical path")
 
     class Config:
@@ -131,16 +136,16 @@ class CompanyEntityResponse(CompanyEntityBase):
                 "created_at": "2024-01-01T00:00:00Z",
                 "updated_at": "2024-01-01T00:00:00Z",
                 "effective_ownership": 100.0,
-                "full_path": "Manufacturing Division"
+                "full_path": "Manufacturing Division",
             }
         }
 
 
 class EntityHierarchyNode(BaseModel):
     """Node in entity hierarchy tree"""
-    
+
     entity: CompanyEntityResponse
-    children: List['EntityHierarchyNode'] = []
+    children: List["EntityHierarchyNode"] = []
 
     class Config:
         from_attributes = True
@@ -152,7 +157,7 @@ EntityHierarchyNode.model_rebuild()
 
 class EntityHierarchyResponse(BaseModel):
     """Response schema for entity hierarchy"""
-    
+
     company_id: UUID
     total_entities: int
     hierarchy: List[EntityHierarchyNode]
@@ -163,7 +168,7 @@ class EntityHierarchyResponse(BaseModel):
 
 class OwnershipValidationResult(BaseModel):
     """Result of ownership validation"""
-    
+
     is_valid: bool
     total_entities: int
     issues: List[str] = []
@@ -175,14 +180,14 @@ class OwnershipValidationResult(BaseModel):
                 "is_valid": True,
                 "total_entities": 5,
                 "issues": [],
-                "message": "Ownership structure is valid"
+                "message": "Ownership structure is valid",
             }
         }
 
 
 class EntitySummaryResponse(BaseModel):
     """Summary response for entity statistics"""
-    
+
     company_id: UUID
     total_entities: int
     active_entities: int
@@ -200,21 +205,19 @@ class EntitySummaryResponse(BaseModel):
                 "inactive_entities": 2,
                 "max_hierarchy_level": 3,
                 "total_ownership_issues": 0,
-                "consolidation_methods": {
-                    "full": 6,
-                    "equity": 2,
-                    "proportional": 0
-                }
+                "consolidation_methods": {"full": 6, "equity": 2, "proportional": 0},
             }
         }
 
 
 class BulkEntityOperation(BaseModel):
     """Schema for bulk entity operations"""
-    
+
     operation: str = Field(..., description="Operation type: create, update, delete")
     entities: List[Dict] = Field(..., description="List of entity data")
-    validate_ownership: bool = Field(default=True, description="Whether to validate ownership constraints")
+    validate_ownership: bool = Field(
+        default=True, description="Whether to validate ownership constraints"
+    )
 
     class Config:
         schema_extra = {
@@ -224,22 +227,22 @@ class BulkEntityOperation(BaseModel):
                     {
                         "name": "Subsidiary A",
                         "entity_type": "subsidiary",
-                        "ownership_percentage": 75.0
+                        "ownership_percentage": 75.0,
                     },
                     {
-                        "name": "Subsidiary B", 
+                        "name": "Subsidiary B",
                         "entity_type": "subsidiary",
-                        "ownership_percentage": 25.0
-                    }
+                        "ownership_percentage": 25.0,
+                    },
                 ],
-                "validate_ownership": True
+                "validate_ownership": True,
             }
         }
 
 
 class BulkOperationResult(BaseModel):
     """Result of bulk entity operation"""
-    
+
     success_count: int
     error_count: int
     total_processed: int
@@ -255,7 +258,7 @@ class BulkOperationResult(BaseModel):
                 "errors": [],
                 "created_entities": [
                     "123e4567-e89b-12d3-a456-426614174000",
-                    "123e4567-e89b-12d3-a456-426614174001"
-                ]
+                    "123e4567-e89b-12d3-a456-426614174001",
+                ],
             }
         }

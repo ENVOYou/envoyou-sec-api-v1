@@ -929,9 +929,9 @@ class Scope1EmissionsCalculator:
         insights["summary"] = {
             "total_activities": len(activity_data),
             "total_co2e_tonnes": round(total_co2e, 2),
-            "average_co2e_per_activity": round(total_co2e / len(activity_data), 2)
-            if activity_data
-            else 0,
+            "average_co2e_per_activity": (
+                round(total_co2e / len(activity_data), 2) if activity_data else 0
+            ),
             "fuel_types_count": len(
                 set(a.fuel_type for a in activity_data if a.fuel_type)
             ),
@@ -971,16 +971,24 @@ class Scope1EmissionsCalculator:
 
         insights["quality_analysis"] = {
             "quality_distribution": quality_distribution,
-            "measured_percentage": round(
-                (quality_distribution.get("measured", 0) / len(activity_data)) * 100, 1
-            )
-            if activity_data
-            else 0,
-            "estimated_percentage": round(
-                (quality_distribution.get("estimated", 0) / len(activity_data)) * 100, 1
-            )
-            if activity_data
-            else 0,
+            "measured_percentage": (
+                round(
+                    (quality_distribution.get("measured", 0) / len(activity_data))
+                    * 100,
+                    1,
+                )
+                if activity_data
+                else 0
+            ),
+            "estimated_percentage": (
+                round(
+                    (quality_distribution.get("estimated", 0) / len(activity_data))
+                    * 100,
+                    1,
+                )
+                if activity_data
+                else 0
+            ),
             "data_completeness_score": self._calculate_data_completeness(activity_data),
             "overall_quality_score": self._calculate_data_quality_score(activity_data),
         }
@@ -988,9 +996,9 @@ class Scope1EmissionsCalculator:
         # Simple benchmarks (would be enhanced with industry data)
         insights["benchmarks"] = {
             "emissions_intensity": {
-                "co2e_per_activity": round(total_co2e / len(activity_data), 2)
-                if activity_data
-                else 0,
+                "co2e_per_activity": (
+                    round(total_co2e / len(activity_data), 2) if activity_data else 0
+                ),
                 "benchmark_category": self._categorize_emissions_intensity(
                     total_co2e, len(activity_data)
                 ),
@@ -1088,10 +1096,15 @@ class Scope1EmissionsCalculator:
         return entity
 
     def _generate_calculation_code(self, prefix: str, company_identifier: str) -> str:
-        """Generate unique calculation code"""
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        """Generate unique calculation code with microseconds and UUID for CI/CD safety"""
+        import uuid as uuid_lib
+
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")  # Include microseconds
         company_code = company_identifier[:3].upper() if company_identifier else "UNK"
-        return f"{prefix}-{company_code}-{timestamp}"
+        unique_suffix = str(uuid_lib.uuid4())[
+            :8
+        ]  # Add 8-char UUID for extra uniqueness
+        return f"{prefix}-{company_code}-{timestamp}-{unique_suffix}"
 
     def _create_audit_trail_entry(
         self, calculation_id: uuid.UUID, event_type: str, description: str, user_id: str
@@ -1143,12 +1156,12 @@ class Scope1EmissionsCalculator:
             data_quality_score=calculation.data_quality_score,
             uncertainty_percentage=calculation.uncertainty_percentage,
             calculated_by=str(calculation.calculated_by),
-            reviewed_by=str(calculation.reviewed_by)
-            if calculation.reviewed_by
-            else None,
-            approved_by=str(calculation.approved_by)
-            if calculation.approved_by
-            else None,
+            reviewed_by=(
+                str(calculation.reviewed_by) if calculation.reviewed_by else None
+            ),
+            approved_by=(
+                str(calculation.approved_by) if calculation.approved_by else None
+            ),
             calculation_timestamp=calculation.calculation_timestamp,
             calculation_duration_seconds=calculation.calculation_duration_seconds,
             activity_data=[
