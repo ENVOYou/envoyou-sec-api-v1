@@ -39,7 +39,7 @@ class TestSimpleAnomalyIntegration:
         """Test that audit service has anomaly integration code"""
         
         # Read the audit service file to verify integration exists
-        with open('app/services/enhanced_audit_service.py', 'r') as f:
+        with open('app/services/enhanced_audit_service.py', 'r', encoding='utf-8') as f:
             content = f.read()
             
         # Verify anomaly detection import exists
@@ -54,7 +54,7 @@ class TestSimpleAnomalyIntegration:
         """Test that validation service has anomaly integration code"""
         
         # Read the validation service file to verify integration exists
-        with open('app/services/emissions_validation_service.py', 'r') as f:
+        with open('app/services/emissions_validation_service.py', 'r', encoding='utf-8') as f:
             content = f.read()
             
         # Verify anomaly detection import exists
@@ -69,7 +69,7 @@ class TestSimpleAnomalyIntegration:
         """Test that audit endpoints have anomaly integration"""
         
         # Read the audit endpoints file to verify integration exists
-        with open('app/api/v1/endpoints/enhanced_audit.py', 'r') as f:
+        with open('app/api/v1/endpoints/enhanced_audit.py', 'r', encoding='utf-8') as f:
             content = f.read()
             
         # Verify anomaly detection import exists
@@ -85,7 +85,7 @@ class TestSimpleAnomalyIntegration:
         """Test that error handling for anomaly integration exists"""
         
         # Read validation service to check error handling
-        with open('app/services/emissions_validation_service.py', 'r') as f:
+        with open('app/services/emissions_validation_service.py', 'r', encoding='utf-8') as f:
             validation_content = f.read()
             
         # Verify error handling exists
@@ -95,7 +95,7 @@ class TestSimpleAnomalyIntegration:
         assert 'Anomaly detection failed during validation' in validation_content
         
         # Read audit service to check error handling
-        with open('app/services/enhanced_audit_service.py', 'r') as f:
+        with open('app/services/enhanced_audit_service.py', 'r', encoding='utf-8') as f:
             audit_content = f.read()
             
         # Verify error handling exists in audit service too
@@ -122,7 +122,7 @@ class TestSimpleAnomalyIntegration:
         """Test that anomaly API endpoints are properly defined"""
         
         # Read the anomaly endpoints file
-        with open('app/api/v1/endpoints/anomaly_detection.py', 'r') as f:
+        with open('app/api/v1/endpoints/anomaly_detection.py', 'r', encoding='utf-8') as f:
             content = f.read()
             
         # Verify main endpoints exist
@@ -141,7 +141,7 @@ class TestSimpleAnomalyIntegration:
         assert os.path.exists('ANOMALY_INTEGRATION_GUIDE.md')
         
         # Read and verify content
-        with open('ANOMALY_INTEGRATION_GUIDE.md', 'r') as f:
+        with open('ANOMALY_INTEGRATION_GUIDE.md', 'r', encoding='utf-8') as f:
             content = f.read()
             
         # Verify key sections exist

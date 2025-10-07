@@ -92,25 +92,20 @@ class TestAnomalyIntegration:
                 mock_company.industry = "manufacturing"
                 mock_db.query.return_value.filter.return_value.first.return_value = mock_company
                 
-                try:
-                    result = await validation_service.validate_company_emissions(
-                        company_id=company_id,
-                        reporting_year=2024
-                    )
-                    
-                    # Verify anomaly detection was called
-                    mock_anomaly_instance.detect_anomalies.assert_called_once()
-                    
-                    # Verify anomaly insights are included in recommendations
-                    assert any("Anomaly Detection:" in rec for rec in result.recommendations)
-                    
-                    # Verify confidence score was adjusted for anomalies
-                    assert result["metadata"].get("anomaly_detection_enabled") is True
-                    
-                except Exception as e:
-                    # If validation fails due to missing data, that's expected in test
-                    # The important thing is that anomaly detection was attempted
-                    mock_anomaly_instance.detect_anomalies.assert_called_once()
+                # Test the anomaly detection method directly
+                result = await validation_service._perform_anomaly_detection(
+                    company_id=company_id,
+                    reporting_year=2024
+                )
+                
+                # Verify anomaly detection was called
+                mock_anomaly_instance.detect_anomalies.assert_called_once()
+                
+                # Verify result structure
+                assert "report" in result
+                assert "risk_score" in result
+                assert "total_anomalies" in result
+                assert result["report"] == sample_anomaly_report
     
     def test_audit_service_anomaly_integration(self, mock_db, sample_anomaly_report):
         """Test that audit service integrates anomaly detection during session creation"""

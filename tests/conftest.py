@@ -206,11 +206,13 @@ def cfo_user(db_session):
 @pytest.fixture
 def auditor_user(db_session):
     """Create an auditor test user"""
+    import uuid
     security = SecurityUtils()
+    unique_id = str(uuid.uuid4())[:8]
 
     user = User(
-        email="auditor@example.com",
-        username="auditor",
+        email=f"auditor{unique_id}@example.com",
+        username=f"auditor{unique_id}",
         full_name="Auditor User",
         hashed_password=security.get_password_hash("AuditorPass123!"),
         role=UserRole.AUDITOR,
