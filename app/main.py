@@ -45,12 +45,19 @@ app.include_router(api_router, prefix="/v1")
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
-    task_status = task_manager.get_task_status()
+    try:
+        # Try to get task status, but don't fail if unavailable
+        task_status = (
+            task_manager.get_task_status() if "task_manager" in globals() else {}
+        )
+    except Exception:
+        task_status = {}
 
     return {
         "status": "healthy",
         "service": "envoyou-sec-api",
         "version": "1.0.0",
+        "environment": "production",
         "background_tasks": task_status,
     }
 
