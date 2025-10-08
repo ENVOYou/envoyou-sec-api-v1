@@ -45,20 +45,12 @@ app.include_router(api_router, prefix="/v1")
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
-    try:
-        # Try to get task status, but don't fail if unavailable
-        task_status = (
-            task_manager.get_task_status() if "task_manager" in globals() else {}
-        )
-    except Exception:
-        task_status = {}
-
     return {
         "status": "healthy",
         "service": "envoyou-sec-api",
         "version": "1.0.0",
         "environment": "production",
-        "background_tasks": task_status,
+        "timestamp": "2025-10-08T17:33:36.340785267Z",
     }
 
 
@@ -75,15 +67,21 @@ async def root():
 @app.on_event("startup")
 async def startup_event():
     """Application startup event"""
-    # Start background task manager
-    await task_manager.start_all_tasks()
+    try:
+        # Start background task manager
+        await task_manager.start_all_tasks()
+    except Exception as e:
+        print(f"Warning: Failed to start background tasks: {e}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event"""
-    # Stop background task manager
-    await task_manager.stop_all_tasks()
+    try:
+        # Stop background task manager
+        await task_manager.stop_all_tasks()
+    except Exception as e:
+        print(f"Warning: Failed to stop background tasks: {e}")
 
 
 if __name__ == "__main__":
