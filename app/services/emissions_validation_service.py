@@ -8,6 +8,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, func, or_
@@ -16,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.core.audit_logger import AuditLogger
 from app.models.emissions import ActivityData, Company, EmissionsCalculation
 from app.models.epa_data import EmissionFactor
+from app.services.anomaly_detection_service import AnomalyDetectionService
 from app.services.epa_ghgrp_service import EPAGHGRPService
 
 logger = logging.getLogger(__name__)
@@ -50,6 +52,10 @@ class ValidationResult:
         self.variance_analysis: Dict[str, Any] = {}
         self.threshold_analysis: Dict[str, Any] = {}
 
+        # Anomaly detection results
+        self.anomaly_report: Optional[Dict[str, Any]] = None
+        self.anomaly_risk_score: float = 0.0
+
 
 class EmissionsValidationService:
     """Emissions data cross-validation engine"""
@@ -58,6 +64,7 @@ class EmissionsValidationService:
         self.db = db
         self.ghgrp_service = EPAGHGRPService(db)
         self.audit_logger = AuditLogger(db)
+        self.anomaly_service = AnomalyDetectionService(db)
 
         # Validation thresholds
         self.variance_thresholds = {
@@ -164,7 +171,14 @@ class EmissionsValidationService:
                 confidence_scores, discrepancies, threshold_analysis
             )
 
-            # Generate recommendations
+            # Perform anomaly detection analysis
+            anomaly_analysis = await self._perform_anomaly_detection(
+                company_id, reporting_year
+            )
+            result.anomaly_report = anomaly_analysis["report"]
+            result.anomaly_risk_score = anomaly_analysis["risk_score"]
+
+            # Generate recommendations (including anomaly-based recommendations)
             result.recommendations = self._generate_recommendations(
                 result, company_emissions, ghgrp_validation, discrepancies
             )
@@ -513,9 +527,9 @@ class EmissionsValidationService:
                 # This would need GHGRP scope breakdown - simplified for now
                 scope_variances[scope] = {
                     "company_total": total,
-                    "variance_from_total": (total / company_total * 100)
-                    if company_total > 0
-                    else 0,
+                    "variance_from_total": (
+                        (total / company_total * 100) if company_total > 0 else 0
+                    ),
                 }
 
             return {
@@ -525,9 +539,9 @@ class EmissionsValidationService:
                 "company_total": company_total,
                 "ghgrp_total": ghgrp_total,
                 "scope_variances": scope_variances,
-                "variance_direction": "higher"
-                if company_total > ghgrp_total
-                else "lower",
+                "variance_direction": (
+                    "higher" if company_total > ghgrp_total else "lower"
+                ),
             }
 
         except Exception as e:
@@ -846,6 +860,40 @@ class EmissionsValidationService:
             return "low"
         else:
             return "very_low"
+
+    async def _perform_anomaly_detection(
+        self, company_id: str, reporting_year: int
+    ) -> Dict[str, Any]:
+        """Perform anomaly detection analysis"""
+        try:
+            # Run anomaly detection as part of validation
+            anomaly_service = AnomalyDetectionService(self.db)
+            anomaly_report = anomaly_service.detect_anomalies(
+                company_id=company_id,
+                reporting_year=reporting_year,
+                user_id="system",  # System-initiated validation
+            )
+
+            return {
+                "report": anomaly_report,
+                "risk_score": anomaly_report.overall_risk_score,
+                "total_anomalies": anomaly_report.total_anomalies,
+                "critical_anomalies": anomaly_report.anomalies_by_severity.get(
+                    "critical", 0
+                ),
+                "high_anomalies": anomaly_report.anomalies_by_severity.get("high", 0),
+            }
+
+        except Exception as e:
+            logger.warning(f"Anomaly detection failed during validation: {str(e)}")
+            # Return empty result if anomaly detection fails
+            return {
+                "report": None,
+                "risk_score": 0.0,
+                "total_anomalies": 0,
+                "critical_anomalies": 0,
+                "high_anomalies": 0,
+            }
 
     # Additional helper methods would be implemented here for:
     # - _validate_calculation_methodology

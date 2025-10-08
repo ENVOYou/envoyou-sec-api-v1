@@ -71,7 +71,7 @@ The Enhanced Scope 2 Emissions Calculator provides comprehensive, SEC-compliant 
 ```python
 city_mappings = {
     'New York City': 'NYIS',
-    'Long Island': 'NYLI', 
+    'Long Island': 'NYLI',
     'Los Angeles': 'CAMX',
     'Chicago': 'SRMW',
     'Houston': 'ERCT',
@@ -129,7 +129,7 @@ city_mappings = {
 
 ### **Electricity Units**
 | From | To | Factor | Example |
-|------|----|---------|---------| 
+|------|----|---------|---------|
 | kWh | MWh | 0.001 | 1,000 kWh → 1 MWh |
 | MWh | GWh | 0.001 | 1,000 MWh → 1 GWh |
 | GWh | TWh | 0.001 | 1,000 GWh → 1 TWh |
@@ -153,7 +153,7 @@ GW → GWh (1:1 ratio)
 ```python
 quality_scores = {
     'measured': 95,      # Smart meters, utility bills
-    'calculated': 85,    # Sub-meter calculations  
+    'calculated': 85,    # Sub-meter calculations
     'estimated': 70,     # Engineering estimates
     'default': 60        # Default assumptions
 }
@@ -161,7 +161,7 @@ quality_scores = {
 
 #### **Electricity-Specific Modifiers**
 - **Smart Meter Data**: +15 points
-- **Utility Bills**: +15 points  
+- **Utility Bills**: +15 points
 - **Sub-meters**: +10 points
 - **Detailed Location**: +10 points (for regional accuracy)
 - **Continuous Monitoring**: +15 points
@@ -219,7 +219,7 @@ request = Scope2CalculationRequest(
     electricity_consumption=[
         ActivityDataInput(
             quantity=1000000.0,
-            unit="kwh", 
+            unit="kwh",
             location="Austin, TX",  # → ERCT region
             additional_data={
                 "recs_mwh": 500.0,  # 50% REC coverage
@@ -277,7 +277,7 @@ ActivityDataInput(
       "emission_factor": 0.4306
     },
     "ERCT": {
-      "consumption_mwh": 1000.0, 
+      "consumption_mwh": 1000.0,
       "emissions_tco2e": 210.5,
       "emission_factor": 0.2105
     }

@@ -19,7 +19,7 @@
 ```python
 variance_thresholds = {
     "low": 5.0,      # 5% variance - acceptable
-    "medium": 15.0,  # 15% variance - needs review  
+    "medium": 15.0,  # 15% variance - needs review
     "high": 25.0,    # 25% variance - significant discrepancy
     "critical": 50.0 # 50% variance - critical issue
 }
@@ -70,7 +70,7 @@ scoring_weights = {
 #### **Management & Batch Endpoints**
 - `GET /emissions-validation/validation-thresholds`
   - Current configuration and methodology
-  
+
 - `POST /emissions-validation/batch-validate` (Admin/CFO only)
   - Batch validation for multiple companies
   - Organizational compliance monitoring
@@ -133,7 +133,7 @@ Overall Score = (
 
 ### **Risk Assessment**
 - **Low Risk**: <5% variance, high confidence
-- **Medium Risk**: 5-25% variance, moderate confidence  
+- **Medium Risk**: 5-25% variance, moderate confidence
 - **High Risk**: 25-50% variance, low confidence
 - **Critical Risk**: >50% variance, very low confidence
 
@@ -233,7 +233,7 @@ Overall Score = (
 The emissions data cross-validation engine is now **production-ready** with:
 
 - ✅ **Comprehensive variance analysis** against EPA GHGRP database
-- ✅ **Multi-dimensional confidence scoring** with weighted methodology  
+- ✅ **Multi-dimensional confidence scoring** with weighted methodology
 - ✅ **Automated discrepancy detection** with severity classification
 - ✅ **SEC compliance-ready reporting** in multiple formats
 - ✅ **Production-grade error handling** and audit logging

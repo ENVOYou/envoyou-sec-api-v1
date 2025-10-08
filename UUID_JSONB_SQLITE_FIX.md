@@ -31,7 +31,7 @@ class GUID(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         # Handle UUID conversion for different databases
-        
+
     def process_result_value(self, value, dialect):
         # Always return UUID object for consistency
 ```
@@ -56,7 +56,7 @@ class JSON(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         # Serialize to JSON string for SQLite
-        
+
     def process_result_value(self, value, dialect):
         # Deserialize from JSON string for SQLite
 ```
@@ -65,7 +65,7 @@ class JSON(TypeDecorator):
 
 ### 1. `app/models/base.py`
 - ✅ Added `GUID` TypeDecorator
-- ✅ Added `JSON` TypeDecorator  
+- ✅ Added `JSON` TypeDecorator
 - ✅ Fixed `UUIDMixin` default value generation
 
 ### 2. `app/models/emissions.py`

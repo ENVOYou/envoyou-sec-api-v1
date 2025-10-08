@@ -68,7 +68,11 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             # Handle empty string case
             if not v.strip():
-                return []
+                return ["*"]  # Default to allow all if empty
+            # Handle single URL without comma
+            if "," not in v:
+                return [v.strip()]
+            # Handle comma-separated URLs
             return [origin.strip() for origin in v.split(",")]
         return v
 

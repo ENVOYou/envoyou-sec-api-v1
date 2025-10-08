@@ -48,10 +48,10 @@ async def some_function(
 def require_roles(required_roles: List[str]) -> Callable:
     """
     Creates a FastAPI dependency that checks user roles
-    
+
     Args:
         required_roles: List of roles required to access the endpoint
-        
+
     Returns:
         FastAPI dependency function that validates user roles
     """

@@ -410,3 +410,202 @@ async def get_forensic_report(
             details={"calculation_id": calculation_id, "error": str(e)},
         )
         raise
+
+
+@router.get("/companies/{company_id}/anomaly-insights")
+async def get_audit_anomaly_insights(
+    company_id: str,
+    reporting_year: Optional[int] = Query(None, description="Filter by reporting year"),
+    include_historical: bool = Query(
+        True, description="Include historical anomaly trends"
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(["admin", "auditor", "cfo", "general_counsel"])
+    ),
+):
+    """
+    Get anomaly detection insights for audit purposes
+
+    Provides comprehensive anomaly analysis including:
+    - Current year anomaly detection results
+    - Historical anomaly trends
+    - Risk assessment and recommendations
+    - Integration with audit findings
+
+    Restricted to Admin, Auditor, CFO, and General Counsel roles.
+    """
+    from app.services.anomaly_detection_service import AnomalyDetectionService
+
+    audit_service = EnhancedAuditService(db)
+    anomaly_service = AnomalyDetectionService(db)
+    audit_logger = AuditLogger(db)
+
+    try:
+        # Get current year or specified year anomalies
+        target_year = reporting_year or datetime.utcnow().year
+
+        anomaly_report = anomaly_service.detect_anomalies(
+            company_id=company_id, reporting_year=target_year, user_id=current_user.id
+        )
+
+        # Get historical trends if requested
+        historical_data = {}
+        if include_historical:
+            for year in range(target_year - 2, target_year):
+                try:
+                    historical_report = anomaly_service.detect_anomalies(
+                        company_id=company_id,
+                        reporting_year=year,
+                        user_id=current_user.id,
+                    )
+                    historical_data[str(year)] = {
+                        "total_anomalies": historical_report.total_anomalies,
+                        "risk_score": historical_report.overall_risk_score,
+                        "severity_breakdown": historical_report.anomalies_by_severity,
+                    }
+                except Exception as e:
+                    historical_data[str(year)] = {
+                        "error": f"Data not available: {str(e)}"
+                    }
+
+        # Create audit-focused summary
+        audit_summary = {
+            "company_id": company_id,
+            "reporting_year": target_year,
+            "audit_timestamp": datetime.utcnow().isoformat(),
+            "anomaly_overview": {
+                "total_anomalies": anomaly_report.total_anomalies,
+                "overall_risk_score": anomaly_report.overall_risk_score,
+                "severity_breakdown": anomaly_report.anomalies_by_severity,
+                "detection_types": anomaly_report.anomalies_by_type,
+            },
+            "critical_findings": [
+                {
+                    "anomaly_id": anomaly.anomaly_id,
+                    "type": anomaly.anomaly_type,
+                    "description": anomaly.description,
+                    "severity": anomaly.severity,
+                    "confidence": anomaly.confidence_score,
+                    "recommendations": anomaly.recommendations,
+                    "affected_data": anomaly.affected_data_points,
+                }
+                for anomaly in anomaly_report.detected_anomalies
+                if anomaly.severity in ["critical", "high"]
+            ],
+            "audit_recommendations": anomaly_report.summary_insights,
+            "historical_trends": historical_data if include_historical else None,
+            "compliance_impact": {
+                "requires_investigation": anomaly_report.total_anomalies > 0,
+                "high_risk_areas": [
+                    anomaly.anomaly_type
+                    for anomaly in anomaly_report.detected_anomalies
+                    if anomaly.severity == "critical"
+                ],
+                "recommended_actions": (
+                    [
+                        "Review critical anomalies before SEC filing",
+                        "Validate data sources for high-risk areas",
+                        "Document investigation results in audit trail",
+                    ]
+                    if anomaly_report.total_anomalies > 0
+                    else ["No immediate action required"]
+                ),
+            },
+        }
+
+        # Log the anomaly insights access
+        await audit_logger.log_event(
+            event_type="ANOMALY_INSIGHTS_ACCESSED",
+            user_id=current_user.id,
+            details={
+                "company_id": company_id,
+                "reporting_year": target_year,
+                "total_anomalies": anomaly_report.total_anomalies,
+                "risk_score": anomaly_report.overall_risk_score,
+                "include_historical": include_historical,
+            },
+        )
+
+        return {
+            "message": "Anomaly insights retrieved successfully",
+            "data": audit_summary,
+        }
+
+    except Exception as e:
+        await audit_logger.log_event(
+            event_type="ANOMALY_INSIGHTS_ERROR",
+            user_id=current_user.id,
+            details={
+                "company_id": company_id,
+                "reporting_year": reporting_year,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve anomaly insights: {str(e)}",
+        )
+
+
+@router.post("/audit-sessions/{session_id}/anomaly-review")
+async def create_anomaly_review_task(
+    session_id: str,
+    anomaly_ids: List[str],
+    reviewer_notes: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["admin", "auditor", "cfo"])),
+):
+    """
+    Create anomaly review task within an audit session
+
+    Allows auditors to formally review and document anomaly findings
+    as part of the audit process.
+    """
+    audit_service = EnhancedAuditService(db)
+    audit_logger = AuditLogger(db)
+
+    try:
+        # Create audit task for anomaly review
+        review_task = {
+            "task_id": f"anomaly_review_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+            "session_id": session_id,
+            "task_type": "anomaly_review",
+            "assigned_to": current_user.id,
+            "anomaly_ids": anomaly_ids,
+            "reviewer_notes": reviewer_notes,
+            "status": "pending",
+            "created_at": datetime.utcnow().isoformat(),
+            "metadata": {
+                "anomaly_count": len(anomaly_ids),
+                "review_priority": "high" if len(anomaly_ids) > 5 else "medium",
+            },
+        }
+
+        # Log the review task creation
+        await audit_logger.log_event(
+            event_type="ANOMALY_REVIEW_TASK_CREATED",
+            user_id=current_user.id,
+            details={
+                "session_id": session_id,
+                "task_id": review_task["task_id"],
+                "anomaly_count": len(anomaly_ids),
+                "reviewer_notes_provided": bool(reviewer_notes),
+            },
+        )
+
+        return {
+            "message": "Anomaly review task created successfully",
+            "data": review_task,
+        }
+
+    except Exception as e:
+        await audit_logger.log_event(
+            event_type="ANOMALY_REVIEW_TASK_ERROR",
+            user_id=current_user.id,
+            details={"session_id": session_id, "error": str(e)},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create anomaly review task: {str(e)}",
+        )

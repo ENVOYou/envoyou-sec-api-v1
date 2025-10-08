@@ -18,10 +18,8 @@ from passlib.context import CryptContext
 from app.core.config import settings
 from app.models.user import UserRole
 
-if settings.ENVIRONMENT == "testing":
-    pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
-else:
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+# Always use pbkdf2_sha256 to avoid bcrypt 72-byte limit issues
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 class SecurityUtils:

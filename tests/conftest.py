@@ -69,12 +69,55 @@ def db_session():
     try:
         yield db
     finally:
-        # Clean up: delete all data from tables
+        # Clean up: delete all data from tables in correct order
         db.rollback()
-        for table in reversed(Base.metadata.sorted_tables):
-            db.execute(table.delete())
-        db.commit()
-        db.close()
+        try:
+            # Disable foreign key constraints temporarily for SQLite
+            db.execute("PRAGMA foreign_keys=OFF")
+
+            # Define cleanup order to handle foreign key dependencies
+            cleanup_tables = [
+                "notification_queue",
+                "workflow_history",
+                "approval_requests",
+                "workflows",
+                "workflow_templates",
+                "consolidation_audit_trail",
+                "consolidated_emissions",
+                "emissions_calculations",
+                "company_entities",
+                "emission_factors",
+                "companies",
+                "users",
+            ]
+
+            # Clean up specific tables first
+            for table_name in cleanup_tables:
+                try:
+                    db.execute(f"DELETE FROM {table_name}")
+                except Exception as e:
+                    # Skip tables that don't exist
+                    continue
+
+            # Clean up any remaining tables
+            for table in reversed(Base.metadata.sorted_tables):
+                if table.name not in cleanup_tables:
+                    try:
+                        db.execute(table.delete())
+                    except Exception as e:
+                        continue
+
+            # Reset sequences for SQLite
+            db.execute("DELETE FROM sqlite_sequence")
+
+            # Re-enable foreign key constraints
+            db.execute("PRAGMA foreign_keys=ON")
+            db.commit()
+        except Exception as e:
+            print(f"Warning: Database cleanup failed: {e}")
+            db.rollback()
+        finally:
+            db.close()
 
 
 @pytest.fixture(scope="function")
@@ -88,6 +131,11 @@ def client() -> Generator:
 def test_user(db_session):
     """Create a test user"""
     security = SecurityUtils()
+
+    # Check if user already exists
+    existing_user = db_session.query(User).filter(User.username == "testuser").first()
+    if existing_user:
+        return existing_user
 
     user = User(
         email="test@example.com",
@@ -110,6 +158,11 @@ def test_user(db_session):
 def admin_user(db_session):
     """Create an admin test user"""
     security = SecurityUtils()
+
+    # Check if user already exists
+    existing_user = db_session.query(User).filter(User.username == "admin").first()
+    if existing_user:
+        return existing_user
 
     user = User(
         email="admin@example.com",
@@ -153,11 +206,14 @@ def cfo_user(db_session):
 @pytest.fixture
 def auditor_user(db_session):
     """Create an auditor test user"""
+    import uuid
+
     security = SecurityUtils()
+    unique_id = str(uuid.uuid4())[:8]
 
     user = User(
-        email="auditor@example.com",
-        username="auditor",
+        email=f"auditor{unique_id}@example.com",
+        username=f"auditor{unique_id}",
         full_name="Auditor User",
         hashed_password=security.get_password_hash("AuditorPass123!"),
         role=UserRole.AUDITOR,
@@ -224,10 +280,17 @@ def sample_emission_factor():
 @pytest.fixture
 def test_company(db_session):
     """Create a test company for emissions calculations"""
+    import uuid
+
+    # Use unique CIK and ticker based on UUID to avoid conflicts
+    unique_suffix = uuid.uuid4().hex[:6].upper()
+    unique_cik = f"{unique_suffix}"
+    unique_ticker = f"TST{unique_suffix[:3]}"
+
     company = Company(
         name="Test Company Inc.",
-        ticker="TEST",
-        cik="0000123456",
+        ticker=unique_ticker,
+        cik=unique_cik,
         industry="Manufacturing",
         sector="Industrial",
         headquarters_country="United States",

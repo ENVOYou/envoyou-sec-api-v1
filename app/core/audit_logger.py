@@ -214,9 +214,9 @@ class AuditLogger:
                 user_role=user.role.value,
                 request_id=request_id,
                 success=True,
-                processing_time_ms=str(processing_time_ms)
-                if processing_time_ms
-                else None,
+                processing_time_ms=(
+                    str(processing_time_ms) if processing_time_ms else None
+                ),
                 event_data={
                     "calculation_type": calculation_type,
                     "input_data": input_data,

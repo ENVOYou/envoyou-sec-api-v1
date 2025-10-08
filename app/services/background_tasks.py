@@ -279,9 +279,9 @@ class BackgroundTaskManager:
             status["tasks"][task_name] = {
                 "running": not task.done(),
                 "cancelled": task.cancelled(),
-                "exception": str(task.exception())
-                if task.done() and task.exception()
-                else None,
+                "exception": (
+                    str(task.exception()) if task.done() and task.exception() else None
+                ),
             }
 
         return status

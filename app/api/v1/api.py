@@ -5,9 +5,12 @@ Aggregates all API endpoints for version 1
 
 from fastapi import APIRouter
 
+from app.api.v1 import consolidation
 from app.api.v1.endpoints import (
+    anomaly_detection,
     audit,
     auth,
+    company_entities,
     emissions,
     emissions_validation,
     enhanced_audit,
@@ -34,9 +37,18 @@ api_router.include_router(
     prefix="/emissions-validation",
     tags=["Emissions Cross-Validation"],
 )
+api_router.include_router(
+    anomaly_detection.router,
+    prefix="/anomaly-detection",
+    tags=["Anomaly Detection"],
+)
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Audit"])
 api_router.include_router(
     enhanced_audit.router, prefix="/enhanced-audit", tags=["Enhanced Audit & Forensics"]
 )
+api_router.include_router(
+    company_entities.router, prefix="/entities", tags=["Company Entities"]
+)
 api_router.include_router(workflow.router, prefix="/workflow", tags=["Workflow"])
+api_router.include_router(consolidation.router, tags=["Emissions Consolidation"])

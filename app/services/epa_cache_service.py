@@ -191,9 +191,13 @@ class EPACachedService:
         return {
             "refresh_time": datetime.utcnow().isoformat(),
             "sources": results,
-            "overall_status": "success"
-            if all(r.get("status") in ["success", "skipped"] for r in results.values())
-            else "partial_failure",
+            "overall_status": (
+                "success"
+                if all(
+                    r.get("status") in ["success", "skipped"] for r in results.values()
+                )
+                else "partial_failure"
+            ),
         }
 
     async def _handle_api_fallback(self, source: str):
