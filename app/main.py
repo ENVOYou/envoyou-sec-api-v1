@@ -50,7 +50,6 @@ async def health_check():
         "service": "envoyou-sec-api",
         "version": "1.0.0",
         "environment": "production",
-        "timestamp": "2025-10-08T17:33:36.340785267Z",
     }
 
 
