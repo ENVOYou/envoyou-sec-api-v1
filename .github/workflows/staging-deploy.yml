@@ -112,6 +112,8 @@ jobs:
                 # 3. Buat file .env
                 log "📝 Membuat file .env..."
                 cat <<EOF > .env
+                log "🔒 Mengamankan file .env..."
+                chmod 600 .env
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
             REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
