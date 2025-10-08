@@ -112,17 +112,17 @@ jobs:
                 # 3. Buat file .env
                 log "📝 Membuat file .env..."
                 cat <<EOF > .env
-                log "🔒 Mengamankan file .env..."
-                chmod 600 .env
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
             REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
             SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
-            CORS_ORIGINS=${{ secrets.STAGING_CORS_ORIGINS }}
-            EPA_API_KEY=${{ secrets.EPA_API_KEY }}
+            CORS_ORIGINS=["*"]
+            EPA_API_KEY=
             GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
             JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
             EOF
+                log "🔒 Mengamankan file .env..."
+                chmod 600 .env
 
                 # 4. Hentikan dan bersihkan kontainer lama
                 log "🛑 Menghentikan dan membersihkan kontainer lama..."
