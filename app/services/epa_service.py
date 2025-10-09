@@ -18,6 +18,7 @@ from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
+from app.core.circuit_breaker import epa_api_circuit_breaker
 from app.core.config import settings
 from app.models.epa_data import (
     ElectricityRegion,
@@ -70,14 +71,17 @@ class EPADataIngestionService:
             if settings.EPA_API_KEY:
                 headers["X-API-Key"] = settings.EPA_API_KEY
 
-            # Fetch data from EPA API
-            response = await self.http_client.get(endpoints[source], headers=headers)
+            # Fetch data from EPA API with circuit breaker protection
+            async def _fetch_data():
+                response = await self.http_client.get(endpoints[source], headers=headers)
+                if response.status_code != 200:
+                    raise HTTPException(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        detail=f"EPA API error: {response.status_code}",
+                    )
+                return response
 
-            if response.status_code != 200:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=f"EPA API error: {response.status_code}",
-                )
+            response = await epa_api_circuit_breaker.call(_fetch_data)
 
             data = response.json()
 

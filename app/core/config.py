@@ -103,9 +103,10 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Override database URL for testing
+        # Override settings for testing
         if os.getenv("TESTING") == "true":
             self.DATABASE_URL = "sqlite:///./test_envoyou_sec.db"
+            self.ENVIRONMENT = "testing"
 
 
 # Global settings instance
