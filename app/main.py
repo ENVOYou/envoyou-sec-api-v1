@@ -4,10 +4,12 @@ Climate Disclosure Rule Compliance Platform for US Public Companies
 """
 
 import uvicorn
+from datetime import datetime
 from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.v1.api import api_router
@@ -80,22 +82,63 @@ app.include_router(api_router, prefix="/v1")
 
 @app.get("/health")
 async def health_check(db: Session = Depends(get_db)):
-    """Comprehensive health check endpoint for monitoring"""
-    health_status = await get_detailed_health_status(db)
+    """Basic health check endpoint for load balancers and monitoring"""
+    # Simple health check - just verify the service is running
+    # Don't do comprehensive checks that might fail due to external dependencies
+    return {
+        "status": "healthy",
+        "service": "envoyou-sec-api",
+        "version": "1.0.0",
+        "environment": settings.ENVIRONMENT,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
-    # For simple health checks (like load balancers), return simple response
-    # For detailed monitoring, return full status
-    if health_status["status"] == "healthy":
+
+@app.get("/health/detailed")
+async def detailed_health_check(db: Session = Depends(get_db)):
+    """Comprehensive health check with dependency verification"""
+    try:
+        health_status = await get_detailed_health_status(db)
+        return health_status
+    except Exception as e:
+        # Return degraded status if detailed check fails
         return {
-            "status": "healthy",
+            "status": "degraded",
             "service": "envoyou-sec-api",
             "version": "1.0.0",
             "environment": settings.ENVIRONMENT,
-            "timestamp": health_status["timestamp"],
+            "error": f"Detailed health check failed: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat(),
+            "note": "Service is running but some dependencies may be unavailable"
         }
-    else:
-        # Return detailed status for troubleshooting
-        return health_status
+
+
+@app.get("/debug/db")
+async def debug_database(db: Session = Depends(get_db)):
+    """Debug endpoint to test database connectivity"""
+    try:
+        # Test basic connectivity
+        result = db.execute(text("SELECT 1 as test, version() as pg_version")).fetchone()
+
+        # Get database info
+        db_info = {
+            "connection_test": result[0] == 1,
+            "postgresql_version": result[1] if len(result) > 1 else "unknown",
+            "database_url": settings.DATABASE_URL.replace(settings.DATABASE_URL.split('@')[0].split('//')[1].split(':')[0], "***").replace(settings.DATABASE_URL.split('@')[0].split('//')[1].split(':')[1], "***") if '@' in settings.DATABASE_URL else "masked",
+        }
+
+        return {
+            "status": "connected",
+            "database_info": db_info,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "database_url_masked": settings.DATABASE_URL.split('@')[0] + "@***:***@" + settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else "invalid_url",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
 
 @app.get("/metrics")

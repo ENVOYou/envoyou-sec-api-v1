@@ -18,6 +18,9 @@ services:
       - key: CORS_ORIGINS
         # Set this in Render Dashboard Environment Variables
         sync: false
+      - key: ALLOWED_HOSTS
+        # Set this in Render Dashboard Environment Variables
+        sync: false
       - key: JWT_ALGORITHM
         value: HS256
       - key: EPA_API_KEY
