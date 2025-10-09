@@ -3,8 +3,9 @@ ENVOYOU SEC API - Main FastAPI Application
 Climate Disclosure Rule Compliance Platform for US Public Companies
 """
 
-import uvicorn
 from datetime import datetime
+
+import uvicorn
 from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -109,7 +110,7 @@ async def detailed_health_check(db: Session = Depends(get_db)):
             "environment": settings.ENVIRONMENT,
             "error": f"Detailed health check failed: {str(e)}",
             "timestamp": datetime.utcnow().isoformat(),
-            "note": "Service is running but some dependencies may be unavailable"
+            "note": "Service is running but some dependencies may be unavailable",
         }
 
 
@@ -118,13 +119,25 @@ async def debug_database(db: Session = Depends(get_db)):
     """Debug endpoint to test database connectivity"""
     try:
         # Test basic connectivity
-        result = db.execute(text("SELECT 1 as test, version() as pg_version")).fetchone()
+        result = db.execute(
+            text("SELECT 1 as test, version() as pg_version")
+        ).fetchone()
 
         # Get database info
         db_info = {
             "connection_test": result[0] == 1,
             "postgresql_version": result[1] if len(result) > 1 else "unknown",
-            "database_url": settings.DATABASE_URL.replace(settings.DATABASE_URL.split('@')[0].split('//')[1].split(':')[0], "***").replace(settings.DATABASE_URL.split('@')[0].split('//')[1].split(':')[1], "***") if '@' in settings.DATABASE_URL else "masked",
+            "database_url": (
+                settings.DATABASE_URL.replace(
+                    settings.DATABASE_URL.split("@")[0].split("//")[1].split(":")[0],
+                    "***",
+                ).replace(
+                    settings.DATABASE_URL.split("@")[0].split("//")[1].split(":")[1],
+                    "***",
+                )
+                if "@" in settings.DATABASE_URL
+                else "masked"
+            ),
         }
 
         return {
@@ -136,7 +149,13 @@ async def debug_database(db: Session = Depends(get_db)):
         return {
             "status": "error",
             "error": str(e),
-            "database_url_masked": settings.DATABASE_URL.split('@')[0] + "@***:***@" + settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else "invalid_url",
+            "database_url_masked": (
+                settings.DATABASE_URL.split("@")[0]
+                + "@***:***@"
+                + settings.DATABASE_URL.split("@")[1]
+                if "@" in settings.DATABASE_URL
+                else "invalid_url"
+            ),
             "timestamp": datetime.utcnow().isoformat(),
         }
 

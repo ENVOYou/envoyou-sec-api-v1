@@ -32,7 +32,13 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "https://envoyou-sec-api-v1.onrender.com",
     ]
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "testserver", "api.envoyou.com", "envoyou-sec-api-v1.onrender.com"]
+    ALLOWED_HOSTS: List[str] = [
+        "localhost",
+        "127.0.0.1",
+        "testserver",
+        "api.envoyou.com",
+        "envoyou-sec-api-v1.onrender.com",
+    ]
 
     # Database
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/envoyou_sec"
@@ -87,7 +93,13 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             # Handle empty string case
             if not v.strip():
-                return ["localhost", "127.0.0.1", "testserver", "api.envoyou.com", "envoyou-sec-api.onrender.com"]
+                return [
+                    "localhost",
+                    "127.0.0.1",
+                    "testserver",
+                    "api.envoyou.com",
+                    "envoyou-sec-api.onrender.com",
+                ]
             return [host.strip() for host in v.split(",")]
         return v
 
