@@ -1,177 +1,224 @@
 """
-Report generation endpoints
-SEC-compliant report generation in multiple formats
+Report Management Endpoints
+Handles report locking, comments, and revision tracking for audit and collaboration
 """
 
-from typing import Optional
-from uuid import UUID
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import Any, Dict
 
-from app.core.dependencies import get_current_user, get_db
+from app.core.dependencies import get_current_active_user
+from app.db.database import get_db
+from app.models.report import Report, ReportLock, Comment, Revision
 from app.models.user import User
-from app.services.emissions_consolidation_service import EmissionsConsolidationService
+from app.schemas.report import (
+    LockReportRequest,
+    LockReportResponse,
+    UnlockReportRequest,
+    CommentCreate,
+    CommentResponse,
+    RevisionResponse,
+    ReportLockStatus,
+    ReportCommentList,
+    ReportRevisionList,
+)
+from app.services.report_lock_service import ReportLockService
 
 router = APIRouter()
 
-
-# Placeholder - will be implemented in later tasks
-@router.get("/")
-async def reports_placeholder():
-    """Placeholder for reports endpoints"""
-    return {"message": "Reports endpoints - Coming soon"}
+report_lock_service = ReportLockService
 
 
-# Consolidation Integration for Reports
-@router.get("/companies/{company_id}/consolidation-report/{reporting_year}")
-async def get_consolidation_report(
-    company_id: UUID,
-    reporting_year: int,
-    consolidation_id: Optional[UUID] = Query(
-        None, description="Specific consolidation ID"
-    ),
-    format: str = Query("json", description="Report format: json, pdf, excel"),
-    include_entity_breakdown: bool = Query(
-        True, description="Include entity-level breakdown"
-    ),
-    include_audit_trail: bool = Query(False, description="Include audit trail"),
+@router.post("/{report_id}/lock", response_model=LockReportResponse)
+async def lock_report(
+    report_id: str,
+    lock_data: LockReportRequest,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """
-    Generate consolidation report for SEC compliance.
-
-    This endpoint integrates consolidation data into report format
-    suitable for SEC Climate Disclosure Rule compliance.
-    """
-    consolidation_service = EmissionsConsolidationService(db)
-
+    """Lock a report for audit or review purposes"""
     try:
-        if consolidation_id:
-            # Get specific consolidation
-            consolidation = await consolidation_service.get_consolidation(
-                consolidation_id
-            )
-        else:
-            # Get latest consolidation for the year
-            consolidations = await consolidation_service.list_consolidations(
-                company_id=company_id, reporting_year=reporting_year, limit=1, offset=0
-            )
-
-            if not consolidations:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"No consolidations found for company {company_id} in year {reporting_year}",
-                )
-
-            consolidation = await consolidation_service.get_consolidation(
-                consolidations[0].id
-            )
-
-        # Build report structure
-        report = {
-            "report_type": "emissions_consolidation",
-            "company_id": str(company_id),
-            "reporting_year": reporting_year,
-            "consolidation_id": str(consolidation.id),
-            "consolidation_method": consolidation.consolidation_method.value,
-            "consolidation_date": consolidation.consolidation_date,
-            "report_generated_at": "2024-01-01T00:00:00Z",  # Current timestamp
-            # Executive Summary
-            "executive_summary": {
-                "total_co2e": consolidation.total_co2e,
-                "total_scope1_co2e": consolidation.total_scope1_co2e,
-                "total_scope2_co2e": consolidation.total_scope2_co2e,
-                "total_scope3_co2e": consolidation.total_scope3_co2e,
-                "total_entities_included": consolidation.total_entities_included,
-                "data_completeness_score": consolidation.data_completeness_score,
-                "consolidation_confidence_score": consolidation.consolidation_confidence_score,
-            },
-            # Methodology
-            "methodology": {
-                "consolidation_method": consolidation.consolidation_method.value,
-                "consolidation_approach": "Emissions consolidated based on ownership percentage and operational control",
-                "reporting_boundary": f"All entities with ownership >= threshold included",
-                "data_sources": "EPA emission factors, company activity data",
-                "calculation_standards": "GHG Protocol Corporate Standard",
-            },
-            # Status and Approval
-            "status": {
-                "consolidation_status": consolidation.status.value,
-                "is_final": consolidation.is_final,
-                "validation_status": consolidation.validation_status,
-                "approved_by": (
-                    str(consolidation.approved_by)
-                    if consolidation.approved_by
-                    else None
-                ),
-                "approved_at": consolidation.approved_at,
-            },
-        }
-
-        # Add entity breakdown if requested
-        if include_entity_breakdown:
-            report["entity_breakdown"] = [
-                {
-                    "entity_id": str(contrib.entity_id),
-                    "entity_name": contrib.entity_name,
-                    "ownership_percentage": contrib.ownership_percentage,
-                    "consolidation_factor": contrib.consolidation_factor,
-                    "original_emissions": {
-                        "scope1_co2e": contrib.original_scope1_co2e,
-                        "scope2_co2e": contrib.original_scope2_co2e,
-                        "scope3_co2e": contrib.original_scope3_co2e,
-                        "total_co2e": contrib.original_total_co2e,
-                    },
-                    "consolidated_emissions": {
-                        "scope1_co2e": contrib.consolidated_scope1_co2e,
-                        "scope2_co2e": contrib.consolidated_scope2_co2e,
-                        "scope3_co2e": contrib.consolidated_scope3_co2e,
-                        "total_co2e": contrib.consolidated_total_co2e,
-                    },
-                    "data_quality": {
-                        "completeness": contrib.data_completeness,
-                        "quality_score": contrib.data_quality_score,
-                    },
-                    "included_in_consolidation": contrib.included_in_consolidation,
-                    "exclusion_reason": contrib.exclusion_reason,
-                }
-                for contrib in consolidation.entity_contributions
-            ]
-
-        # Add audit trail if requested (admin only)
-        if include_audit_trail and current_user.is_admin:
-            # This would be implemented when audit trail endpoints are ready
-            report["audit_trail"] = {
-                "message": "Audit trail integration pending - will be available in future version"
-            }
-
-        # Handle different formats
-        if format.lower() == "json":
-            return report
-        elif format.lower() == "pdf":
-            return {
-                "message": "PDF generation not yet implemented",
-                "report_data": report,
-                "format": "pdf",
-            }
-        elif format.lower() == "excel":
-            return {
-                "message": "Excel generation not yet implemented",
-                "report_data": report,
-                "format": "excel",
-            }
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported format: {format}. Supported formats: json, pdf, excel",
-            )
-
-    except Exception as e:
-        if "not found" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error generating consolidation report: {str(e)}",
+        service = ReportLockService(db)
+        result = service.lock_report(
+            report_id=report_id,
+            user_id=current_user.id,
+            lock_reason=lock_data.lock_reason,
+            expires_in_hours=lock_data.expires_in_hours,
         )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/{report_id}/unlock")
+async def unlock_report(
+    report_id: str,
+    unlock_data: UnlockReportRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Unlock a report"""
+    try:
+        service = ReportLockService(db)
+        result = service.unlock_report(report_id=report_id, user_id=current_user.id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/{report_id}/lock-status", response_model=ReportLockStatus)
+async def get_report_lock_status(
+    report_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get current lock status for a report"""
+    try:
+        service = ReportLockService(db)
+        lock_status = service.get_lock_status(report_id=report_id)
+        
+        if lock_status:
+            return ReportLockStatus(
+                is_locked=True,
+                locked_by=lock_status.locked_by,
+                lock_reason=lock_status.lock_reason,
+                locked_at=lock_status.locked_at,
+                expires_at=lock_status.expires_at,
+            )
+        else:
+            return ReportLockStatus(
+                is_locked=False,
+                locked_by=None,
+                lock_reason=None,
+                locked_at=None,
+                expires_at=None,
+            )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/{report_id}/locks", response_model=List[LockReportResponse])
+async def get_report_locks(
+    report_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get history of locks for a report"""
+    try:
+        service = ReportLockService(db)
+        locks = service.get_report_locks(report_id=report_id)
+        return locks
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/{report_id}/comments", response_model=CommentResponse)
+async def add_comment_to_report(
+    report_id: str,
+    comment_data: CommentCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Add a comment to a report"""
+    try:
+        service = ReportLockService(db)
+        comment = service.add_comment(
+            report_id=report_id,
+            user_id=current_user.id,
+            comment_data=comment_data,
+        )
+        return comment
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/{report_id}/comments", response_model=ReportCommentList)
+async def get_report_comments(
+    report_id: str,
+    parent_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get comments for a report, optionally filtered by parent"""
+    try:
+        service = ReportLockService(db)
+        comments = service.get_comments(
+            report_id=report_id,
+            parent_id=parent_id,
+        )
+        return ReportCommentList(comments=comments)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.put("/{report_id}/comments/{comment_id}/resolve")
+async def resolve_report_comment(
+    report_id: str,
+    comment_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Resolve a comment (mark as resolved)"""
+    try:
+        service = ReportLockService(db)
+        comment = service.resolve_comment(
+            comment_id=comment_id,
+            user_id=current_user.id,
+        )
+        return comment
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/{report_id}/revisions", response_model=RevisionResponse)
+async def create_report_revision(
+    report_id: str,
+    revision_data: Dict[str, Any],
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new revision for a report"""
+    try:
+        service = ReportLockService(db)
+        revision = service.create_revision(
+            report_id=report_id,
+            user_id=current_user.id,
+            change_type=revision_data.get("change_type", "update"),
+            changes_summary=revision_data.get("changes_summary", "Manual revision"),
+        )
+        return revision
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/{report_id}/revisions", response_model=ReportRevisionList)
+async def get_report_revisions(
+    report_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get revision history for a report"""
+    try:
+        service = ReportLockService(db)
+        revisions = service.get_revisions(report_id=report_id)
+        return ReportRevisionList(revisions=revisions)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

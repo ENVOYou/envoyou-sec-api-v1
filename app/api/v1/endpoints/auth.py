@@ -11,7 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
-from app.core.dependencies import get_admin_user, get_current_active_user
+from app.core.dependencies import get_admin_user, get_current_active_user, require_auditor
 from app.core.rate_limiting import SLOWAPI_AVAILABLE, limiter
 from app.core.security import JWTManager
 
@@ -248,7 +248,7 @@ async def change_password(
 
 @router.post("/audit-session")
 async def create_audit_session(
-    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
+    current_user: User = Depends(require_auditor), db: Session = Depends(get_db)
 ):
     """
     Create audit session for external auditors
