@@ -3,15 +3,16 @@ Tests for Report Locking and Collaboration Features
 Tests for report locking, comments, and revision tracking
 """
 
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from uuid import uuid4
 
 from app.main import app
-from app.models.report import Report, ReportLock, Comment, Revision
+from app.models.report import Comment, Report, ReportLock, Revision
 from app.models.user import User, UserRole
-from app.schemas.report import LockReportRequest, CommentCreate
+from app.schemas.report import CommentCreate, LockReportRequest
 
 
 @pytest.mark.parametrize("user_role", [UserRole.AUDITOR, UserRole.ADMIN, UserRole.CFO])
@@ -60,7 +61,9 @@ def test_lock_report_success(
     assert db_report.locked_by == test_user.id
 
 
-def test_lock_report_unauthorized(client: TestClient, db_session: Session, test_user: User):
+def test_lock_report_unauthorized(
+    client: TestClient, db_session: Session, test_user: User
+):
     """Test report locking by unauthorized user"""
     # Create test report
     report = Report(
@@ -83,10 +86,14 @@ def test_lock_report_unauthorized(client: TestClient, db_session: Session, test_
     )
 
     assert response.status_code == 403
-    assert "Only auditors, admins, or CFOs can lock reports" in response.json()["detail"]
+    assert (
+        "Only auditors, admins, or CFOs can lock reports" in response.json()["detail"]
+    )
 
 
-def test_unlock_report_success(client: TestClient, db_session: Session, test_user: User):
+def test_unlock_report_success(
+    client: TestClient, db_session: Session, test_user: User
+):
     """Test successful report unlocking by authorized user"""
     # Create test report and lock
     report = Report(
@@ -131,7 +138,9 @@ def test_unlock_report_success(client: TestClient, db_session: Session, test_use
     assert db_lock.is_active is False
 
 
-def test_unlock_report_unauthorized(client: TestClient, db_session: Session, test_user: User):
+def test_unlock_report_unauthorized(
+    client: TestClient, db_session: Session, test_user: User
+):
     """Test report unlocking by unauthorized user"""
     # Create test report and lock by different user
     report = Report(
@@ -163,7 +172,9 @@ def test_unlock_report_unauthorized(client: TestClient, db_session: Session, tes
     )
 
     assert response.status_code == 403
-    assert "Only the locking user or admin can unlock reports" in response.json()["detail"]
+    assert (
+        "Only the locking user or admin can unlock reports" in response.json()["detail"]
+    )
 
 
 def test_add_comment_success(client: TestClient, db_session: Session, test_user: User):
@@ -198,7 +209,9 @@ def test_add_comment_success(client: TestClient, db_session: Session, test_user:
     assert comment_response["is_resolved"] is False
 
     # Verify in database
-    db_comment = db_session.query(Comment).filter(Comment.id == comment_response["id"]).first()
+    db_comment = (
+        db_session.query(Comment).filter(Comment.id == comment_response["id"]).first()
+    )
     assert db_comment.content == "This is a test comment"
     assert db_comment.report_id == report.id
 
@@ -242,10 +255,15 @@ def test_get_comments_success(client: TestClient, db_session: Session, test_user
     assert response.status_code == 200
     comments_response = response.json()
     assert len(comments_response["comments"]) == 2
-    assert comments_response["comments"][0]["content"] in ["First comment", "Second comment"]
+    assert comments_response["comments"][0]["content"] in [
+        "First comment",
+        "Second comment",
+    ]
 
 
-def test_resolve_comment_success(client: TestClient, db_session: Session, test_user: User):
+def test_resolve_comment_success(
+    client: TestClient, db_session: Session, test_user: User
+):
     """Test resolving a comment"""
     # Create test report and comment
     report = Report(
@@ -286,7 +304,9 @@ def test_resolve_comment_success(client: TestClient, db_session: Session, test_u
     assert db_comment.resolved_by == test_user.id
 
 
-def test_create_revision_success(client: TestClient, db_session: Session, test_user: User):
+def test_create_revision_success(
+    client: TestClient, db_session: Session, test_user: User
+):
     """Test creating a revision for a report"""
     # Create test report
     report = Report(
@@ -317,12 +337,18 @@ def test_create_revision_success(client: TestClient, db_session: Session, test_u
     assert revision_response["revision_number"] == 1
 
     # Verify in database
-    db_revision = db_session.query(Revision).filter(Revision.id == revision_response["id"]).first()
+    db_revision = (
+        db_session.query(Revision)
+        .filter(Revision.id == revision_response["id"])
+        .first()
+    )
     assert db_revision.change_type == "update"
     assert db_revision.report_id == report.id
 
 
-def test_get_revisions_success(client: TestClient, db_session: Session, test_user: User):
+def test_get_revisions_success(
+    client: TestClient, db_session: Session, test_user: User
+):
     """Test getting revisions for a report"""
     # Create test report
     report = Report(
@@ -371,5 +397,6 @@ def test_get_revisions_success(client: TestClient, db_session: Session, test_use
 def generate_test_token(user: User) -> str:
     """Generate a test JWT token for the user"""
     from app.core.security import JWTManager
+
     jwt_manager = JWTManager()
     return jwt_manager.create_access_token(data={"sub": str(user.id)})

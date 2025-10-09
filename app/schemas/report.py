@@ -4,21 +4,23 @@ Pydantic models for report locking, comments, and revision tracking
 """
 
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
-from uuid import UUID
 
 from app.schemas.base import AuditMixin
 
 
 class LockReportRequest(BaseModel):
     """Request to lock a report"""
+
     lock_reason: str = Field(..., min_length=1, max_length=255)
     expires_in_hours: Optional[int] = Field(None, ge=1, le=168)  # 1-7 days
 
 
 class LockReportResponse(BaseModel):
     """Response when locking a report"""
+
     id: str
     report_id: str
     locked_by: str
@@ -30,11 +32,13 @@ class LockReportResponse(BaseModel):
 
 class UnlockReportRequest(BaseModel):
     """Request to unlock a report"""
+
     reason: Optional[str] = Field(None, max_length=255)
 
 
 class ReportLockStatus(BaseModel):
     """Current lock status of a report"""
+
     is_locked: bool
     locked_by: Optional[str] = None
     lock_reason: Optional[str] = None
@@ -44,13 +48,17 @@ class ReportLockStatus(BaseModel):
 
 class CommentCreate(BaseModel):
     """Request to create a comment"""
+
     content: str = Field(..., min_length=1, max_length=5000)
-    comment_type: str = Field(default="general", pattern="^(general|question|suggestion|action_item)$")
+    comment_type: str = Field(
+        default="general", pattern="^(general|question|suggestion|action_item)$"
+    )
     parent_id: Optional[str] = None  # UUID string
 
 
 class CommentResponse(BaseModel):
     """Response for a comment"""
+
     id: str
     report_id: str
     user_id: str
@@ -64,11 +72,13 @@ class CommentResponse(BaseModel):
 
 class ReportCommentList(BaseModel):
     """List of comments for a report"""
+
     comments: List[CommentResponse]
 
 
 class RevisionResponse(BaseModel):
     """Response for a revision"""
+
     id: str
     report_id: str
     version: str
@@ -82,10 +92,12 @@ class RevisionResponse(BaseModel):
 
 class ReportRevisionList(BaseModel):
     """List of revisions for a report"""
+
     revisions: List[RevisionResponse]
 
 
 # Audit mixin for report-related models
 class ReportAuditMixin(AuditMixin):
     """Audit mixin specifically for report models"""
+
     pass

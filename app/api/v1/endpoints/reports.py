@@ -3,26 +3,25 @@ Report Management Endpoints
 Handles report locking, comments, and revision tracking for audit and collaboration
 """
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import Any, Dict
 
 from app.core.dependencies import get_current_active_user
 from app.db.database import get_db
-from app.models.report import Report, ReportLock, Comment, Revision
+from app.models.report import Comment, Report, ReportLock, Revision
 from app.models.user import User
 from app.schemas.report import (
-    LockReportRequest,
-    LockReportResponse,
-    UnlockReportRequest,
     CommentCreate,
     CommentResponse,
-    RevisionResponse,
-    ReportLockStatus,
+    LockReportRequest,
+    LockReportResponse,
     ReportCommentList,
+    ReportLockStatus,
     ReportRevisionList,
+    RevisionResponse,
+    UnlockReportRequest,
 )
 from app.services.report_lock_service import ReportLockService
 
@@ -53,7 +52,9 @@ async def lock_report(
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.post("/{report_id}/unlock")
@@ -73,7 +74,9 @@ async def unlock_report(
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/{report_id}/lock-status", response_model=ReportLockStatus)
@@ -86,7 +89,7 @@ async def get_report_lock_status(
     try:
         service = ReportLockService(db)
         lock_status = service.get_lock_status(report_id=report_id)
-        
+
         if lock_status:
             return ReportLockStatus(
                 is_locked=True,
@@ -104,7 +107,9 @@ async def get_report_lock_status(
                 expires_at=None,
             )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/{report_id}/locks", response_model=List[LockReportResponse])
@@ -119,7 +124,9 @@ async def get_report_locks(
         locks = service.get_report_locks(report_id=report_id)
         return locks
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.post("/{report_id}/comments", response_model=CommentResponse)
@@ -141,7 +148,9 @@ async def add_comment_to_report(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/{report_id}/comments", response_model=ReportCommentList)
@@ -160,7 +169,9 @@ async def get_report_comments(
         )
         return ReportCommentList(comments=comments)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.put("/{report_id}/comments/{comment_id}/resolve")
@@ -183,7 +194,9 @@ async def resolve_report_comment(
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.post("/{report_id}/revisions", response_model=RevisionResponse)
@@ -206,7 +219,9 @@ async def create_report_revision(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/{report_id}/revisions", response_model=ReportRevisionList)
@@ -221,4 +236,6 @@ async def get_report_revisions(
         revisions = service.get_revisions(report_id=report_id)
         return ReportRevisionList(revisions=revisions)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )

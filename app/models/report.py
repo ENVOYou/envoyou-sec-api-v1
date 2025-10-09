@@ -3,10 +3,20 @@ Report Models for Audit Lock and Collaboration
 Models for report locking, comments, and revision tracking
 """
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text, DateTime, Boolean, func
-from sqlalchemy.orm import relationship
-from sqlalchemy import event
 from uuid import uuid4
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    event,
+    func,
+)
+from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.models.user import User
@@ -21,12 +31,17 @@ class Report(Base):
     id = Column(String(36), primary_key=True)
 
     def __init__(self, **kwargs):
-        if 'id' not in kwargs:
-            kwargs['id'] = str(uuid4())
+        if "id" not in kwargs:
+            kwargs["id"] = str(uuid4())
         super().__init__(**kwargs)
+
     title = Column(String(255), nullable=False)
-    report_type = Column(String(50), nullable=False)  # "sec_10k", "audit_report", "compliance_summary"
-    status = Column(String(50), nullable=False, default="draft")  # "draft", "pending_approval", "approved", "locked"
+    report_type = Column(
+        String(50), nullable=False
+    )  # "sec_10k", "audit_report", "compliance_summary"
+    status = Column(
+        String(50), nullable=False, default="draft"
+    )  # "draft", "pending_approval", "approved", "locked"
     version = Column(String(20), nullable=False, default="1.0")
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
@@ -39,9 +54,15 @@ class Report(Base):
     workflow = relationship("Workflow", back_populates="reports")
     created_by_user = relationship("User", foreign_keys=[created_by])
     updated_by_user = relationship("User", foreign_keys=[updated_by])
-    locks = relationship("ReportLock", back_populates="report", cascade="all, delete-orphan")
-    comments = relationship("Comment", back_populates="report", cascade="all, delete-orphan")
-    revisions = relationship("Revision", back_populates="report", cascade="all, delete-orphan")
+    locks = relationship(
+        "ReportLock", back_populates="report", cascade="all, delete-orphan"
+    )
+    comments = relationship(
+        "Comment", back_populates="report", cascade="all, delete-orphan"
+    )
+    revisions = relationship(
+        "Revision", back_populates="report", cascade="all, delete-orphan"
+    )
 
     # Report content (JSON for flexibility)
     content = Column(Text)  # JSON string containing report data
@@ -73,13 +94,16 @@ class ReportLock(Base):
     id = Column(String(36), primary_key=True)
 
     def __init__(self, **kwargs):
-        if 'id' not in kwargs:
-            kwargs['id'] = str(uuid4())
+        if "id" not in kwargs:
+            kwargs["id"] = str(uuid4())
         super().__init__(**kwargs)
+
     report_id = Column(String(36), ForeignKey("reports.id"), nullable=False, index=True)
     locked_by = Column(String(36), ForeignKey("users.id"), nullable=False)
     locked_at = Column(DateTime)
-    lock_reason = Column(String(255), nullable=False)  # "audit", "review", "compliance_check"
+    lock_reason = Column(
+        String(255), nullable=False
+    )  # "audit", "review", "compliance_check"
     expires_at = Column(DateTime)
     is_active = Column(Boolean, default=True)
 
@@ -96,14 +120,19 @@ class Comment(Base):
     id = Column(String(36), primary_key=True)
 
     def __init__(self, **kwargs):
-        if 'id' not in kwargs:
-            kwargs['id'] = str(uuid4())
+        if "id" not in kwargs:
+            kwargs["id"] = str(uuid4())
         super().__init__(**kwargs)
+
     report_id = Column(String(36), ForeignKey("reports.id"), nullable=False, index=True)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
-    parent_id = Column(String(36), ForeignKey("comments.id"), nullable=True)  # For threaded comments
+    parent_id = Column(
+        String(36), ForeignKey("comments.id"), nullable=True
+    )  # For threaded comments
     content = Column(Text, nullable=False)
-    comment_type = Column(String(50), default="general")  # "general", "question", "suggestion", "action_item"
+    comment_type = Column(
+        String(50), default="general"
+    )  # "general", "question", "suggestion", "action_item"
     is_resolved = Column(Boolean, default=False)
     resolved_by = Column(String(36), ForeignKey("users.id"))
     resolved_at = Column(DateTime)
@@ -125,14 +154,17 @@ class Revision(Base):
     id = Column(String(36), primary_key=True)
 
     def __init__(self, **kwargs):
-        if 'id' not in kwargs:
-            kwargs['id'] = str(uuid4())
+        if "id" not in kwargs:
+            kwargs["id"] = str(uuid4())
         super().__init__(**kwargs)
+
     report_id = Column(String(36), ForeignKey("reports.id"), nullable=False, index=True)
     version = Column(String(20), nullable=False)
     revision_number = Column(Integer, nullable=False)
     changed_by = Column(String(36), ForeignKey("users.id"), nullable=False)
-    change_type = Column(String(50), nullable=False)  # "create", "update", "approve", "reject"
+    change_type = Column(
+        String(50), nullable=False
+    )  # "create", "update", "approve", "reject"
     changes_summary = Column(Text)  # JSON summary of changes
     previous_version = Column(String(20))
     created_at = Column(DateTime)
@@ -140,8 +172,6 @@ class Revision(Base):
     # Relationships
     report = relationship("Report", back_populates="revisions")
     changed_by_user = relationship("User")
-
-
 
 
 # Event listeners for automatic revision creation
@@ -153,6 +183,7 @@ def receive_before_update(mapper, connection, target):
 
     # Create revision record using session
     from sqlalchemy.orm import sessionmaker
+
     Session = sessionmaker(bind=connection)
     session = Session()
 
@@ -179,6 +210,7 @@ def receive_before_update(mapper, connection, target):
 def receive_after_insert(mapper, connection, target):
     """Create initial revision after report creation"""
     from sqlalchemy.orm import sessionmaker
+
     Session = sessionmaker(bind=connection)
     session = Session()
 

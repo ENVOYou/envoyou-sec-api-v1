@@ -125,7 +125,9 @@ class Workflow(BaseModel, AuditMixin):
     approval_requests = relationship(
         "ApprovalRequest", back_populates="workflow", cascade="all, delete-orphan"
     )
-    reports = relationship("Report", back_populates="workflow", cascade="all, delete-orphan")
+    reports = relationship(
+        "Report", back_populates="workflow", cascade="all, delete-orphan"
+    )
 
     # Indexes and constraints
     __table_args__ = (

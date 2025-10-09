@@ -8,18 +8,18 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from uuid import uuid4
 
-from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc
+from sqlalchemy.orm import Session
 
-from app.models.report import Report, ReportLock, Comment, Revision
+from app.models.report import Comment, Report, ReportLock, Revision
 from app.models.user import User, UserRole
 from app.schemas.report import (
-    LockReportRequest,
-    LockReportResponse,
-    UnlockReportRequest,
     CommentCreate,
     CommentResponse,
+    LockReportRequest,
+    LockReportResponse,
     RevisionResponse,
+    UnlockReportRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,9 @@ class ReportLockService:
         self.db.commit()
         self.db.refresh(lock)
 
-        logger.info(f"Report {report_id} locked by user {user_id} for reason: {lock_reason}")
+        logger.info(
+            f"Report {report_id} locked by user {user_id} for reason: {lock_reason}"
+        )
 
         return LockReportResponse(
             id=str(lock.id),
@@ -265,7 +267,9 @@ class ReportLockService:
             .first()
         )
 
-        next_revision_number = (last_revision.revision_number + 1) if last_revision else 1
+        next_revision_number = (
+            (last_revision.revision_number + 1) if last_revision else 1
+        )
 
         # Create revision
         revision = Revision(
@@ -281,7 +285,9 @@ class ReportLockService:
         self.db.commit()
         self.db.refresh(revision)
 
-        logger.info(f"Revision {next_revision_number} created for report {report_id} by user {user_id}")
+        logger.info(
+            f"Revision {next_revision_number} created for report {report_id} by user {user_id}"
+        )
 
         return RevisionResponse.from_orm(revision)
 

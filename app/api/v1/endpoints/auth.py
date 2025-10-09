@@ -11,7 +11,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
-from app.core.dependencies import get_admin_user, get_current_active_user, require_auditor
+from app.core.dependencies import (
+    get_admin_user,
+    get_current_active_user,
+    require_auditor,
+)
 from app.core.rate_limiting import SLOWAPI_AVAILABLE, limiter
 from app.core.security import JWTManager
 
