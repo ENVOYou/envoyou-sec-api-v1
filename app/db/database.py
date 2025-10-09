@@ -34,7 +34,7 @@ else:
         connect_args={
             "sslmode": "require",  # Required for Neon
             "connect_timeout": 10,  # Connection timeout
-            "options": "-c statement_timeout=30000",  # 30 second query timeout
+            # "options": "-c statement_timeout=30000",  # 30 second query timeout
         },
     )
 
