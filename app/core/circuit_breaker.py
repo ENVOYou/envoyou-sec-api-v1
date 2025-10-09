@@ -4,23 +4,24 @@ Prevents cascade failures when external services are unavailable
 """
 
 import asyncio
-import time
 import logging
+import time
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, Callable, Dict, Optional
-from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 
 
 class CircuitBreakerState(Enum):
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"         # Circuit is open, failing fast
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Circuit is open, failing fast
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
 class CircuitBreakerOpenException(Exception):
     """Exception raised when circuit breaker is open"""
+
     pass
 
 
@@ -34,7 +35,7 @@ class CircuitBreaker:
         expected_exception: Exception = Exception,
         success_threshold: int = 3,
         timeout: float = 10.0,
-        name: str = "default"
+        name: str = "default",
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -62,7 +63,10 @@ class CircuitBreaker:
         """Record a successful call"""
         async with self._lock:
             self.success_count += 1
-            if self.state == CircuitBreakerState.HALF_OPEN and self.success_count >= self.success_threshold:
+            if (
+                self.state == CircuitBreakerState.HALF_OPEN
+                and self.success_count >= self.success_threshold
+            ):
                 self._reset()
             elif self.state == CircuitBreakerState.CLOSED:
                 self.failure_count = 0
@@ -75,7 +79,9 @@ class CircuitBreaker:
 
             if self.failure_count >= self.failure_threshold:
                 self.state = CircuitBreakerState.OPEN
-                logger.warning(f"Circuit breaker '{self.name}' opened due to {self.failure_count} failures")
+                logger.warning(
+                    f"Circuit breaker '{self.name}' opened due to {self.failure_count} failures"
+                )
 
     def _reset(self):
         """Reset the circuit breaker to closed state"""
@@ -121,14 +127,18 @@ class CircuitBreaker:
             # Add timeout to the call
             try:
                 if asyncio.iscoroutinefunction(func):
-                    return await asyncio.wait_for(func(*args, **kwargs), timeout=self.timeout)
+                    return await asyncio.wait_for(
+                        func(*args, **kwargs), timeout=self.timeout
+                    )
                 else:
                     return await asyncio.get_event_loop().run_in_executor(
                         None, lambda: func(*args, **kwargs)
                     )
             except asyncio.TimeoutError:
                 await self._record_failure()
-                raise Exception(f"Call to {func.__name__} timed out after {self.timeout}s")
+                raise Exception(
+                    f"Call to {func.__name__} timed out after {self.timeout}s"
+                )
 
     def get_state(self) -> Dict[str, Any]:
         """Get current circuit breaker state"""

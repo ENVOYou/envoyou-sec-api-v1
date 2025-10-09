@@ -5,8 +5,8 @@ Comprehensive health monitoring for database, cache, and external services
 
 import asyncio
 import time
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any, Dict, List
 
 import redis
 from sqlalchemy import text
@@ -19,7 +19,9 @@ from app.core.metrics import update_database_connections, update_redis_connectio
 class HealthCheckResult:
     """Result of a health check"""
 
-    def __init__(self, name: str, status: str, response_time: float = None, error: str = None):
+    def __init__(
+        self, name: str, status: str, response_time: float = None, error: str = None
+    ):
         self.name = name
         self.status = status  # "healthy", "unhealthy", "degraded"
         self.response_time = response_time
@@ -30,7 +32,9 @@ class HealthCheckResult:
         return {
             "name": self.name,
             "status": self.status,
-            "response_time_ms": round(self.response_time * 1000, 2) if self.response_time else None,
+            "response_time_ms": (
+                round(self.response_time * 1000, 2) if self.response_time else None
+            ),
             "error": self.error,
             "timestamp": self.timestamp.isoformat(),
         }
@@ -54,7 +58,9 @@ class HealthChecker:
                 response_time = time.time() - start_time
                 return HealthCheckResult("database", "healthy", response_time)
             else:
-                return HealthCheckResult("database", "unhealthy", error="Invalid response from database")
+                return HealthCheckResult(
+                    "database", "unhealthy", error="Invalid response from database"
+                )
 
         except Exception as e:
             response_time = time.time() - start_time
@@ -92,7 +98,11 @@ class HealthChecker:
 
             state = epa_api_circuit_breaker.get_state()
             if state["state"] == "open":
-                results.append(HealthCheckResult("epa_api", "degraded", error="Circuit breaker is open"))
+                results.append(
+                    HealthCheckResult(
+                        "epa_api", "degraded", error="Circuit breaker is open"
+                    )
+                )
             else:
                 results.append(HealthCheckResult("epa_api", "healthy"))
 
@@ -113,7 +123,9 @@ class HealthChecker:
         all_checks = [db_check, redis_check] + external_checks
 
         # Calculate overall status
-        unhealthy_checks = [check for check in all_checks if check.status == "unhealthy"]
+        unhealthy_checks = [
+            check for check in all_checks if check.status == "unhealthy"
+        ]
         degraded_checks = [check for check in all_checks if check.status == "degraded"]
 
         if unhealthy_checks:
@@ -142,7 +154,7 @@ class HealthChecker:
                 "healthy": len([c for c in all_checks if c.status == "healthy"]),
                 "degraded": len([c for c in all_checks if c.status == "degraded"]),
                 "unhealthy": len([c for c in all_checks if c.status == "unhealthy"]),
-            }
+            },
         }
 
 

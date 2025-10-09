@@ -4,7 +4,7 @@ Climate Disclosure Rule Compliance Platform for US Public Companies
 """
 
 import uvicorn
-from fastapi import FastAPI, Response, Depends
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -12,17 +12,21 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.db.database import get_db
-from app.core.middleware import AuditMiddleware, ErrorHandlingMiddleware
 from app.core.health_checks import get_detailed_health_status
-from app.core.metrics import MetricsMiddleware, get_metrics, PROMETHEUS_AVAILABLE
-from app.core.rate_limiting import limiter, rate_limit_exceeded_handler, SLOWAPI_AVAILABLE
+from app.core.metrics import PROMETHEUS_AVAILABLE, MetricsMiddleware, get_metrics
+from app.core.middleware import AuditMiddleware, ErrorHandlingMiddleware
+from app.core.rate_limiting import (
+    SLOWAPI_AVAILABLE,
+    limiter,
+    rate_limit_exceeded_handler,
+)
 from app.core.security_headers import SecurityHeadersMiddleware
+from app.db.database import get_db
 from app.services.background_tasks import task_manager
 
 if SLOWAPI_AVAILABLE:
-    from slowapi.middleware import SlowAPIMiddleware
     from slowapi.errors import RateLimitExceeded
+    from slowapi.middleware import SlowAPIMiddleware
 
 # Create FastAPI application
 app = FastAPI(
@@ -99,11 +103,13 @@ async def metrics():
     """Prometheus metrics endpoint"""
     if settings.ENVIRONMENT not in ["production", "staging"]:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Metrics not available in this environment")
+
+        raise HTTPException(
+            status_code=404, detail="Metrics not available in this environment"
+        )
 
     return Response(
-        content=get_metrics(),
-        media_type="text/plain; version=0.0.4; charset=utf-8"
+        content=get_metrics(), media_type="text/plain; version=0.0.4; charset=utf-8"
     )
 
 

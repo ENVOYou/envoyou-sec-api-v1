@@ -3,33 +3,43 @@ Authentication endpoints
 JWT-based authentication with role-based access control
 """
 
+import os
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-import os
 from app.core.audit_logger import AuditLogger
 from app.core.dependencies import get_admin_user, get_current_active_user
-from app.core.rate_limiting import limiter, SLOWAPI_AVAILABLE
+from app.core.rate_limiting import SLOWAPI_AVAILABLE, limiter
 from app.core.security import JWTManager
 
 if SLOWAPI_AVAILABLE:
     from slowapi.util import get_remote_address
 else:
+
     def get_remote_address(request):
-        return getattr(request, 'client', None) and getattr(request.client, 'host', 'unknown') or 'unknown'
+        return (
+            getattr(request, "client", None)
+            and getattr(request.client, "host", "unknown")
+            or "unknown"
+        )
+
 
 # Conditional rate limiting decorator
 def conditional_rate_limit(limit_string: str):
     """Apply rate limiting only when not in testing environment"""
+
     def decorator(func):
         # Don't apply rate limiting during testing
         if SLOWAPI_AVAILABLE and os.getenv("TESTING") != "true":
             return limiter.limit(limit_string)(func)
         return func  # Return function unchanged if rate limiting not applicable
+
     return decorator
+
+
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.auth import (

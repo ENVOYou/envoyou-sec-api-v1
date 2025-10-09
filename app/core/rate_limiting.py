@@ -7,23 +7,31 @@ import redis
 
 try:
     from slowapi import Limiter
-    from slowapi.util import get_remote_address
-    from slowapi.middleware import SlowAPIMiddleware
     from slowapi.errors import RateLimitExceeded
+    from slowapi.middleware import SlowAPIMiddleware
+    from slowapi.util import get_remote_address
+
     SLOWAPI_AVAILABLE = True
 except ImportError:
     SLOWAPI_AVAILABLE = False
+
     # Create dummy classes/functions for when slowapi is not available
     class Limiter:
         def __init__(self, **kwargs):
             pass
+
         def limit(self, *args, **kwargs):
             def decorator(func):
                 return func
+
             return decorator
 
     def get_remote_address(request):
-        return getattr(request, 'client', None) and getattr(request.client, 'host', 'unknown') or 'unknown'
+        return (
+            getattr(request, "client", None)
+            and getattr(request.client, "host", "unknown")
+            or "unknown"
+        )
 
     class SlowAPIMiddleware:
         def __init__(self, limiter):
@@ -31,6 +39,7 @@ except ImportError:
 
     class RateLimitExceeded(Exception):
         pass
+
 
 from app.core.config import settings
 
@@ -46,8 +55,9 @@ limiter = Limiter(
         "socket_connect_timeout": 5,
         "socket_timeout": 5,
         "retry_on_timeout": True,
-    }
+    },
 )
+
 
 # Custom rate limit exceeded handler
 def rate_limit_exceeded_handler(request, exc):
@@ -63,6 +73,7 @@ def rate_limit_exceeded_handler(request, exc):
         "timestamp": exc.timestamp,
         "request_id": getattr(request.state, "request_id", None),
     }
+
 
 # Set custom error response
 limiter.error_response = rate_limit_exceeded_handler

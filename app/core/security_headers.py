@@ -19,7 +19,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # HTTPS Security Headers
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
 
         # Prevent clickjacking
         response.headers["X-Frame-Options"] = "DENY"
@@ -64,6 +66,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Add custom headers
         response.headers["X-API-Version"] = "1.0.0"
-        response.headers["X-Content-Security-Policy"] = response.headers["Content-Security-Policy"]
+        response.headers["X-Content-Security-Policy"] = response.headers[
+            "Content-Security-Policy"
+        ]
 
         return response

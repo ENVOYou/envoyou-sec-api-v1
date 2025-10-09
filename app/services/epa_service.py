@@ -73,7 +73,9 @@ class EPADataIngestionService:
 
             # Fetch data from EPA API with circuit breaker protection
             async def _fetch_data():
-                response = await self.http_client.get(endpoints[source], headers=headers)
+                response = await self.http_client.get(
+                    endpoints[source], headers=headers
+                )
                 if response.status_code != 200:
                     raise HTTPException(
                         status_code=status.HTTP_502_BAD_GATEWAY,

@@ -7,43 +7,54 @@ import time
 from typing import Callable
 
 from fastapi import Request, Response
+
 try:
     from prometheus_client import (
+        CONTENT_TYPE_LATEST,
         Counter,
         Gauge,
         Histogram,
         generate_latest,
-        CONTENT_TYPE_LATEST,
     )
+
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
+
     # Create dummy classes/functions for when prometheus is not available
     class Counter:
         def __init__(self, *args, **kwargs):
             pass
+
         def labels(self, **kwargs):
             return self
+
         def inc(self, value=1):
             pass
 
     class Gauge:
         def __init__(self, *args, **kwargs):
             pass
+
         def labels(self, **kwargs):
             return self
+
         def set(self, value):
             pass
+
         def inc(self):
             pass
+
         def dec(self):
             pass
 
     class Histogram:
         def __init__(self, *args, **kwargs):
             pass
+
         def labels(self, **kwargs):
             return self
+
         def observe(self, value):
             pass
 
@@ -57,49 +68,41 @@ from starlette.middleware.base import BaseHTTPMiddleware
 REQUEST_COUNT = Counter(
     "http_requests_total",
     "Total number of HTTP requests",
-    ["method", "endpoint", "status_code"]
+    ["method", "endpoint", "status_code"],
 )
 
 REQUEST_DURATION = Histogram(
     "http_request_duration_seconds",
     "HTTP request duration in seconds",
-    ["method", "endpoint"]
+    ["method", "endpoint"],
 )
 
 # Business metrics
 EMISSIONS_CALCULATIONS = Counter(
     "emissions_calculations_total",
     "Total number of emissions calculations performed",
-    ["scope", "method"]
+    ["scope", "method"],
 )
 
 EPA_API_CALLS = Counter(
-    "epa_api_calls_total",
-    "Total number of EPA API calls",
-    ["endpoint", "status"]
+    "epa_api_calls_total", "Total number of EPA API calls", ["endpoint", "status"]
 )
 
 CIRCUIT_BREAKER_STATE = Gauge(
     "circuit_breaker_state",
     "Current state of circuit breakers (0=closed, 1=open, 2=half_open)",
-    ["name"]
+    ["name"],
 )
 
 # System metrics
-ACTIVE_CONNECTIONS = Gauge(
-    "active_connections",
-    "Number of active connections"
-)
+ACTIVE_CONNECTIONS = Gauge("active_connections", "Number of active connections")
 
 DATABASE_CONNECTIONS = Gauge(
-    "database_connections_active",
-    "Number of active database connections",
-    ["pool"]
+    "database_connections_active", "Number of active database connections", ["pool"]
 )
 
 REDIS_CONNECTIONS = Gauge(
-    "redis_connections_active",
-    "Number of active Redis connections"
+    "redis_connections_active", "Number of active Redis connections"
 )
 
 
@@ -120,12 +123,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             REQUEST_COUNT.labels(
                 method=request.method,
                 endpoint=request.url.path,
-                status_code=response.status_code
+                status_code=response.status_code,
             ).inc()
 
             REQUEST_DURATION.labels(
-                method=request.method,
-                endpoint=request.url.path
+                method=request.method, endpoint=request.url.path
             ).observe(duration)
 
             return response
