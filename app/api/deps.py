@@ -230,7 +230,7 @@ def require_auditor(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role.value not in ["auditor", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Auditor role required",
+            detail="Only auditors can create audit sessions",
         )
     return current_user
 

@@ -20,7 +20,9 @@ from app.models.epa_data import (
     EPADataValidation,
     FuelType,
 )
+from app.models.report import Comment, Report, ReportLock, Revision
 from app.models.user import User, UserRole, UserStatus
+from app.models.workflow import Workflow, WorkflowHistory, WorkflowState, WorkflowTemplate
 
 __all__ = [
     "BaseModel",
@@ -44,5 +46,13 @@ __all__ = [
     "EmissionScope",
     "CalculationStatus",
     "CalculationMethod",
+    "Report",
+    "ReportLock",
+    "Comment",
+    "Revision",
+    "Workflow",
+    "WorkflowTemplate",
+    "WorkflowHistory",
+    "WorkflowState",
     # "AuditLog",  # Imported separately to avoid circular imports
 ]

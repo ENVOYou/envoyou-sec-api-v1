@@ -68,12 +68,8 @@ class ReportLockService:
         )
         self.db.add(lock)
 
-        # Update report
-        report.is_locked = True
-        report.locked_by = user_id
-        report.lock_reason = lock_reason
-        report.locked_at = datetime.utcnow()
-        report.lock_expires_at = expires_at
+        # Note: Report locking is handled through the ReportLock relationship
+        # The report.is_locked property will reflect this automatically
 
         self.db.commit()
         self.db.refresh(lock)
@@ -127,12 +123,8 @@ class ReportLockService:
             active_lock.unlocked_at = datetime.utcnow()
             active_lock.unlocked_by = user_id
 
-        # Update report
-        report.is_locked = False
-        report.locked_by = None
-        report.lock_reason = None
-        report.locked_at = None
-        report.lock_expires_at = None
+        # Note: Report unlocking is handled through the ReportLock relationship
+        # The report.is_locked property will reflect this automatically
 
         self.db.commit()
 

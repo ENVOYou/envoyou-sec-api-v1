@@ -1,0 +1,101 @@
+# Render Monitoring Configuration for ENVOYOU SEC API
+# Includes log monitoring, metrics collection, and alerting
+
+services:
+  # Main API Service (already exists)
+  - type: web
+    name: envoyou-sec-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: EPA_API_KEY
+        value: ""
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # Log Monitoring Service
+  - type: worker
+    name: envoyou-log-monitor
+    env: python
+    buildCommand: |
+      pip install requests python-json-logger structlog
+    startCommand: python monitoring/log_monitor.py
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: envoyou-sec-api
+          property: host
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MONITOR_INTERVAL
+        value: 60
+      - key: ALERT_WEBHOOK_URL
+        sync: false  # Set this in Render dashboard for alerts
+    autoDeploy: true
+
+  # Metrics Collector Service
+  - type: worker
+    name: envoyou-metrics-collector
+    env: python
+    buildCommand: |
+      pip install requests prometheus-client
+    startCommand: python monitoring/metrics_collector.py
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: envoyou-sec-api
+          property: host
+      - key: METRICS_INTERVAL
+        value: 30
+      - key: PROMETHEUS_PUSHGATEWAY_URL
+        sync: false  # Optional: for centralized metrics
+    autoDeploy: true
+
+  # Health Checker Service
+  - type: worker
+    name: envoyou-health-checker
+    env: python
+    buildCommand: |
+      pip install requests
+    startCommand: python monitoring/health_checker.py
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: envoyou-sec-api
+          property: host
+      - key: HEALTH_CHECK_INTERVAL
+        value: 30
+      - key: ALERT_WEBHOOK_URL
+        sync: false
+    autoDeploy: true
+
+# Environment Groups for different deployment stages
+environments:
+  - name: production
+    services:
+      - envoyou-sec-api
+      - envoyou-log-monitor
+      - envoyou-metrics-collector
+      - envoyou-health-checker
+
+  - name: staging
+    services:
+      - envoyou-sec-api
+      - envoyou-log-monitor
+      - envoyou-health-checker

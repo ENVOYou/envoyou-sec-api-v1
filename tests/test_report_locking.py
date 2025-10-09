@@ -148,7 +148,7 @@ def test_unlock_report_unauthorized(
         report_type="sec_10k",
         status="draft",
         version="1.0",
-        created_by=uuid4(),
+        created_by=str(uuid4()),
     )
     db_session.add(report)
     db_session.commit()
@@ -156,7 +156,7 @@ def test_unlock_report_unauthorized(
 
     lock = ReportLock(
         report_id=report.id,
-        locked_by=uuid4(),  # Different user
+        locked_by=str(uuid4()),  # Different user
         lock_reason="audit",
         is_active=True,
     )

@@ -30,6 +30,12 @@ router = APIRouter()
 report_lock_service = ReportLockService
 
 
+@router.get("/test")
+async def test_endpoint():
+    """Test endpoint to verify router is working"""
+    return {"message": "Reports router is working"}
+
+
 @router.post("/{report_id}/lock", response_model=LockReportResponse)
 async def lock_report(
     report_id: str,
@@ -42,9 +48,9 @@ async def lock_report(
         service = ReportLockService(db)
         result = service.lock_report(
             report_id=report_id,
-            user_id=current_user.id,
+            user_id=str(current_user.id),
             lock_reason=lock_data.lock_reason,
-            expires_in_hours=lock_data.expires_in_hours,
+            expires_in_hours=lock_data.expires_in_hours or 24,
         )
         return result
     except ValueError as e:
@@ -53,7 +59,8 @@ async def lock_report(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to lock report: {str(e)}"
         )
 
 
@@ -67,7 +74,10 @@ async def unlock_report(
     """Unlock a report"""
     try:
         service = ReportLockService(db)
-        result = service.unlock_report(report_id=report_id, user_id=current_user.id)
+        result = service.unlock_report(
+            report_id=report_id,
+            user_id=str(current_user.id),
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -75,40 +85,42 @@ async def unlock_report(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unlock report: {str(e)}"
         )
 
 
 @router.get("/{report_id}/lock-status", response_model=ReportLockStatus)
 async def get_report_lock_status(
     report_id: str,
-    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """Get current lock status for a report"""
     try:
-        service = ReportLockService(db)
-        lock_status = service.get_lock_status(report_id=report_id)
+        # Check if report exists
+        report = db.query(Report).filter(Report.id == report_id).first()
+        if not report:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
-        if lock_status:
+        service = ReportLockService(db)
+        lock = service.get_lock_status(report_id)
+
+        if lock:
             return ReportLockStatus(
                 is_locked=True,
-                locked_by=lock_status.locked_by,
-                lock_reason=lock_status.lock_reason,
-                locked_at=lock_status.locked_at,
-                expires_at=lock_status.expires_at,
+                locked_by=str(lock.locked_by),
+                lock_reason=lock.lock_reason,
+                locked_at=str(lock.locked_at),
+                expires_at=str(lock.expires_at) if lock.expires_at else None,
             )
         else:
-            return ReportLockStatus(
-                is_locked=False,
-                locked_by=None,
-                lock_reason=None,
-                locked_at=None,
-                expires_at=None,
-            )
+            return ReportLockStatus(is_locked=False)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get lock status: {str(e)}"
         )
 
 
@@ -120,12 +132,20 @@ async def get_report_locks(
 ):
     """Get history of locks for a report"""
     try:
+        # Check if report exists
+        report = db.query(Report).filter(Report.id == report_id).first()
+        if not report:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
         service = ReportLockService(db)
-        locks = service.get_report_locks(report_id=report_id)
+        locks = service.get_report_locks(report_id)
         return locks
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get report locks: {str(e)}"
         )
 
 
@@ -139,17 +159,18 @@ async def add_comment_to_report(
     """Add a comment to a report"""
     try:
         service = ReportLockService(db)
-        comment = service.add_comment(
+        result = service.add_comment(
             report_id=report_id,
-            user_id=current_user.id,
+            user_id=str(current_user.id),
             comment_data=comment_data,
         )
-        return comment
+        return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add comment: {str(e)}"
         )
 
 
@@ -160,17 +181,22 @@ async def get_report_comments(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """Get comments for a report, optionally filtered by parent"""
+    """Get comments for a report"""
     try:
+        # Check if report exists
+        report = db.query(Report).filter(Report.id == report_id).first()
+        if not report:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
         service = ReportLockService(db)
-        comments = service.get_comments(
-            report_id=report_id,
-            parent_id=parent_id,
-        )
+        comments = service.get_comments(report_id, parent_id)
         return ReportCommentList(comments=comments)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get comments: {str(e)}"
         )
 
 
@@ -181,21 +207,22 @@ async def resolve_report_comment(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """Resolve a comment (mark as resolved)"""
+    """Resolve a comment"""
     try:
         service = ReportLockService(db)
-        comment = service.resolve_comment(
+        result = service.resolve_comment(
             comment_id=comment_id,
-            user_id=current_user.id,
+            user_id=str(current_user.id),
         )
-        return comment
+        return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to resolve comment: {str(e)}"
         )
 
 
@@ -208,19 +235,23 @@ async def create_report_revision(
 ):
     """Create a new revision for a report"""
     try:
+        change_type = revision_data.get("change_type", "update")
+        changes_summary = revision_data.get("changes_summary", "")
+
         service = ReportLockService(db)
-        revision = service.create_revision(
+        result = service.create_revision(
             report_id=report_id,
-            user_id=current_user.id,
-            change_type=revision_data.get("change_type", "update"),
-            changes_summary=revision_data.get("changes_summary", "Manual revision"),
+            user_id=str(current_user.id),
+            change_type=change_type,
+            changes_summary=changes_summary,
         )
-        return revision
+        return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create revision: {str(e)}"
         )
 
 
@@ -232,10 +263,18 @@ async def get_report_revisions(
 ):
     """Get revision history for a report"""
     try:
+        # Check if report exists
+        report = db.query(Report).filter(Report.id == report_id).first()
+        if not report:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
         service = ReportLockService(db)
-        revisions = service.get_revisions(report_id=report_id)
+        revisions = service.get_revisions(report_id)
         return ReportRevisionList(revisions=revisions)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get revisions: {str(e)}"
         )
