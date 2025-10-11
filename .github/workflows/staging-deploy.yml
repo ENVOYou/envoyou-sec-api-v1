@@ -118,7 +118,6 @@ jobs:
             SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
             CORS_ORIGINS=${{ secrets.STAGING_CORS_ORIGINS }}
             EPA_API_KEY=
-            GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
             JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
             EOF
                 log "🔒 Mengamankan file .env..."
@@ -146,9 +145,7 @@ jobs:
                 # 9. Lakukan pengecekan kesehatan akhir
                 log "🏥 Melakukan pengecekan kesehatan akhir untuk semua layanan..."
                 wait_for_health "API" "http://localhost:8000/health"
-                wait_for_health "Prometheus" "http://localhost:9090/-/healthy"
-                wait_for_health "Grafana" "http://localhost:3000/api/health"
-
+                
                 log "✅ Deployment selesai dengan sukses!"
             }
 
