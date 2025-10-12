@@ -113,8 +113,7 @@ envoyou_api_info{{version="1.0.0",environment="{settings.ENVIRONMENT}"}} 1
 """
 
     return Response(
-        content=metrics,
-        media_type="text/plain; version=0.0.4; charset=utf-8"
+        content=metrics, media_type="text/plain; version=0.0.4; charset=utf-8"
     )
 
 
@@ -189,8 +188,10 @@ async def metrics():
     # Only check for PROMETHEUS_AVAILABLE in production/staging
     if settings.ENVIRONMENT in ["production", "staging"] and not PROMETHEUS_AVAILABLE:
         from fastapi import HTTPException
+
         raise HTTPException(
-            status_code=404, detail="Metrics not available - Prometheus client not configured"
+            status_code=404,
+            detail="Metrics not available - Prometheus client not configured",
         )
 
     return Response(

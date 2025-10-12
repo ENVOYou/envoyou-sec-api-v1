@@ -145,7 +145,7 @@ jobs:
                 # 9. Lakukan pengecekan kesehatan akhir
                 log "🏥 Melakukan pengecekan kesehatan akhir untuk semua layanan..."
                 wait_for_health "API" "http://localhost:8000/health"
-                
+
                 log "✅ Deployment selesai dengan sukses!"
             }
 
