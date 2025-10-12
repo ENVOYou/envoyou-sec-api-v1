@@ -27,3 +27,4 @@ from app.api.deps import (
 
 # Legacy aliases for backward compatibility
 get_admin_user = require_admin
+get_auditor_user = require_auditor

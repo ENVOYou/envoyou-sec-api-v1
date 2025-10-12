@@ -21,6 +21,14 @@ from app.models.epa_data import (
     FuelType,
 )
 from app.models.user import User, UserRole, UserStatus
+from app.models.audit import (
+    AuditEntry,
+    AuditSession,
+    AuditAnomaly,
+    AuditReport,
+    DataLineage,
+    AuditConfiguration,
+)
 
 __all__ = [
     "BaseModel",
@@ -44,5 +52,11 @@ __all__ = [
     "EmissionScope",
     "CalculationStatus",
     "CalculationMethod",
+    "AuditEntry",
+    "AuditSession",
+    "AuditAnomaly",
+    "AuditReport",
+    "DataLineage",
+    "AuditConfiguration",
     # "AuditLog",  # Imported separately to avoid circular imports
 ]
