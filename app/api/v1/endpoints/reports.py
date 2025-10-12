@@ -60,7 +60,7 @@ async def lock_report(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to lock report: {str(e)}"
+            detail=f"Failed to lock report: {str(e)}",
         )
 
 
@@ -86,7 +86,7 @@ async def unlock_report(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to unlock report: {str(e)}"
+            detail=f"Failed to unlock report: {str(e)}",
         )
 
 
@@ -100,7 +100,9 @@ async def get_report_lock_status(
         # Check if report exists
         report = db.query(Report).filter(Report.id == report_id).first()
         if not report:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
 
         service = ReportLockService(db)
         lock = service.get_lock_status(report_id)
@@ -120,7 +122,7 @@ async def get_report_lock_status(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get lock status: {str(e)}"
+            detail=f"Failed to get lock status: {str(e)}",
         )
 
 
@@ -135,7 +137,9 @@ async def get_report_locks(
         # Check if report exists
         report = db.query(Report).filter(Report.id == report_id).first()
         if not report:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
 
         service = ReportLockService(db)
         locks = service.get_report_locks(report_id)
@@ -145,7 +149,7 @@ async def get_report_locks(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get report locks: {str(e)}"
+            detail=f"Failed to get report locks: {str(e)}",
         )
 
 
@@ -170,7 +174,7 @@ async def add_comment_to_report(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add comment: {str(e)}"
+            detail=f"Failed to add comment: {str(e)}",
         )
 
 
@@ -186,7 +190,9 @@ async def get_report_comments(
         # Check if report exists
         report = db.query(Report).filter(Report.id == report_id).first()
         if not report:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
 
         service = ReportLockService(db)
         comments = service.get_comments(report_id, parent_id)
@@ -196,7 +202,7 @@ async def get_report_comments(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get comments: {str(e)}"
+            detail=f"Failed to get comments: {str(e)}",
         )
 
 
@@ -222,7 +228,7 @@ async def resolve_report_comment(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to resolve comment: {str(e)}"
+            detail=f"Failed to resolve comment: {str(e)}",
         )
 
 
@@ -251,7 +257,7 @@ async def create_report_revision(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create revision: {str(e)}"
+            detail=f"Failed to create revision: {str(e)}",
         )
 
 
@@ -266,7 +272,9 @@ async def get_report_revisions(
         # Check if report exists
         report = db.query(Report).filter(Report.id == report_id).first()
         if not report:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
 
         service = ReportLockService(db)
         revisions = service.get_revisions(report_id)
@@ -276,5 +284,5 @@ async def get_report_revisions(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get revisions: {str(e)}"
+            detail=f"Failed to get revisions: {str(e)}",
         )

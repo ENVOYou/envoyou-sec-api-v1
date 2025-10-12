@@ -12,31 +12,35 @@ from datetime import datetime
 from typing import Dict, Optional
 
 import requests
-from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, push_to_gateway
+from prometheus_client import (
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    push_to_gateway,
+)
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 class MetricsCollector:
     """Collect and forward application metrics"""
 
     def __init__(self):
-        self.api_base_url = os.getenv('API_BASE_URL', 'https://api.envoyou.com')
-        self.metrics_interval = int(os.getenv('METRICS_INTERVAL', '30'))
-        self.pushgateway_url = os.getenv('PROMETHEUS_PUSHGATEWAY_URL')
+        self.api_base_url = os.getenv("API_BASE_URL", "https://api.envoyou.com")
+        self.metrics_interval = int(os.getenv("METRICS_INTERVAL", "30"))
+        self.pushgateway_url = os.getenv("PROMETHEUS_PUSHGATEWAY_URL")
 
         # HTTP session with retries
         self.session = requests.Session()
         retry_strategy = Retry(
-            total=3,
-            status_forcelist=[429, 500, 502, 503, 504],
-            backoff_factor=1
+            total=3, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=1
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
@@ -47,35 +51,35 @@ class MetricsCollector:
 
         # Custom metrics
         self.api_response_time = Histogram(
-            'envoyou_api_response_time_seconds',
-            'API endpoint response time',
-            ['endpoint', 'method', 'status'],
-            registry=self.registry
+            "envoyou_api_response_time_seconds",
+            "API endpoint response time",
+            ["endpoint", "method", "status"],
+            registry=self.registry,
         )
 
         self.api_requests_total = Counter(
-            'envoyou_api_requests_total',
-            'Total API requests',
-            ['endpoint', 'method', 'status'],
-            registry=self.registry
+            "envoyou_api_requests_total",
+            "Total API requests",
+            ["endpoint", "method", "status"],
+            registry=self.registry,
         )
 
         self.health_status = Gauge(
-            'envoyou_health_status',
-            'Application health status (1=healthy, 0=unhealthy)',
-            registry=self.registry
+            "envoyou_health_status",
+            "Application health status (1=healthy, 0=unhealthy)",
+            registry=self.registry,
         )
 
         self.database_connections = Gauge(
-            'envoyou_database_connections_active',
-            'Number of active database connections',
-            registry=self.registry
+            "envoyou_database_connections_active",
+            "Number of active database connections",
+            registry=self.registry,
         )
 
         self.redis_connections = Gauge(
-            'envoyou_redis_connections_active',
-            'Redis connection status (1=connected, 0=disconnected)',
-            registry=self.registry
+            "envoyou_redis_connections_active",
+            "Redis connection status (1=connected, 0=disconnected)",
+            registry=self.registry,
         )
 
     def collect_api_metrics(self) -> Dict:
@@ -85,43 +89,47 @@ class MetricsCollector:
         try:
             # Get Prometheus metrics from /metrics endpoint
             metrics_response = self.session.get(
-                f"{self.api_base_url}/metrics",
-                timeout=10
+                f"{self.api_base_url}/metrics", timeout=10
             )
 
             if metrics_response.status_code == 200:
-                metrics['prometheus_raw'] = metrics_response.text
+                metrics["prometheus_raw"] = metrics_response.text
                 logger.debug("Successfully collected Prometheus metrics")
             else:
                 logger.warning(f"Failed to get metrics: {metrics_response.status_code}")
 
             # Get detailed health status
             health_response = self.session.get(
-                f"{self.api_base_url}/health/detailed",
-                timeout=10
+                f"{self.api_base_url}/health/detailed", timeout=10
             )
 
             if health_response.status_code == 200:
                 health_data = health_response.json()
-                metrics['health_status'] = health_data
+                metrics["health_status"] = health_data
 
                 # Update health gauge
-                self.health_status.set(1 if health_data.get('status') == 'healthy' else 0)
+                self.health_status.set(
+                    1 if health_data.get("status") == "healthy" else 0
+                )
 
                 # Update database connections if available
-                if 'database' in health_data:
-                    db_status = health_data['database']
-                    if 'connections' in db_status:
-                        self.database_connections.set(db_status['connections'])
+                if "database" in health_data:
+                    db_status = health_data["database"]
+                    if "connections" in db_status:
+                        self.database_connections.set(db_status["connections"])
 
                 # Update Redis status if available
-                if 'redis' in health_data:
-                    redis_status = health_data['redis']
-                    self.redis_connections.set(1 if redis_status.get('status') == 'connected' else 0)
+                if "redis" in health_data:
+                    redis_status = health_data["redis"]
+                    self.redis_connections.set(
+                        1 if redis_status.get("status") == "connected" else 0
+                    )
 
                 logger.debug("Successfully collected health metrics")
             else:
-                logger.warning(f"Failed to get health status: {health_response.status_code}")
+                logger.warning(
+                    f"Failed to get health status: {health_response.status_code}"
+                )
                 self.health_status.set(0)
 
         except requests.exceptions.RequestException as e:
@@ -133,43 +141,40 @@ class MetricsCollector:
     def test_api_endpoints(self):
         """Test key API endpoints and collect response time metrics"""
         endpoints_to_test = [
-            ('GET', '/health'),
-            ('GET', '/v1/auth/permissions'),  # This will fail auth but we measure response time
+            ("GET", "/health"),
+            (
+                "GET",
+                "/v1/auth/permissions",
+            ),  # This will fail auth but we measure response time
         ]
 
         for method, endpoint in endpoints_to_test:
             try:
                 start_time = time.time()
                 response = self.session.request(
-                    method=method,
-                    url=f"{self.api_base_url}{endpoint}",
-                    timeout=10
+                    method=method, url=f"{self.api_base_url}{endpoint}", timeout=10
                 )
                 response_time = time.time() - start_time
 
                 # Record metrics
                 self.api_response_time.labels(
-                    endpoint=endpoint,
-                    method=method,
-                    status=str(response.status_code)
+                    endpoint=endpoint, method=method, status=str(response.status_code)
                 ).observe(response_time)
 
                 self.api_requests_total.labels(
-                    endpoint=endpoint,
-                    method=method,
-                    status=str(response.status_code)
+                    endpoint=endpoint, method=method, status=str(response.status_code)
                 ).inc()
 
-                logger.debug(f"Endpoint {method} {endpoint}: {response.status_code} in {response_time:.3f}s")
+                logger.debug(
+                    f"Endpoint {method} {endpoint}: {response.status_code} in {response_time:.3f}s"
+                )
 
             except requests.exceptions.RequestException as e:
                 logger.warning(f"Failed to test endpoint {method} {endpoint}: {str(e)}")
 
                 # Record failed request
                 self.api_requests_total.labels(
-                    endpoint=endpoint,
-                    method=method,
-                    status='error'
+                    endpoint=endpoint, method=method, status="error"
                 ).inc()
 
     def push_metrics_to_gateway(self):
@@ -180,8 +185,8 @@ class MetricsCollector:
         try:
             push_to_gateway(
                 self.pushgateway_url,
-                job='envoyou-metrics-collector',
-                registry=self.registry
+                job="envoyou-metrics-collector",
+                registry=self.registry,
             )
             logger.debug("Successfully pushed metrics to gateway")
         except Exception as e:
@@ -190,10 +195,10 @@ class MetricsCollector:
     def save_metrics_locally(self, metrics: Dict):
         """Save metrics to local file for debugging"""
         try:
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
             filename = f"metrics_{timestamp}.json"
 
-            with open(f"/tmp/{filename}", 'w') as f:
+            with open(f"/tmp/{filename}", "w") as f:
                 json.dump(metrics, f, indent=2, default=str)
 
             logger.debug(f"Saved metrics to /tmp/{filename}")
@@ -204,7 +209,9 @@ class MetricsCollector:
         """Main metrics collection loop"""
         logger.info(f"Starting metrics collection for {self.api_base_url}")
         logger.info(f"Collection interval: {self.metrics_interval} seconds")
-        logger.info(f"Pushgateway: {'configured' if self.pushgateway_url else 'not configured'}")
+        logger.info(
+            f"Pushgateway: {'configured' if self.pushgateway_url else 'not configured'}"
+        )
 
         while True:
             try:
@@ -218,7 +225,7 @@ class MetricsCollector:
                 self.push_metrics_to_gateway()
 
                 # Save locally for debugging (optional)
-                if os.getenv('SAVE_METRICS_LOCALLY', 'false').lower() == 'true':
+                if os.getenv("SAVE_METRICS_LOCALLY", "false").lower() == "true":
                     self.save_metrics_locally(metrics)
 
                 logger.info("Metrics collection cycle completed")
@@ -232,6 +239,7 @@ class MetricsCollector:
             except Exception as e:
                 logger.error(f"Metrics collection error: {str(e)}")
                 time.sleep(self.metrics_interval)
+
 
 if __name__ == "__main__":
     collector = MetricsCollector()

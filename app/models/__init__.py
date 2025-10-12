@@ -30,7 +30,12 @@ from app.models.epa_data import (
 )
 from app.models.report import Comment, Report, ReportLock, Revision
 from app.models.user import User, UserRole, UserStatus
-from app.models.workflow import Workflow, WorkflowHistory, WorkflowState, WorkflowTemplate
+from app.models.workflow import (
+    Workflow,
+    WorkflowHistory,
+    WorkflowState,
+    WorkflowTemplate,
+)
 
 __all__ = [
     "BaseModel",

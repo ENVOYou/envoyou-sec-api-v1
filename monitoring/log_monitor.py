@@ -18,38 +18,38 @@ from urllib3.util.retry import Retry
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 class LogMonitor:
     """Monitor application logs and send alerts"""
 
     def __init__(self):
-        self.api_base_url = os.getenv('API_BASE_URL', 'https://api.envoyou.com')
-        self.log_level = os.getenv('LOG_LEVEL', 'INFO')
-        self.monitor_interval = int(os.getenv('MONITOR_INTERVAL', '60'))
-        self.alert_webhook_url = os.getenv('ALERT_WEBHOOK_URL')
+        self.api_base_url = os.getenv("API_BASE_URL", "https://api.envoyou.com")
+        self.log_level = os.getenv("LOG_LEVEL", "INFO")
+        self.monitor_interval = int(os.getenv("MONITOR_INTERVAL", "60"))
+        self.alert_webhook_url = os.getenv("ALERT_WEBHOOK_URL")
 
         # Patterns to monitor
         self.error_patterns = [
-            r'ERROR.*',
-            r'CRITICAL.*',
-            r'Exception.*',
-            r'Traceback.*',
-            r'500 Internal Server Error',
-            r'502 Bad Gateway',
-            r'503 Service Unavailable',
-            r'Database connection failed',
-            r'Redis connection failed',
+            r"ERROR.*",
+            r"CRITICAL.*",
+            r"Exception.*",
+            r"Traceback.*",
+            r"500 Internal Server Error",
+            r"502 Bad Gateway",
+            r"503 Service Unavailable",
+            r"Database connection failed",
+            r"Redis connection failed",
         ]
 
         self.warning_patterns = [
-            r'WARNING.*',
-            r'429 Too Many Requests',
-            r'Rate limit exceeded',
-            r'Timeout',
+            r"WARNING.*",
+            r"429 Too Many Requests",
+            r"Rate limit exceeded",
+            r"Timeout",
         ]
 
         # Alert tracking
@@ -59,9 +59,7 @@ class LogMonitor:
         # HTTP session with retries
         self.session = requests.Session()
         retry_strategy = Retry(
-            total=3,
-            status_forcelist=[429, 500, 502, 503, 504],
-            backoff_factor=1
+            total=3, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=1
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
@@ -72,42 +70,44 @@ class LogMonitor:
         try:
             # Check health endpoint for basic status
             health_response = self.session.get(
-                f"{self.api_base_url}/health",
-                timeout=10
+                f"{self.api_base_url}/health", timeout=10
             )
 
             if health_response.status_code != 200:
                 return {
-                    'status': 'error',
-                    'message': f'Health check failed: {health_response.status_code}',
-                    'details': health_response.text
+                    "status": "error",
+                    "message": f"Health check failed: {health_response.status_code}",
+                    "details": health_response.text,
                 }
 
             # Check detailed health for more insights
             detailed_health = self.session.get(
-                f"{self.api_base_url}/health/detailed",
-                timeout=10
+                f"{self.api_base_url}/health/detailed", timeout=10
             )
 
             if detailed_health.status_code == 200:
                 health_data = detailed_health.json()
                 return {
-                    'status': 'healthy' if health_data.get('status') == 'healthy' else 'warning',
-                    'message': 'Application is responding',
-                    'details': health_data
+                    "status": (
+                        "healthy"
+                        if health_data.get("status") == "healthy"
+                        else "warning"
+                    ),
+                    "message": "Application is responding",
+                    "details": health_data,
                 }
             else:
                 return {
-                    'status': 'warning',
-                    'message': 'Basic health OK but detailed check failed',
-                    'details': f'Detailed health: {detailed_health.status_code}'
+                    "status": "warning",
+                    "message": "Basic health OK but detailed check failed",
+                    "details": f"Detailed health: {detailed_health.status_code}",
                 }
 
         except requests.exceptions.RequestException as e:
             return {
-                'status': 'error',
-                'message': f'API connection failed: {str(e)}',
-                'details': str(e)
+                "status": "error",
+                "message": f"API connection failed: {str(e)}",
+                "details": str(e),
             }
 
     def analyze_log_patterns(self, log_data: Dict) -> List[Dict]:
@@ -115,25 +115,29 @@ class LogMonitor:
         alerts = []
 
         # Check for error conditions in health data
-        if log_data.get('status') == 'error':
-            alert_key = 'api_unhealthy'
+        if log_data.get("status") == "error":
+            alert_key = "api_unhealthy"
             if self._should_alert(alert_key):
-                alerts.append({
-                    'level': 'CRITICAL',
-                    'message': f'API Health Check Failed: {log_data.get("message", "Unknown error")}',
-                    'details': log_data.get('details', ''),
-                    'timestamp': datetime.utcnow().isoformat()
-                })
+                alerts.append(
+                    {
+                        "level": "CRITICAL",
+                        "message": f'API Health Check Failed: {log_data.get("message", "Unknown error")}',
+                        "details": log_data.get("details", ""),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
 
-        elif log_data.get('status') == 'warning':
-            alert_key = 'api_warning'
+        elif log_data.get("status") == "warning":
+            alert_key = "api_warning"
             if self._should_alert(alert_key):
-                alerts.append({
-                    'level': 'WARNING',
-                    'message': f'API Health Warning: {log_data.get("message", "Unknown warning")}',
-                    'details': log_data.get('details', ''),
-                    'timestamp': datetime.utcnow().isoformat()
-                })
+                alerts.append(
+                    {
+                        "level": "WARNING",
+                        "message": f'API Health Warning: {log_data.get("message", "Unknown warning")}',
+                        "details": log_data.get("details", ""),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
 
         return alerts
 
@@ -156,23 +160,27 @@ class LogMonitor:
 
         try:
             payload = {
-                'service': 'envoyou-sec-api-log-monitor',
-                'alert': alert,
-                'environment': os.getenv('RENDER_ENVIRONMENT', 'unknown'),
-                'service_id': os.getenv('RENDER_SERVICE_ID', 'unknown')
+                "service": "envoyou-sec-api-log-monitor",
+                "alert": alert,
+                "environment": os.getenv("RENDER_ENVIRONMENT", "unknown"),
+                "service_id": os.getenv("RENDER_SERVICE_ID", "unknown"),
             }
 
             response = self.session.post(
                 self.alert_webhook_url,
                 json=payload,
-                headers={'Content-Type': 'application/json'},
-                timeout=10
+                headers={"Content-Type": "application/json"},
+                timeout=10,
             )
 
             if response.status_code == 200:
-                logger.info(f"Alert sent successfully: {alert['level']} - {alert['message']}")
+                logger.info(
+                    f"Alert sent successfully: {alert['level']} - {alert['message']}"
+                )
             else:
-                logger.error(f"Failed to send alert: {response.status_code} - {response.text}")
+                logger.error(
+                    f"Failed to send alert: {response.status_code} - {response.text}"
+                )
 
         except Exception as e:
             logger.error(f"Error sending alert: {str(e)}")
@@ -181,7 +189,9 @@ class LogMonitor:
         """Main monitoring loop"""
         logger.info(f"Starting log monitoring for {self.api_base_url}")
         logger.info(f"Monitor interval: {self.monitor_interval} seconds")
-        logger.info(f"Alert webhook: {'configured' if self.alert_webhook_url else 'not configured'}")
+        logger.info(
+            f"Alert webhook: {'configured' if self.alert_webhook_url else 'not configured'}"
+        )
 
         while True:
             try:
@@ -194,7 +204,9 @@ class LogMonitor:
 
                 # Send alerts
                 for alert in alerts:
-                    logger.warning(f"Sending alert: {alert['level']} - {alert['message']}")
+                    logger.warning(
+                        f"Sending alert: {alert['level']} - {alert['message']}"
+                    )
                     self.send_alert(alert)
 
                 # Wait for next check
@@ -206,6 +218,7 @@ class LogMonitor:
             except Exception as e:
                 logger.error(f"Monitoring error: {str(e)}")
                 time.sleep(self.monitor_interval)
+
 
 if __name__ == "__main__":
     monitor = LogMonitor()
