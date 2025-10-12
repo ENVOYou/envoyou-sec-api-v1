@@ -1,6 +1,14 @@
 # Database models package
 
 # AuditLog imported separately to avoid circular imports
+from app.models.audit import (
+    AuditAnomaly,
+    AuditConfiguration,
+    AuditEntry,
+    AuditReport,
+    AuditSession,
+    DataLineage,
+)
 from app.models.base import AuditMixin, BaseModel, TimestampMixin, UUIDMixin
 from app.models.emissions import (
     ActivityData,
@@ -54,5 +62,11 @@ __all__ = [
     "WorkflowTemplate",
     "WorkflowHistory",
     "WorkflowState",
+    "AuditEntry",
+    "AuditSession",
+    "AuditAnomaly",
+    "AuditReport",
+    "DataLineage",
+    "AuditConfiguration",
     # "AuditLog",  # Imported separately to avoid circular imports
 ]

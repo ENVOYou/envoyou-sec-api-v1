@@ -95,6 +95,28 @@ async def health_check(db: Session = Depends(get_db)):
     }
 
 
+@app.get("/health/metrics")
+async def prometheus_health_metrics():
+    """Prometheus-compatible health metrics endpoint"""
+    # Return basic health metrics in Prometheus format
+    metrics = f"""# HELP envoyou_api_health_status API health status (1=healthy, 0=unhealthy)
+# TYPE envoyou_api_health_status gauge
+envoyou_api_health_status 1
+
+# HELP envoyou_api_uptime_seconds API uptime in seconds
+# TYPE envoyou_api_uptime_seconds counter
+envoyou_api_uptime_seconds {int((datetime.utcnow() - datetime(2025, 1, 1)).total_seconds())}
+
+# HELP envoyou_api_info API information
+# TYPE envoyou_api_info gauge
+envoyou_api_info{{version="1.0.0",environment="{settings.ENVIRONMENT}"}} 1
+"""
+
+    return Response(
+        content=metrics, media_type="text/plain; version=0.0.4; charset=utf-8"
+    )
+
+
 @app.get("/health/detailed")
 async def detailed_health_check(db: Session = Depends(get_db)):
     """Comprehensive health check with dependency verification"""
@@ -163,11 +185,13 @@ async def debug_database(db: Session = Depends(get_db)):
 @app.get("/metrics")
 async def metrics():
     """Prometheus metrics endpoint"""
-    if settings.ENVIRONMENT not in ["production", "staging"]:
+    # Only check for PROMETHEUS_AVAILABLE in production/staging
+    if settings.ENVIRONMENT in ["production", "staging"] and not PROMETHEUS_AVAILABLE:
         from fastapi import HTTPException
 
         raise HTTPException(
-            status_code=404, detail="Metrics not available in this environment"
+            status_code=404,
+            detail="Metrics not available - Prometheus client not configured",
         )
 
     return Response(

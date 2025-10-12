@@ -6,6 +6,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    depends_on:
+      - redis
     volumes:
       - ./storage:/app/storage
     restart: unless-stopped
@@ -15,27 +17,10 @@ services:
       timeout: 10s
       retries: 3
 
-  # Prometheus monitoring - Staging
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.staging.yml:/etc/prometheus/prometheus.yml
-      - prometheus_staging_data:/prometheus
+  # Redis cache untuk Staging
+  redis:
+    image: redis:7-alpine
     restart: unless-stopped
 
-  # Grafana dashboards - Staging
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_staging_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-    restart: unless-stopped
-
-volumes:
-  prometheus_staging_data:
-  grafana_staging_data:
+# Tidak ada lagi volume untuk prometheus dan grafana
+volumes: {}
