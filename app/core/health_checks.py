@@ -5,8 +5,8 @@ Comprehensive health monitoring for database, cache, and external services
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 import redis
 from sqlalchemy import text
@@ -30,19 +30,21 @@ class HealthChecker:
             # Test basic connectivity
             start_time = datetime.utcnow()
             result = db.execute(text("SELECT 1 as test")).fetchone()
-            response_time = (datetime.utcnow() - start_time).total_seconds() * 1000  # ms
+            response_time = (
+                datetime.utcnow() - start_time
+            ).total_seconds() * 1000  # ms
 
             if result and result[0] == 1:
                 return {
                     "status": "healthy",
                     "response_time_ms": round(response_time, 2),
-                    "message": "Database connection successful"
+                    "message": "Database connection successful",
                 }
             else:
                 return {
                     "status": "unhealthy",
                     "response_time_ms": round(response_time, 2),
-                    "message": "Database query returned unexpected result"
+                    "message": "Database query returned unexpected result",
                 }
 
         except Exception as e:
@@ -50,18 +52,21 @@ class HealthChecker:
             logger.error(f"Database health check failed: {error_msg}")
 
             # In development, SQLite connection issues are expected
-            if settings.ENVIRONMENT == "development" and ("sqlite" in settings.DATABASE_URL.lower() or "no such table" in error_msg.lower()):
+            if settings.ENVIRONMENT == "development" and (
+                "sqlite" in settings.DATABASE_URL.lower()
+                or "no such table" in error_msg.lower()
+            ):
                 return {
                     "status": "healthy",
                     "response_time_ms": 0,
                     "message": "Development environment - SQLite database not initialized",
-                    "note": "Database will be initialized on first API call"
+                    "note": "Database will be initialized on first API call",
                 }
 
             return {
                 "status": "unhealthy",
                 "error": error_msg,
-                "message": "Database connection failed"
+                "message": "Database connection failed",
             }
 
     async def check_redis(self) -> Dict[str, Any]:
@@ -78,7 +83,9 @@ class HealthChecker:
             self.redis_client.setex(test_key, 10, test_value)
             retrieved_value = self.redis_client.get(test_key)
 
-            response_time = (datetime.utcnow() - start_time).total_seconds() * 1000  # ms
+            response_time = (
+                datetime.utcnow() - start_time
+            ).total_seconds() * 1000  # ms
 
             if retrieved_value == test_value:
                 # Clean up test key
@@ -87,13 +94,13 @@ class HealthChecker:
                 return {
                     "status": "healthy",
                     "response_time_ms": round(response_time, 2),
-                    "message": "Redis connection and operations successful"
+                    "message": "Redis connection and operations successful",
                 }
             else:
                 return {
                     "status": "unhealthy",
                     "response_time_ms": round(response_time, 2),
-                    "message": "Redis set/get operation failed"
+                    "message": "Redis set/get operation failed",
                 }
 
         except Exception as e:
@@ -101,18 +108,21 @@ class HealthChecker:
             logger.error(f"Redis health check failed: {error_msg}")
 
             # In development, Redis connection issues are expected
-            if settings.ENVIRONMENT == "development" and ("connection refused" in error_msg.lower() or "localhost" in settings.REDIS_URL):
+            if settings.ENVIRONMENT == "development" and (
+                "connection refused" in error_msg.lower()
+                or "localhost" in settings.REDIS_URL
+            ):
                 return {
                     "status": "healthy",
                     "response_time_ms": 0,
                     "message": "Development environment - Redis not available locally",
-                    "note": "Using Upstash Redis in production"
+                    "note": "Using Upstash Redis in production",
                 }
 
             return {
                 "status": "unhealthy",
                 "error": error_msg,
-                "message": "Redis connection failed"
+                "message": "Redis connection failed",
             }
 
     async def check_external_services(self) -> Dict[str, Any]:
@@ -126,18 +136,18 @@ class HealthChecker:
             if settings.EPA_API_BASE_URL:
                 services_status["epa_api"] = {
                     "status": "configured",
-                    "message": "EPA API URL is configured"
+                    "message": "EPA API URL is configured",
                 }
             else:
                 services_status["epa_api"] = {
                     "status": "not_configured",
-                    "message": "EPA API URL not configured"
+                    "message": "EPA API URL not configured",
                 }
         except Exception as e:
             services_status["epa_api"] = {
                 "status": "error",
                 "error": str(e),
-                "message": "EPA API check failed"
+                "message": "EPA API check failed",
             }
 
         return services_status
@@ -171,7 +181,9 @@ class HealthChecker:
         health_status["checks"]["redis"] = await self.check_redis()
 
         # External services check
-        health_status["checks"]["external_services"] = await self.check_external_services()
+        health_status["checks"][
+            "external_services"
+        ] = await self.check_external_services()
 
         # Determine overall status
         unhealthy_checks = []
@@ -183,15 +195,18 @@ class HealthChecker:
         if settings.ENVIRONMENT == "development":
             # Filter out expected development issues
             critical_unhealthy = [
-                check for check in unhealthy_checks
+                check
+                for check in unhealthy_checks
                 if not (
-                    check.get("service") == "database" and (
-                        "SQLite database not initialized" in check.get("message", "") or
-                        "connection to server" in check.get("error", "")
+                    check.get("service") == "database"
+                    and (
+                        "SQLite database not initialized" in check.get("message", "")
+                        or "connection to server" in check.get("error", "")
                     )
-                    or check.get("service") == "redis" and (
-                        "Redis not available locally" in check.get("message", "") or
-                        "Redis set/get operation failed" in check.get("message", "")
+                    or check.get("service") == "redis"
+                    and (
+                        "Redis not available locally" in check.get("message", "")
+                        or "Redis set/get operation failed" in check.get("message", "")
                     )
                 )
             ]
@@ -219,7 +234,7 @@ class HealthChecker:
                 "database_url_configured": bool(settings.DATABASE_URL),
                 "redis_url_configured": bool(settings.REDIS_URL),
                 "epa_api_configured": bool(settings.EPA_API_BASE_URL),
-            }
+            },
         }
 
         return detailed_report

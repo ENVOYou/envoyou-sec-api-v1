@@ -5,7 +5,7 @@ Provides comprehensive audit trail functionality for forensic-grade traceability
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_
@@ -109,57 +109,75 @@ class AuditService:
                 start_date = end_date - timedelta(days=30)
 
             # Query audit statistics
-            total_entries = self.db.query(func.count(AuditEntry.id)).filter(
-                and_(
-                    AuditEntry.timestamp >= start_date,
-                    AuditEntry.timestamp <= end_date
+            total_entries = (
+                self.db.query(func.count(AuditEntry.id))
+                .filter(
+                    and_(
+                        AuditEntry.timestamp >= start_date,
+                        AuditEntry.timestamp <= end_date,
+                    )
                 )
-            ).scalar()
+                .scalar()
+            )
 
             # Action breakdown
-            action_stats = self.db.query(
-                AuditEntry.action,
-                func.count(AuditEntry.id).label('count')
-            ).filter(
-                and_(
-                    AuditEntry.timestamp >= start_date,
-                    AuditEntry.timestamp <= end_date
+            action_stats = (
+                self.db.query(
+                    AuditEntry.action, func.count(AuditEntry.id).label("count")
                 )
-            ).group_by(AuditEntry.action).all()
+                .filter(
+                    and_(
+                        AuditEntry.timestamp >= start_date,
+                        AuditEntry.timestamp <= end_date,
+                    )
+                )
+                .group_by(AuditEntry.action)
+                .all()
+            )
 
             actions_breakdown = {action: count for action, count in action_stats}
 
             # User activity
-            user_stats = self.db.query(
-                AuditEntry.user_id,
-                func.count(AuditEntry.id).label('count')
-            ).filter(
-                and_(
-                    AuditEntry.timestamp >= start_date,
-                    AuditEntry.timestamp <= end_date
+            user_stats = (
+                self.db.query(
+                    AuditEntry.user_id, func.count(AuditEntry.id).label("count")
                 )
-            ).group_by(AuditEntry.user_id).all()
+                .filter(
+                    and_(
+                        AuditEntry.timestamp >= start_date,
+                        AuditEntry.timestamp <= end_date,
+                    )
+                )
+                .group_by(AuditEntry.user_id)
+                .all()
+            )
 
             user_activity = {str(user_id): count for user_id, count in user_stats}
 
             # Entity types
-            entity_stats = self.db.query(
-                AuditEntry.entity_type,
-                func.count(AuditEntry.id).label('count')
-            ).filter(
-                and_(
-                    AuditEntry.timestamp >= start_date,
-                    AuditEntry.timestamp <= end_date
+            entity_stats = (
+                self.db.query(
+                    AuditEntry.entity_type, func.count(AuditEntry.id).label("count")
                 )
-            ).group_by(AuditEntry.entity_type).all()
+                .filter(
+                    and_(
+                        AuditEntry.timestamp >= start_date,
+                        AuditEntry.timestamp <= end_date,
+                    )
+                )
+                .group_by(AuditEntry.entity_type)
+                .all()
+            )
 
             entity_types = {entity_type: count for entity_type, count in entity_stats}
 
             # Recent activity (last 24 hours)
             recent_cutoff = datetime.utcnow() - timedelta(hours=24)
-            recent_entries = self.db.query(func.count(AuditEntry.id)).filter(
-                AuditEntry.timestamp >= recent_cutoff
-            ).scalar()
+            recent_entries = (
+                self.db.query(func.count(AuditEntry.id))
+                .filter(AuditEntry.timestamp >= recent_cutoff)
+                .scalar()
+            )
 
             return AuditSummaryResponse(
                 total_entries=total_entries,
@@ -186,12 +204,17 @@ class AuditService:
         """Get data lineage and provenance information"""
         try:
             # Get the main entity
-            main_entry = self.db.query(AuditEntry).filter(
-                and_(
-                    AuditEntry.entity_type == entity_type,
-                    AuditEntry.entity_id == entity_id
+            main_entry = (
+                self.db.query(AuditEntry)
+                .filter(
+                    and_(
+                        AuditEntry.entity_type == entity_type,
+                        AuditEntry.entity_id == entity_id,
+                    )
                 )
-            ).order_by(desc(AuditEntry.timestamp)).first()
+                .order_by(desc(AuditEntry.timestamp))
+                .first()
+            )
 
             if not main_entry:
                 return DataLineageResponse(
@@ -212,22 +235,30 @@ class AuditService:
                     break
                 visited.add(current_entity.id)
 
-                lineage_chain.append({
-                    "entry_id": str(current_entity.id),
-                    "timestamp": current_entity.timestamp,
-                    "action": current_entity.action,
-                    "user_id": current_entity.user_id,
-                    "before_state": current_entity.before_state,
-                    "after_state": current_entity.after_state,
-                    "metadata": current_entity.metadata,
-                })
+                lineage_chain.append(
+                    {
+                        "entry_id": str(current_entity.id),
+                        "timestamp": current_entity.timestamp,
+                        "action": current_entity.action,
+                        "user_id": current_entity.user_id,
+                        "before_state": current_entity.before_state,
+                        "after_state": current_entity.after_state,
+                        "metadata": current_entity.metadata,
+                    }
+                )
 
                 # Find parent/related entries
-                if current_entity.metadata and "parent_entity_id" in current_entity.metadata:
+                if (
+                    current_entity.metadata
+                    and "parent_entity_id" in current_entity.metadata
+                ):
                     parent_id = current_entity.metadata["parent_entity_id"]
-                    current_entity = self.db.query(AuditEntry).filter(
-                        AuditEntry.entity_id == parent_id
-                    ).order_by(desc(AuditEntry.timestamp)).first()
+                    current_entity = (
+                        self.db.query(AuditEntry)
+                        .filter(AuditEntry.entity_id == parent_id)
+                        .order_by(desc(AuditEntry.timestamp))
+                        .first()
+                    )
                     if not current_entity:
                         break
                 else:
@@ -235,18 +266,30 @@ class AuditService:
 
             # Build data provenance
             data_provenance = {
-                "original_source": main_entry.metadata.get("source", "unknown") if main_entry.metadata else "unknown",
+                "original_source": (
+                    main_entry.metadata.get("source", "unknown")
+                    if main_entry.metadata
+                    else "unknown"
+                ),
                 "creation_timestamp": main_entry.timestamp,
                 "last_modified": main_entry.timestamp,
                 "modification_count": len(lineage_chain),
-                "data_quality_score": main_entry.metadata.get("quality_score", 0.0) if main_entry.metadata else 0.0,
+                "data_quality_score": (
+                    main_entry.metadata.get("quality_score", 0.0)
+                    if main_entry.metadata
+                    else 0.0
+                ),
             }
 
-            metadata = {
-                "depth_explored": len(lineage_chain),
-                "total_chain_length": len(lineage_chain),
-                "has_circular_references": len(visited) < len(lineage_chain),
-            } if include_metadata else None
+            metadata = (
+                {
+                    "depth_explored": len(lineage_chain),
+                    "total_chain_length": len(lineage_chain),
+                    "has_circular_references": len(visited) < len(lineage_chain),
+                }
+                if include_metadata
+                else None
+            )
 
             return DataLineageResponse(
                 entity_type=entity_type,
@@ -277,13 +320,17 @@ class AuditService:
             anomalies = []
 
             # Check for unusual login patterns
-            login_entries = self.db.query(AuditEntry).filter(
-                and_(
-                    AuditEntry.action == "LOGIN",
-                    AuditEntry.timestamp >= start_date,
-                    AuditEntry.timestamp <= end_date
+            login_entries = (
+                self.db.query(AuditEntry)
+                .filter(
+                    and_(
+                        AuditEntry.action == "LOGIN",
+                        AuditEntry.timestamp >= start_date,
+                        AuditEntry.timestamp <= end_date,
+                    )
                 )
-            ).all()
+                .all()
+            )
 
             # Group by user and check for anomalies
             user_logins = {}
@@ -295,27 +342,40 @@ class AuditService:
 
             # Detect multiple failed logins
             for user_id, entries in user_logins.items():
-                failed_logins = [e for e in entries if e.metadata and e.metadata.get("success") == False]
+                failed_logins = [
+                    e
+                    for e in entries
+                    if e.metadata and e.metadata.get("success") == False
+                ]
                 if len(failed_logins) > 5:  # Threshold for anomaly
-                    anomalies.append({
-                        "anomaly_id": f"failed_logins_{user_id}_{start_date.date()}",
-                        "detected_at": datetime.utcnow(),
-                        "anomaly_type": "multiple_failed_logins",
-                        "severity": "medium",
-                        "description": f"User {user_id} had {len(failed_logins)} failed login attempts",
-                        "affected_entries": [str(e.id) for e in failed_logins],
-                        "risk_assessment": "Potential brute force attack or forgotten credentials",
-                        "recommended_actions": ["Review user access", "Consider temporary account lockout"],
-                    })
+                    anomalies.append(
+                        {
+                            "anomaly_id": f"failed_logins_{user_id}_{start_date.date()}",
+                            "detected_at": datetime.utcnow(),
+                            "anomaly_type": "multiple_failed_logins",
+                            "severity": "medium",
+                            "description": f"User {user_id} had {len(failed_logins)} failed login attempts",
+                            "affected_entries": [str(e.id) for e in failed_logins],
+                            "risk_assessment": "Potential brute force attack or forgotten credentials",
+                            "recommended_actions": [
+                                "Review user access",
+                                "Consider temporary account lockout",
+                            ],
+                        }
+                    )
 
             # Check for unusual data access patterns
-            data_access_entries = self.db.query(AuditEntry).filter(
-                and_(
-                    AuditEntry.action.in_(["READ", "EXPORT"]),
-                    AuditEntry.timestamp >= start_date,
-                    AuditEntry.timestamp <= end_date
+            data_access_entries = (
+                self.db.query(AuditEntry)
+                .filter(
+                    and_(
+                        AuditEntry.action.in_(["READ", "EXPORT"]),
+                        AuditEntry.timestamp >= start_date,
+                        AuditEntry.timestamp <= end_date,
+                    )
                 )
-            ).all()
+                .all()
+            )
 
             # Group by user and count access frequency
             user_access = {}
@@ -326,19 +386,26 @@ class AuditService:
                 user_access[user_id] += 1
 
             # Detect unusually high access frequency
-            avg_access = sum(user_access.values()) / len(user_access) if user_access else 0
+            avg_access = (
+                sum(user_access.values()) / len(user_access) if user_access else 0
+            )
             for user_id, count in user_access.items():
                 if count > avg_access * 3:  # 3x average
-                    anomalies.append({
-                        "anomaly_id": f"high_access_{user_id}_{start_date.date()}",
-                        "detected_at": datetime.utcnow(),
-                        "anomaly_type": "unusual_data_access",
-                        "severity": "low",
-                        "description": f"User {user_id} accessed data {count} times (3x average)",
-                        "affected_entries": [],  # Would need to filter specific entries
-                        "risk_assessment": "May indicate normal high usage or potential data exfiltration",
-                        "recommended_actions": ["Monitor user activity", "Verify business justification"],
-                    })
+                    anomalies.append(
+                        {
+                            "anomaly_id": f"high_access_{user_id}_{start_date.date()}",
+                            "detected_at": datetime.utcnow(),
+                            "anomaly_type": "unusual_data_access",
+                            "severity": "low",
+                            "description": f"User {user_id} accessed data {count} times (3x average)",
+                            "affected_entries": [],  # Would need to filter specific entries
+                            "risk_assessment": "May indicate normal high usage or potential data exfiltration",
+                            "recommended_actions": [
+                                "Monitor user activity",
+                                "Verify business justification",
+                            ],
+                        }
+                    )
 
             # Filter by severity if specified
             if severity:
@@ -370,16 +437,22 @@ class AuditService:
 
             changes = []
             for entry in entries:
-                changes.append({
-                    "id": str(entry.id),
-                    "timestamp": entry.timestamp.isoformat(),
-                    "action": entry.action,
-                    "entity_type": entry.entity_type,
-                    "entity_id": entry.entity_id,
-                    "user_id": entry.user_id,
-                    "user_email": getattr(entry.user, 'email', None) if hasattr(entry, 'user') else None,
-                    "metadata": entry.metadata,
-                })
+                changes.append(
+                    {
+                        "id": str(entry.id),
+                        "timestamp": entry.timestamp.isoformat(),
+                        "action": entry.action,
+                        "entity_type": entry.entity_type,
+                        "entity_id": entry.entity_id,
+                        "user_id": entry.user_id,
+                        "user_email": (
+                            getattr(entry.user, "email", None)
+                            if hasattr(entry, "user")
+                            else None
+                        ),
+                        "metadata": entry.metadata,
+                    }
+                )
 
             return changes
 
@@ -404,7 +477,7 @@ class AuditService:
                 start_date=start_date,
                 end_date=end_date,
                 page=1,
-                page_size=1000  # Large limit for reports
+                page_size=1000,  # Large limit for reports
             )
 
             # Get data lineage
@@ -497,7 +570,7 @@ class AuditService:
                 additional_data={
                     "session_purpose": session_purpose,
                     "requested_by": requested_by,
-                }
+                },
             )
 
             return AuditSessionResponse(

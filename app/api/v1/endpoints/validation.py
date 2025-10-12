@@ -12,13 +12,13 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.schemas.validation import (
-    ValidationRequest,
-    ValidationResponse,
-    ValidationReportResponse,
     AnomalyDetectionRequest,
     AnomalyDetectionResponse,
-    ValidationThresholdsResponse,
     ValidationHistoryResponse,
+    ValidationReportResponse,
+    ValidationRequest,
+    ValidationResponse,
+    ValidationThresholdsResponse,
 )
 from app.services.emissions_validation_service import EmissionsValidationService
 
@@ -48,7 +48,11 @@ async def validate_company_emissions(
 
     try:
         # Convert string UUID to UUID object if needed
-        company_id = str(request.company_id) if isinstance(request.company_id, UUID) else request.company_id
+        company_id = (
+            str(request.company_id)
+            if isinstance(request.company_id, UUID)
+            else request.company_id
+        )
 
         # Perform comprehensive validation
         validation_result = await validation_service.validate_company_emissions(
@@ -93,7 +97,9 @@ async def validate_company_emissions(
 async def get_validation_report(
     company_id: str,
     reporting_year: int = Query(..., description="Reporting year for validation"),
-    format: str = Query("comprehensive", description="Report format: comprehensive, summary, executive"),
+    format: str = Query(
+        "comprehensive", description="Report format: comprehensive, summary, executive"
+    ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -208,7 +214,7 @@ async def validate_multiple_companies(
                             "compliance_level": result.compliance_level,
                             "overall_confidence_score": result.overall_confidence_score,
                             "discrepancies_count": len(result.discrepancies),
-                        }
+                        },
                     }
                 except Exception as e:
                     return {
@@ -234,22 +240,26 @@ async def validate_multiple_companies(
                         company_id=company_id,
                         reporting_year=reporting_year,
                     )
-                    results.append({
-                        "company_id": company_id,
-                        "status": "success",
-                        "validation_result": {
-                            "validation_id": result.validation_id,
-                            "validation_status": result.validation_status,
-                            "compliance_level": result.compliance_level,
-                            "overall_confidence_score": result.overall_confidence_score,
-                            "discrepancies_count": len(result.discrepancies),
+                    results.append(
+                        {
+                            "company_id": company_id,
+                            "status": "success",
+                            "validation_result": {
+                                "validation_id": result.validation_id,
+                                "validation_status": result.validation_status,
+                                "compliance_level": result.compliance_level,
+                                "overall_confidence_score": result.overall_confidence_score,
+                                "discrepancies_count": len(result.discrepancies),
+                            },
                         }
-                    })
+                    )
                 except Exception as e:
-                    errors.append({
-                        "company_id": company_id,
-                        "error": str(e),
-                    })
+                    errors.append(
+                        {
+                            "company_id": company_id,
+                            "error": str(e),
+                        }
+                    )
 
         return {
             "batch_validation_id": f"batch_{reporting_year}_{len(company_ids)}",
@@ -299,7 +309,9 @@ async def validate_calculation_accuracy(
         )
 
 
-@router.post("/companies/{company_id}/detect-anomalies", response_model=AnomalyDetectionResponse)
+@router.post(
+    "/companies/{company_id}/detect-anomalies", response_model=AnomalyDetectionResponse
+)
 async def detect_company_anomalies(
     company_id: str,
     request: AnomalyDetectionRequest,

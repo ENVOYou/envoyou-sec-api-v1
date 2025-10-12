@@ -28,7 +28,9 @@ class ValidationDiscrepancy(BaseModel):
     type: str = Field(..., description="Type of discrepancy")
     category: str = Field(..., description="Category of discrepancy")
     description: str = Field(..., description="Description of the discrepancy")
-    severity: str = Field(..., description="Severity level: low, medium, high, critical")
+    severity: str = Field(
+        ..., description="Severity level: low, medium, high, critical"
+    )
     source: str = Field(..., description="Source of the discrepancy")
     variance_percentage: Optional[float] = Field(
         None, description="Variance percentage if applicable"
@@ -41,7 +43,9 @@ class ValidationResponse(BaseModel):
     validation_id: str = Field(..., description="Unique validation identifier")
     company_id: str = Field(..., description="Company identifier")
     reporting_year: int = Field(..., description="Reporting year validated")
-    validation_timestamp: datetime = Field(..., description="When validation was performed")
+    validation_timestamp: datetime = Field(
+        ..., description="When validation was performed"
+    )
 
     # Status and compliance
     validation_status: str = Field(
@@ -80,9 +84,7 @@ class ValidationResponse(BaseModel):
     anomaly_report: Optional[Dict[str, Any]] = Field(
         None, description="Anomaly detection report"
     )
-    anomaly_risk_score: float = Field(
-        0.0, description="Anomaly risk score (0-100)"
-    )
+    anomaly_risk_score: float = Field(0.0, description="Anomaly risk score (0-100)")
 
     # Additional details
     validation_details: Dict[str, Any] = Field(

@@ -1,6 +1,14 @@
 # Database models package
 
 # AuditLog imported separately to avoid circular imports
+from app.models.audit import (
+    AuditAnomaly,
+    AuditConfiguration,
+    AuditEntry,
+    AuditReport,
+    AuditSession,
+    DataLineage,
+)
 from app.models.base import AuditMixin, BaseModel, TimestampMixin, UUIDMixin
 from app.models.emissions import (
     ActivityData,
@@ -21,14 +29,6 @@ from app.models.epa_data import (
     FuelType,
 )
 from app.models.user import User, UserRole, UserStatus
-from app.models.audit import (
-    AuditEntry,
-    AuditSession,
-    AuditAnomaly,
-    AuditReport,
-    DataLineage,
-    AuditConfiguration,
-)
 
 __all__ = [
     "BaseModel",

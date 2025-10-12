@@ -33,7 +33,9 @@ router = APIRouter()
 async def get_audit_trail(
     entity_id: str,
     entity_type: Optional[str] = Query(None, description="Type of entity"),
-    start_date: Optional[datetime] = Query(None, description="Start date for audit trail"),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for audit trail"
+    ),
     end_date: Optional[datetime] = Query(None, description="End date for audit trail"),
     action: Optional[str] = Query(None, description="Filter by specific action"),
     user_id: Optional[str] = Query(None, description="Filter by specific user"),
@@ -71,23 +73,29 @@ async def get_audit_trail(
         # Convert to response format
         entries = []
         for entry in audit_trail["entries"]:
-            entries.append(AuditEntryResponse(
-                id=str(entry.id),
-                timestamp=entry.timestamp,
-                user_id=entry.user_id,
-                user_email=getattr(entry.user, 'email', None) if hasattr(entry, 'user') else None,
-                action=entry.action,
-                resource_type=entry.resource_type,
-                resource_id=entry.resource_id,
-                entity_type=entry.entity_type,
-                entity_id=entry.entity_id,
-                before_state=entry.before_state,
-                after_state=entry.after_state,
-                metadata=entry.metadata,
-                ip_address=entry.ip_address,
-                user_agent=entry.user_agent,
-                session_id=entry.session_id,
-            ))
+            entries.append(
+                AuditEntryResponse(
+                    id=str(entry.id),
+                    timestamp=entry.timestamp,
+                    user_id=entry.user_id,
+                    user_email=(
+                        getattr(entry.user, "email", None)
+                        if hasattr(entry, "user")
+                        else None
+                    ),
+                    action=entry.action,
+                    resource_type=entry.resource_type,
+                    resource_id=entry.resource_id,
+                    entity_type=entry.entity_type,
+                    entity_id=entry.entity_id,
+                    before_state=entry.before_state,
+                    after_state=entry.after_state,
+                    metadata=entry.metadata,
+                    ip_address=entry.ip_address,
+                    user_agent=entry.user_agent,
+                    session_id=entry.session_id,
+                )
+            )
 
         return AuditTrailResponse(
             total_entries=audit_trail["total_entries"],
@@ -301,8 +309,12 @@ async def get_data_lineage(
 
 @router.get("/anomalies", response_model=List[AuditAnomalyResponse])
 async def detect_audit_anomalies(
-    start_date: Optional[datetime] = Query(None, description="Start date for anomaly detection"),
-    end_date: Optional[datetime] = Query(None, description="End date for anomaly detection"),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for anomaly detection"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for anomaly detection"
+    ),
     severity: Optional[str] = Query(None, description="Filter by severity level"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -331,16 +343,18 @@ async def detect_audit_anomalies(
         # Convert to response format
         anomaly_responses = []
         for anomaly in anomalies:
-            anomaly_responses.append(AuditAnomalyResponse(
-                anomaly_id=anomaly["anomaly_id"],
-                detected_at=anomaly["detected_at"],
-                anomaly_type=anomaly["anomaly_type"],
-                severity=anomaly["severity"],
-                description=anomaly["description"],
-                affected_entries=anomaly["affected_entries"],
-                risk_assessment=anomaly["risk_assessment"],
-                recommended_actions=anomaly["recommended_actions"],
-            ))
+            anomaly_responses.append(
+                AuditAnomalyResponse(
+                    anomaly_id=anomaly["anomaly_id"],
+                    detected_at=anomaly["detected_at"],
+                    anomaly_type=anomaly["anomaly_type"],
+                    severity=anomaly["severity"],
+                    description=anomaly["description"],
+                    affected_entries=anomaly["affected_entries"],
+                    risk_assessment=anomaly["risk_assessment"],
+                    recommended_actions=anomaly["recommended_actions"],
+                )
+            )
 
         return anomaly_responses
 

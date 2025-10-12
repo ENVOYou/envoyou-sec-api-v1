@@ -4,10 +4,20 @@ Database models for comprehensive audit trail functionality
 """
 
 from datetime import datetime
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, JSON, Boolean, ForeignKey, Index
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
@@ -35,13 +45,18 @@ class AuditEntry(Base):
     error_message = Column(Text, nullable=True)
 
     # Relationships
-    user = relationship("User", foreign_keys=[user_id], primaryjoin="AuditEntry.user_id == User.id", lazy="select")
+    user = relationship(
+        "User",
+        foreign_keys=[user_id],
+        primaryjoin="AuditEntry.user_id == User.id",
+        lazy="select",
+    )
 
     __table_args__ = (
-        Index('idx_audit_timestamp_action', 'timestamp', 'action'),
-        Index('idx_audit_entity', 'entity_type', 'entity_id'),
-        Index('idx_audit_user_timestamp', 'user_id', 'timestamp'),
-        Index('idx_audit_session', 'session_id'),
+        Index("idx_audit_timestamp_action", "timestamp", "action"),
+        Index("idx_audit_entity", "entity_type", "entity_id"),
+        Index("idx_audit_user_timestamp", "user_id", "timestamp"),
+        Index("idx_audit_session", "session_id"),
     )
 
     def __repr__(self):
@@ -56,7 +71,9 @@ class AuditSession(Base):
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id = Column(String(255), nullable=False, index=True)
     session_purpose = Column(String(255), nullable=False)
-    status = Column(String(50), nullable=False, default="active")  # active, completed, expired
+    status = Column(
+        String(50), nullable=False, default="active"
+    )  # active, completed, expired
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     expires_at = Column(DateTime, nullable=True)
     last_accessed_at = Column(DateTime, nullable=True)
@@ -65,11 +82,16 @@ class AuditSession(Base):
     audit_metadata = Column(JSON, nullable=True)
 
     # Relationships
-    user = relationship("User", foreign_keys=[user_id], primaryjoin="AuditSession.user_id == User.id", lazy="select")
+    user = relationship(
+        "User",
+        foreign_keys=[user_id],
+        primaryjoin="AuditSession.user_id == User.id",
+        lazy="select",
+    )
 
     __table_args__ = (
-        Index('idx_audit_session_user', 'user_id', 'status'),
-        Index('idx_audit_session_expires', 'expires_at'),
+        Index("idx_audit_session_user", "user_id", "status"),
+        Index("idx_audit_session_expires", "expires_at"),
     )
 
     def __repr__(self):
@@ -90,15 +112,17 @@ class AuditAnomaly(Base):
     affected_entries = Column(JSON, nullable=True)  # List of affected audit entry IDs
     risk_assessment = Column(Text, nullable=True)
     recommended_actions = Column(JSON, nullable=True)  # List of recommended actions
-    status = Column(String(50), nullable=False, default="open")  # open, investigating, resolved, dismissed
+    status = Column(
+        String(50), nullable=False, default="open"
+    )  # open, investigating, resolved, dismissed
     resolved_at = Column(DateTime, nullable=True)
     resolved_by = Column(String(255), nullable=True)
     resolution_notes = Column(Text, nullable=True)
     audit_metadata = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_anomaly_type_severity', 'anomaly_type', 'severity'),
-        Index('idx_anomaly_status_detected', 'status', 'detected_at'),
+        Index("idx_anomaly_type_severity", "anomaly_type", "severity"),
+        Index("idx_anomaly_status_detected", "status", "detected_at"),
     )
 
     def __repr__(self):
@@ -112,7 +136,9 @@ class AuditReport(Base):
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     report_id = Column(String(255), nullable=False, unique=True, index=True)
-    report_type = Column(String(100), nullable=False)  # summary, forensic, compliance, etc.
+    report_type = Column(
+        String(100), nullable=False
+    )  # summary, forensic, compliance, etc.
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
     generated_by = Column(String(255), nullable=False)
@@ -123,7 +149,9 @@ class AuditReport(Base):
     summary_stats = Column(JSON, nullable=True)  # Summary statistics
     file_path = Column(String(1000), nullable=True)  # Path to generated report file
     file_size = Column(Integer, nullable=True)
-    status = Column(String(50), nullable=False, default="completed")  # generating, completed, failed
+    status = Column(
+        String(50), nullable=False, default="completed"
+    )  # generating, completed, failed
     error_message = Column(Text, nullable=True)
     download_count = Column(Integer, default=0)
     last_downloaded_at = Column(DateTime, nullable=True)
@@ -131,12 +159,14 @@ class AuditReport(Base):
     audit_metadata = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_report_type_generated', 'report_type', 'generated_at'),
-        Index('idx_report_generated_by', 'generated_by', 'generated_at'),
+        Index("idx_report_type_generated", "report_type", "generated_at"),
+        Index("idx_report_generated_by", "generated_by", "generated_at"),
     )
 
     def __repr__(self):
-        return f"<AuditReport(id={self.id}, type={self.report_type}, title={self.title})>"
+        return (
+            f"<AuditReport(id={self.id}, type={self.report_type}, title={self.title})>"
+        )
 
 
 class DataLineage(Base):
@@ -156,13 +186,15 @@ class DataLineage(Base):
     audit_metadata = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_lineage_entity', 'entity_type', 'entity_id'),
-        Index('idx_lineage_parent', 'parent_entity_type', 'parent_entity_id'),
-        Index('idx_lineage_created', 'created_at'),
+        Index("idx_lineage_entity", "entity_type", "entity_id"),
+        Index("idx_lineage_parent", "parent_entity_type", "parent_entity_id"),
+        Index("idx_lineage_created", "created_at"),
     )
 
     def __repr__(self):
-        return f"<DataLineage(id={self.id}, entity={self.entity_type}:{self.entity_id})>"
+        return (
+            f"<DataLineage(id={self.id}, entity={self.entity_type}:{self.entity_id})>"
+        )
 
 
 class AuditConfiguration(Base):
@@ -175,7 +207,9 @@ class AuditConfiguration(Base):
     config_value = Column(JSON, nullable=False)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
     updated_by = Column(String(255), nullable=True)
 
     def __repr__(self):

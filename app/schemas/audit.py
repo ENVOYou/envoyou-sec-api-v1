@@ -60,9 +60,7 @@ class AuditSessionRequest(BaseModel):
     start_date: Optional[datetime] = Field(
         None, description="Start date for audit period"
     )
-    end_date: Optional[datetime] = Field(
-        None, description="End date for audit period"
-    )
+    end_date: Optional[datetime] = Field(None, description="End date for audit period")
 
 
 class AuditSessionResponse(BaseModel):
@@ -77,9 +75,7 @@ class AuditSessionResponse(BaseModel):
     start_date: Optional[datetime] = Field(
         None, description="Start date for audit period"
     )
-    end_date: Optional[datetime] = Field(
-        None, description="End date for audit period"
-    )
+    end_date: Optional[datetime] = Field(None, description="End date for audit period")
     created_at: datetime = Field(..., description="When the session was created")
     last_accessed: Optional[datetime] = Field(
         None, description="When the session was last accessed"
@@ -142,9 +138,7 @@ class DataLineageResponse(BaseModel):
     lineage_chain: List[Dict[str, Any]] = Field(
         default_factory=list, description="Chain of data transformations"
     )
-    provenance_score: float = Field(
-        ..., description="Data provenance confidence score"
-    )
+    provenance_score: float = Field(..., description="Data provenance confidence score")
     last_updated: datetime = Field(..., description="When lineage was last updated")
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional lineage metadata"
@@ -178,7 +172,9 @@ class AuditAnomalyResponse(BaseModel):
     anomaly_id: str = Field(..., description="Unique anomaly identifier")
     detected_at: datetime = Field(..., description="When anomaly was detected")
     anomaly_type: str = Field(..., description="Type of anomaly detected")
-    severity: str = Field(..., description="Severity level: low, medium, high, critical")
+    severity: str = Field(
+        ..., description="Severity level: low, medium, high, critical"
+    )
     description: str = Field(..., description="Description of the anomaly")
     affected_entries: List[str] = Field(
         default_factory=list, description="IDs of affected audit entries"
