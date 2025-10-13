@@ -3,12 +3,13 @@ Tests for SEC report generation functionality
 """
 
 import io
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from app.services.report_generator_service import SECReportGenerator
+import pytest
+
 from app.models.user import User, UserRole
+from app.services.report_generator_service import SECReportGenerator
 
 
 class TestSECReportGenerator:
@@ -95,11 +96,19 @@ class TestSECReportGenerator:
         return user
 
     @pytest.mark.asyncio
-    async def test_generate_json_report(self, report_generator, mock_consolidation_service, mock_consolidation, mock_user):
+    async def test_generate_json_report(
+        self,
+        report_generator,
+        mock_consolidation_service,
+        mock_consolidation,
+        mock_user,
+    ):
         """Test JSON report generation"""
         # Setup mocks
         mock_consolidation_service.get_consolidation.return_value = mock_consolidation
-        mock_consolidation_service.list_consolidations.return_value = [MagicMock(id=mock_consolidation.id)]
+        mock_consolidation_service.list_consolidations.return_value = [
+            MagicMock(id=mock_consolidation.id)
+        ]
 
         # Generate report
         result = await report_generator.generate_sec_report(
@@ -108,7 +117,7 @@ class TestSECReportGenerator:
             format_type="json",
             include_entity_breakdown=True,
             include_audit_trail=False,
-            user=mock_user
+            user=mock_user,
         )
 
         # Assertions
@@ -128,11 +137,19 @@ class TestSECReportGenerator:
         assert summary["data_completeness_score"] == 0.95
 
     @pytest.mark.asyncio
-    async def test_generate_pdf_report(self, report_generator, mock_consolidation_service, mock_consolidation, mock_user):
+    async def test_generate_pdf_report(
+        self,
+        report_generator,
+        mock_consolidation_service,
+        mock_consolidation,
+        mock_user,
+    ):
         """Test PDF report generation"""
         # Setup mocks
         mock_consolidation_service.get_consolidation.return_value = mock_consolidation
-        mock_consolidation_service.list_consolidations.return_value = [MagicMock(id=mock_consolidation.id)]
+        mock_consolidation_service.list_consolidations.return_value = [
+            MagicMock(id=mock_consolidation.id)
+        ]
 
         # Generate report
         result = await report_generator.generate_sec_report(
@@ -141,7 +158,7 @@ class TestSECReportGenerator:
             format_type="pdf",
             include_entity_breakdown=True,
             include_audit_trail=False,
-            user=mock_user
+            user=mock_user,
         )
 
         # Assertions
@@ -153,11 +170,19 @@ class TestSECReportGenerator:
         assert isinstance(result["content"], bytes)
 
     @pytest.mark.asyncio
-    async def test_generate_excel_report(self, report_generator, mock_consolidation_service, mock_consolidation, mock_user):
+    async def test_generate_excel_report(
+        self,
+        report_generator,
+        mock_consolidation_service,
+        mock_consolidation,
+        mock_user,
+    ):
         """Test Excel report generation"""
         # Setup mocks
         mock_consolidation_service.get_consolidation.return_value = mock_consolidation
-        mock_consolidation_service.list_consolidations.return_value = [MagicMock(id=mock_consolidation.id)]
+        mock_consolidation_service.list_consolidations.return_value = [
+            MagicMock(id=mock_consolidation.id)
+        ]
 
         # Generate report
         result = await report_generator.generate_sec_report(
@@ -166,24 +191,36 @@ class TestSECReportGenerator:
             format_type="excel",
             include_entity_breakdown=True,
             include_audit_trail=False,
-            user=mock_user
+            user=mock_user,
         )
 
         # Assertions
         assert "filename" in result
         assert "content_type" in result
         assert "content" in result
-        assert result["content_type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        assert (
+            result["content_type"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         assert "SEC_Climate_Disclosure" in result["filename"]
         assert ".xlsx" in result["filename"]
         assert isinstance(result["content"], bytes)
 
     @pytest.mark.asyncio
-    async def test_audit_trail_inclusion_admin_only(self, report_generator, mock_consolidation_service, mock_consolidation, mock_user, mock_admin_user):
+    async def test_audit_trail_inclusion_admin_only(
+        self,
+        report_generator,
+        mock_consolidation_service,
+        mock_consolidation,
+        mock_user,
+        mock_admin_user,
+    ):
         """Test that audit trail is only included for admin users"""
         # Setup mocks
         mock_consolidation_service.get_consolidation.return_value = mock_consolidation
-        mock_consolidation_service.list_consolidations.return_value = [MagicMock(id=mock_consolidation.id)]
+        mock_consolidation_service.list_consolidations.return_value = [
+            MagicMock(id=mock_consolidation.id)
+        ]
 
         # Test regular user - should not include audit trail
         result_regular = await report_generator.generate_sec_report(
@@ -192,7 +229,7 @@ class TestSECReportGenerator:
             format_type="json",
             include_entity_breakdown=True,
             include_audit_trail=True,
-            user=mock_user
+            user=mock_user,
         )
 
         assert "audit_trail" not in result_regular
@@ -204,7 +241,7 @@ class TestSECReportGenerator:
             format_type="json",
             include_entity_breakdown=True,
             include_audit_trail=True,
-            user=mock_admin_user
+            user=mock_admin_user,
         )
 
         assert "audit_trail" in result_admin
@@ -264,7 +301,9 @@ class TestSECReportGenerator:
         assert entity["consolidated_emissions"]["total_mtco2e"] == 650.0
 
     @pytest.mark.asyncio
-    async def test_error_handling_no_consolidation(self, report_generator, mock_consolidation_service):
+    async def test_error_handling_no_consolidation(
+        self, report_generator, mock_consolidation_service
+    ):
         """Test error handling when no consolidation is found"""
         from fastapi import HTTPException
 
@@ -277,20 +316,24 @@ class TestSECReportGenerator:
                 company_id=uuid4(),
                 reporting_year=2024,
                 format_type="json",
-                user=MagicMock()
+                user=MagicMock(),
             )
 
         assert exc_info.value.status_code == 404
         assert "No consolidations found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_invalid_format_type(self, report_generator, mock_consolidation_service, mock_consolidation):
+    async def test_invalid_format_type(
+        self, report_generator, mock_consolidation_service, mock_consolidation
+    ):
         """Test error handling for invalid format type"""
         from fastapi import HTTPException
 
         # Setup mocks
         mock_consolidation_service.get_consolidation.return_value = mock_consolidation
-        mock_consolidation_service.list_consolidations.return_value = [MagicMock(id=mock_consolidation.id)]
+        mock_consolidation_service.list_consolidations.return_value = [
+            MagicMock(id=mock_consolidation.id)
+        ]
 
         # Should raise HTTPException for invalid format
         with pytest.raises(HTTPException) as exc_info:
@@ -298,7 +341,7 @@ class TestSECReportGenerator:
                 company_id=uuid4(),
                 reporting_year=2024,
                 format_type="invalid_format",
-                user=MagicMock()
+                user=MagicMock(),
             )
 
         assert exc_info.value.status_code == 400
@@ -316,7 +359,7 @@ class TestSECCompliance:
             "executive_summary",
             "emissions_tables",
             "methodology",
-            "status"
+            "status",
         ]
 
         # Mock report structure
@@ -324,7 +367,7 @@ class TestSECCompliance:
             "executive_summary": {},
             "emissions_tables": {},
             "methodology": {},
-            "status": {}
+            "status": {},
         }
 
         for section in required_sections:
@@ -337,7 +380,7 @@ class TestSECCompliance:
             {
                 "source_category": "Stationary Combustion",
                 "emissions_mtco2e": 1000.0,
-                "percentage_of_total": 50.0
+                "percentage_of_total": 50.0,
             }
         ]
 
@@ -355,7 +398,7 @@ class TestSECCompliance:
                 "completeness": 0.95,
                 "accuracy": 0.92,
                 "consistency": "Cross-validated",
-                "transparency": "Full audit trail"
+                "transparency": "Full audit trail",
             }
         }
 

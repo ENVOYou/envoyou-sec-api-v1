@@ -24,6 +24,11 @@ if "sqlite" in settings.DATABASE_URL:
     )
 else:
     # Enhanced PostgreSQL connection with SSL and timeout settings
+    # Use require for production/staging (Neon), prefer for local development
+    ssl_mode = (
+        "require" if settings.ENVIRONMENT in ["staging", "production"] else "prefer"
+    )
+
     engine = create_engine(
         settings.DATABASE_URL,
         poolclass=QueuePool,
@@ -32,7 +37,7 @@ else:
         pool_pre_ping=True,
         echo=settings.DEBUG,
         connect_args={
-            "sslmode": "prefer",  # Allow non-SSL for local development
+            "sslmode": ssl_mode,
             "connect_timeout": 10,  # Connection timeout
             "options": "-c statement_timeout=30000",  # 30 second query timeout
         },

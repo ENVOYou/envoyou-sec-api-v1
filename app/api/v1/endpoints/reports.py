@@ -19,10 +19,13 @@ router = APIRouter()
 
 # SEC Report Generation Endpoints
 
+
 @router.get("/generate/{company_id}")
 async def generate_sec_report(
     company_id: UUID,
-    reporting_year: int = Query(..., description="Reporting year for the SEC disclosure"),
+    reporting_year: int = Query(
+        ..., description="Reporting year for the SEC disclosure"
+    ),
     consolidation_id: Optional[UUID] = Query(
         None, description="Specific consolidation ID to use"
     ),
@@ -70,7 +73,7 @@ async def generate_sec_report(
                 media_type=result["content_type"],
                 headers={
                     "Content-Disposition": f"attachment; filename={result['filename']}"
-                }
+                },
             )
         else:
             # Return JSON data
@@ -230,7 +233,7 @@ async def get_consolidation_report(
                     media_type=result["content_type"],
                     headers={
                         "Content-Disposition": f"attachment; filename={result['filename']}"
-                    }
+                    },
                 )
             else:
                 # Return JSON data
@@ -238,7 +241,9 @@ async def get_consolidation_report(
 
         except Exception as e:
             if "not found" in str(e).lower():
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+                )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error generating consolidation report: {str(e)}",
