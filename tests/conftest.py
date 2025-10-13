@@ -188,6 +188,11 @@ def cfo_user(db_session):
     """Create a CFO test user"""
     security = SecurityUtils()
 
+    # Check if user already exists
+    existing_user = db_session.query(User).filter(User.username == "cfo").first()
+    if existing_user:
+        return existing_user
+
     user = User(
         email="cfo@example.com",
         username="cfo",
@@ -212,6 +217,13 @@ def auditor_user(db_session):
 
     security = SecurityUtils()
     unique_id = str(uuid.uuid4())[:8]
+
+    # Check if user already exists
+    existing_user = (
+        db_session.query(User).filter(User.username == f"auditor{unique_id}").first()
+    )
+    if existing_user:
+        return existing_user
 
     user = User(
         email=f"auditor{unique_id}@example.com",

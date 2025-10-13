@@ -218,6 +218,8 @@ def receive_before_update(mapper, connection, target):
 @event.listens_for(Report, "after_insert")
 def receive_after_insert(mapper, connection, target):
     """Create initial revision after report creation"""
+    from datetime import datetime
+
     from sqlalchemy.orm import sessionmaker
 
     Session = sessionmaker(bind=connection)
@@ -231,6 +233,7 @@ def receive_after_insert(mapper, connection, target):
             changed_by=target.created_by,
             change_type="create",
             changes_summary="Initial report creation",
+            created_at=datetime.utcnow(),
         )
         session.add(revision)
         session.commit()

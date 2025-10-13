@@ -5,15 +5,16 @@ Revises: 20251009_add_reports
 Create Date: 2025-10-14 00:01:36.275703
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '00cba2a7ee84'
-down_revision: Union[str, None] = '20251009_add_reports'
+revision: str = "00cba2a7ee84"
+down_revision: Union[str, None] = "20251009_add_reports"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -26,561 +27,973 @@ def upgrade() -> None:
     # op.drop_index('ix_audit_logs_request_id', table_name='audit_logs')
     # op.drop_index('ix_audit_logs_user_id', table_name='audit_logs')
     # op.drop_table('audit_logs')
-    op.alter_column('activity_data', 'calculation_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('activity_data', 'emission_factor_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('activity_data', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('activity_data', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('activity_data', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('approval_requests', 'workflow_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('approval_requests', 'assigned_to',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('approval_requests', 'delegated_to',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('approval_requests', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('approval_requests', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('approval_requests', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('calculation_audit_trails', 'calculation_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('calculation_audit_trails', 'user_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('calculation_audit_trails', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('companies', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('companies', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('companies', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('company_entities', 'company_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('company_entities', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('company_entities', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('company_entities', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidated_emissions', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidated_emissions', 'company_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidated_emissions', 'approved_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidated_emissions', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidated_emissions', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidation_audit_trail', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidation_audit_trail', 'consolidation_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidation_audit_trail', 'user_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidation_audit_trail', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidation_audit_trail', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emission_factors', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('emission_factors', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emission_factors', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'company_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('emissions_calculations', 'entity_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'calculated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('emissions_calculations', 'reviewed_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'approved_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('emissions_calculations', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('epa_data_updates', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('epa_data_updates', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('epa_data_updates', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('epa_data_validations', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('notification_queue', 'workflow_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('notification_queue', 'recipient_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('notification_queue', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('notification_queue', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('notification_queue', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.add_column('report_locks', sa.Column('unlocked_at', sa.DateTime(), nullable=True))
-    op.add_column('report_locks', sa.Column('unlocked_by', sa.String(length=36), nullable=True))
-    op.create_foreign_key(None, 'report_locks', 'users', ['unlocked_by'], ['id'])
-    op.alter_column('users', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('users', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('users', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_history', 'workflow_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_history', 'actor_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_history', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_history', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_history', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_templates', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_templates', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_templates', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('workflows', 'template_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'subject_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'initiated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
-    op.alter_column('workflows', 'updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.String(length=36),
-               existing_nullable=True)
+    op.alter_column(
+        "activity_data",
+        "calculation_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "activity_data",
+        "emission_factor_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "activity_data",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "activity_data",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "activity_data",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "approval_requests",
+        "workflow_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "approval_requests",
+        "assigned_to",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "approval_requests",
+        "delegated_to",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "approval_requests",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "approval_requests",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "approval_requests",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "calculation_audit_trails",
+        "calculation_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "calculation_audit_trails",
+        "user_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "calculation_audit_trails",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "companies",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "companies",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "companies",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "company_entities",
+        "company_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "company_entities",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "company_entities",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "company_entities",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "company_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "approved_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "consolidation_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "user_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emission_factors",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emission_factors",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emission_factors",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "company_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "entity_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "calculated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "reviewed_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "approved_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "epa_data_updates",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "epa_data_updates",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "epa_data_updates",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "epa_data_validations",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "notification_queue",
+        "workflow_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "notification_queue",
+        "recipient_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "notification_queue",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "notification_queue",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "notification_queue",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.add_column(
+        "report_locks", sa.Column("unlocked_at", sa.DateTime(), nullable=True)
+    )
+    op.add_column(
+        "report_locks", sa.Column("unlocked_by", sa.String(length=36), nullable=True)
+    )
+    op.create_foreign_key(None, "report_locks", "users", ["unlocked_by"], ["id"])
+    op.alter_column(
+        "users",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "users",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "users",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_history",
+        "workflow_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_history",
+        "actor_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_history",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_history",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_history",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_templates",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_templates",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_templates",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflows",
+        "template_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "subject_id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "initiated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "id",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "created_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflows",
+        "updated_by",
+        existing_type=sa.VARCHAR(length=36),
+        type_=sa.String(length=36),
+        existing_nullable=True,
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.alter_column('workflows', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('workflows', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('workflows', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'initiated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'subject_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflows', 'template_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_templates', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_templates', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_templates', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_history', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_history', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('workflow_history', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_history', 'actor_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('workflow_history', 'workflow_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('users', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('users', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('users', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.drop_constraint(None, 'report_locks', type_='foreignkey')
-    op.drop_column('report_locks', 'unlocked_by')
-    op.drop_column('report_locks', 'unlocked_at')
-    op.alter_column('notification_queue', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('notification_queue', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('notification_queue', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('notification_queue', 'recipient_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('notification_queue', 'workflow_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('epa_data_validations', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('epa_data_updates', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('epa_data_updates', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('epa_data_updates', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('emissions_calculations', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('emissions_calculations', 'approved_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'reviewed_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'calculated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('emissions_calculations', 'entity_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emissions_calculations', 'company_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('emission_factors', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emission_factors', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('emission_factors', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidation_audit_trail', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidation_audit_trail', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidation_audit_trail', 'user_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidation_audit_trail', 'consolidation_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidation_audit_trail', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidated_emissions', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidated_emissions', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidated_emissions', 'approved_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('consolidated_emissions', 'company_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('consolidated_emissions', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('company_entities', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('company_entities', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('company_entities', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('company_entities', 'company_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('companies', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('companies', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('companies', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('calculation_audit_trails', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('calculation_audit_trails', 'user_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('calculation_audit_trails', 'calculation_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('approval_requests', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('approval_requests', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('approval_requests', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('approval_requests', 'delegated_to',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('approval_requests', 'assigned_to',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('approval_requests', 'workflow_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('activity_data', 'updated_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('activity_data', 'created_by',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('activity_data', 'id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-    op.alter_column('activity_data', 'emission_factor_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-    op.alter_column('activity_data', 'calculation_id',
-               existing_type=sa.String(length=36),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
+    op.alter_column(
+        "workflows",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflows",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflows",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "initiated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "subject_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflows",
+        "template_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_templates",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_templates",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_templates",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_history",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_history",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "workflow_history",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_history",
+        "actor_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "workflow_history",
+        "workflow_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "users",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "users",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "users",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.drop_constraint(None, "report_locks", type_="foreignkey")
+    op.drop_column("report_locks", "unlocked_by")
+    op.drop_column("report_locks", "unlocked_at")
+    op.alter_column(
+        "notification_queue",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "notification_queue",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "notification_queue",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "notification_queue",
+        "recipient_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "notification_queue",
+        "workflow_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "epa_data_validations",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "epa_data_updates",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "epa_data_updates",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "epa_data_updates",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "approved_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "reviewed_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "calculated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "entity_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emissions_calculations",
+        "company_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "emission_factors",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emission_factors",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "emission_factors",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "user_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "consolidation_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidation_audit_trail",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "approved_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "company_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "consolidated_emissions",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "company_entities",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "company_entities",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "company_entities",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "company_entities",
+        "company_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "companies",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "companies",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "companies",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "calculation_audit_trails",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "calculation_audit_trails",
+        "user_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "calculation_audit_trails",
+        "calculation_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "approval_requests",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "approval_requests",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "approval_requests",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "approval_requests",
+        "delegated_to",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "approval_requests",
+        "assigned_to",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "approval_requests",
+        "workflow_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "activity_data",
+        "updated_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "activity_data",
+        "created_by",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "activity_data",
+        "id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
+    op.alter_column(
+        "activity_data",
+        "emission_factor_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=True,
+    )
+    op.alter_column(
+        "activity_data",
+        "calculation_id",
+        existing_type=sa.String(length=36),
+        type_=sa.VARCHAR(length=36),
+        existing_nullable=False,
+    )
     # Skip audit_logs creation as it's not needed for current schema
     # op.create_table('audit_logs',
     # ...

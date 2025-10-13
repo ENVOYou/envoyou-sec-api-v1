@@ -3,6 +3,7 @@ Report Schemas for Audit Lock and Collaboration
 Pydantic models for report locking, comments, and revision tracking
 """
 
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
@@ -66,8 +67,11 @@ class CommentResponse(BaseModel):
     content: str
     comment_type: str
     is_resolved: bool
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ReportCommentList(BaseModel):
@@ -87,7 +91,10 @@ class RevisionResponse(BaseModel):
     change_type: str
     changes_summary: Optional[str] = None
     previous_version: Optional[str] = None
-    created_at: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ReportRevisionList(BaseModel):

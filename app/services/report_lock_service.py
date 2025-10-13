@@ -72,10 +72,12 @@ class ReportLockService:
             )
 
         # Create lock
-        expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours)
+        locked_at = datetime.utcnow()
+        expires_at = locked_at + timedelta(hours=expires_in_hours)
         lock = ReportLock(
             report_id=report_id,
             locked_by=user.id,
+            locked_at=locked_at,
             lock_reason=lock_reason,
             expires_at=expires_at,
             is_active=True,
@@ -90,7 +92,7 @@ class ReportLockService:
 
         return lock
 
-    def unlock_report(self, report_id: UUID, user: User) -> bool:
+    def unlock_report(self, report_id: str, user: User) -> bool:
         """
         Unlock a report
 
@@ -204,12 +206,15 @@ class ReportLockService:
             )
 
         # Create comment
+        now = datetime.utcnow()
         comment = Comment(
             report_id=report_id,
             user_id=user.id,
             content=comment_data.content,
             comment_type=comment_data.comment_type,
             parent_id=comment_data.parent_id,
+            created_at=now,
+            updated_at=now,
         )
 
         self.db.add(comment)
@@ -218,22 +223,28 @@ class ReportLockService:
 
         return comment
 
-    def get_comments(self, report_id: UUID) -> List[Comment]:
+    def get_comments(
+        self, report_id: UUID, parent_id: Optional[str] = None
+    ) -> List[Comment]:
         """
         Get all comments for a report
 
         Args:
             report_id: Report UUID
+            parent_id: Optional parent comment ID for threaded comments
 
         Returns:
             List of comments
         """
-        return (
-            self.db.query(Comment)
-            .filter(Comment.report_id == report_id)
-            .order_by(Comment.created_at.desc())
-            .all()
-        )
+        query = self.db.query(Comment).filter(Comment.report_id == report_id)
+
+        if parent_id:
+            query = query.filter(Comment.parent_id == parent_id)
+        else:
+            # Get only top-level comments if no parent_id specified
+            query = query.filter(Comment.parent_id.is_(None))
+
+        return query.order_by(Comment.created_at.desc()).all()
 
     def resolve_comment(self, comment_id: UUID, user: User) -> Comment:
         """
@@ -266,7 +277,7 @@ class ReportLockService:
         return comment
 
     def create_revision(
-        self, report_id: UUID, user: User, revision_data: RevisionCreate
+        self, report_id: UUID, user: User, change_type: str, changes_summary: str
     ) -> Revision:
         """
         Create a revision for a report
@@ -308,9 +319,10 @@ class ReportLockService:
             version=report.version,
             revision_number=next_revision_number,
             changed_by=user.id,
-            change_type=revision_data.change_type,
-            changes_summary=revision_data.changes_summary,
-            previous_version=revision_data.previous_version,
+            change_type=change_type,
+            changes_summary=changes_summary,
+            previous_version=None,
+            created_at=datetime.utcnow(),
         )
 
         self.db.add(revision)

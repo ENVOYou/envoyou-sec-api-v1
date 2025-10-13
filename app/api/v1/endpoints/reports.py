@@ -54,16 +54,17 @@ async def lock_report(
             expires_in_hours=lock_data.expires_in_hours or 24,
         )
         return LockReportResponse(
-            success=True,
-            message="Report locked successfully",
-            lock_info=ReportLockInfo(
-                is_locked=True,
-                locked_by=str(lock.locked_by),
-                locked_at=lock.locked_at.isoformat(),
-                lock_reason=lock.lock_reason,
-                expires_at=lock.expires_at.isoformat() if lock.expires_at else None,
-            ),
+            id=str(lock.id),
+            report_id=str(lock.report_id),
+            locked_by=str(lock.locked_by),
+            lock_reason=lock.lock_reason,
+            locked_at=lock.locked_at.isoformat() if lock.locked_at else None,
+            expires_at=lock.expires_at.isoformat() if lock.expires_at else None,
+            is_active=lock.is_active,
         )
+    except HTTPException:
+        # Re-raise HTTPException as-is to preserve status code
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
@@ -87,13 +88,12 @@ async def unlock_report(
         service = ReportLockService(db)
         result = service.unlock_report(
             report_id=report_id,
-            user_id=str(current_user.id),
+            user=current_user,
         )
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    except PermissionError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        return {"success": result}
+    except HTTPException:
+        # Re-raise HTTPException as-is to preserve status code
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -176,10 +176,13 @@ async def add_comment_to_report(
         service = ReportLockService(db)
         result = service.add_comment(
             report_id=report_id,
-            user_id=str(current_user.id),
+            user=current_user,
             comment_data=comment_data,
         )
         return result
+    except HTTPException:
+        # Re-raise HTTPException as-is to preserve status code
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -229,9 +232,12 @@ async def resolve_report_comment(
         service = ReportLockService(db)
         result = service.resolve_comment(
             comment_id=comment_id,
-            user_id=str(current_user.id),
+            user=current_user,
         )
         return result
+    except HTTPException:
+        # Re-raise HTTPException as-is to preserve status code
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
@@ -258,11 +264,14 @@ async def create_report_revision(
         service = ReportLockService(db)
         result = service.create_revision(
             report_id=report_id,
-            user_id=str(current_user.id),
+            user=current_user,
             change_type=change_type,
             changes_summary=changes_summary,
         )
         return result
+    except HTTPException:
+        # Re-raise HTTPException as-is to preserve status code
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:

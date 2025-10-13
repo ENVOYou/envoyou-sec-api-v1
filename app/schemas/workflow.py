@@ -160,18 +160,27 @@ class ApprovalRequestResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class ApprovalActionRequest(BaseModel):
+class ApprovalRequest(BaseModel):
     """Schema for taking action on approval requests"""
 
-    action: ApprovalAction = Field(..., description="Action to take")
+    decision: str = Field(..., description="Decision: approve, reject, request_changes")
     comments: Optional[str] = Field(
-        None, max_length=2000, description="Comments for the action"
+        None, max_length=2000, description="Comments for the decision"
     )
-    delegate_to: Optional[UUID] = Field(
-        None, description="User to delegate to (if action is delegate)"
-    )
-    delegation_reason: Optional[str] = Field(None, description="Reason for delegation")
-    metadata: Optional[Dict] = Field(None, description="Additional action metadata")
+    attachments: Optional[List[str]] = Field(None, description="Attachment URLs")
+
+
+class ApprovalResponse(BaseModel):
+    """Schema for approval response"""
+
+    workflow_id: str
+    decision: str
+    approved_by: str
+    approved_at: datetime
+    next_stage: Optional[str]
+    workflow_completed: bool
+    final_status: Optional[str]
+    comments: Optional[str]
 
 
 class WorkflowHistoryResponse(BaseModel):
@@ -266,6 +275,20 @@ class WorkflowMetrics(BaseModel):
     average_response_time_by_role: Dict[UserRole, float]
 
 
+class ApprovalActionRequest(BaseModel):
+    """Schema for taking action on approval requests"""
+
+    action: ApprovalAction = Field(..., description="Action to take")
+    comments: Optional[str] = Field(
+        None, max_length=2000, description="Comments for the action"
+    )
+    delegate_to: Optional[UUID] = Field(
+        None, description="User to delegate to (if action is delegate)"
+    )
+    delegation_reason: Optional[str] = Field(None, description="Reason for delegation")
+    metadata: Optional[Dict] = Field(None, description="Additional action metadata")
+
+
 class BulkApprovalRequest(BaseModel):
     """Schema for bulk approval actions"""
 
@@ -275,6 +298,13 @@ class BulkApprovalRequest(BaseModel):
     action: ApprovalAction = Field(..., description="Action to take on all requests")
     comments: Optional[str] = Field(None, description="Comments for all approvals")
     metadata: Optional[Dict] = Field(None, description="Additional metadata")
+
+
+class WorkflowStatusUpdate(BaseModel):
+    """Schema for updating workflow status"""
+
+    status: str = Field(..., description="New workflow status")
+    reason: Optional[str] = Field(None, description="Reason for status change")
 
 
 class WorkflowSearchRequest(BaseModel):
