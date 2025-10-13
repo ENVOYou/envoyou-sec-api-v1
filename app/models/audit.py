@@ -50,17 +50,7 @@ class AuditEntry(Base):
 
     __tablename__ = "audit_entries"
 
-    id = Column(
-        (
-            PGUUID(as_uuid=True)
-            if "postgresql" in str(Base.metadata.bind.url)
-            else String(36)
-        ),
-        primary_key=True,
-        default=lambda: (
-            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
-        ),
-    )
+    id = Column(get_uuid_column_type(), primary_key=True, default=get_uuid_default())
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     user_id = Column(String(255), nullable=False, index=True)
     action = Column(String(100), nullable=False, index=True)
@@ -205,17 +195,7 @@ class DataLineage(Base):
 
     __tablename__ = "data_lineage"
 
-    id = Column(
-        (
-            PGUUID(as_uuid=True)
-            if "postgresql" in str(Base.metadata.bind.url)
-            else String(36)
-        ),
-        primary_key=True,
-        default=lambda: (
-            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
-        ),
-    )
+    id = Column(get_uuid_column_type(), primary_key=True, default=get_uuid_default())
     entity_type = Column(String(100), nullable=False)
     entity_id = Column(String(255), nullable=False)
     parent_entity_type = Column(String(100), nullable=True)
