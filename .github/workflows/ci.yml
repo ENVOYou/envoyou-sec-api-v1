@@ -9,11 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/envoyou_sec_test
-      REDIS_URL: redis://localhost:6379/0
-      SECRET_KEY: test-secret-key-for-ci
-      ENVIRONMENT: testing
 
     services:
       postgres:
@@ -62,10 +57,36 @@ jobs:
           pip install -r requirements-dev.txt
           pip install pytest pytest-asyncio pytest-cov
 
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/envoyou_sec_test
+          REDIS_URL=redis://localhost:6379/0
+          SECRET_KEY=test-secret-key-for-ci
+          ENVIRONMENT=testing
+          EOF
+
       # Environment variables now set at job level above
 
       - name: Run database migrations
-        run: alembic upgrade head
+        run: |
+          python3 -c "
+import os
+from alembic.config import Config
+from alembic import command
+
+# Load environment from .env file
+with open('.env', 'r') as f:
+   for line in f:
+       if '=' in line:
+           key, value = line.strip().split('=', 1)
+           os.environ[key] = value
+
+# Run migration
+alembic_cfg = Config('alembic.ini')
+command.upgrade(alembic_cfg, 'head')
+print('Database migration completed successfully!')
+"
 
       - name: Run tests with coverage
         run: |
