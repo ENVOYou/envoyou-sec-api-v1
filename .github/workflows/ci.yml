@@ -71,22 +71,22 @@ jobs:
       - name: Run database migrations
         run: |
           python3 -c "
-import os
-from alembic.config import Config
-from alembic import command
+          import os
+          from alembic.config import Config
+          from alembic import command
 
-# Load environment from .env file
-with open('.env', 'r') as f:
-   for line in f:
-       if '=' in line:
-           key, value = line.strip().split('=', 1)
-           os.environ[key] = value
+          # Load environment from .env file
+          with open('.env', 'r') as f:
+            for line in f:
+                if '=' in line:
+                    key, value = line.strip().split('=', 1)
+                    os.environ[key] = value
 
-# Run migration
-alembic_cfg = Config('alembic.ini')
-command.upgrade(alembic_cfg, 'head')
-print('Database migration completed successfully!')
-"
+          # Run migration
+          alembic_cfg = Config('alembic.ini')
+          command.upgrade(alembic_cfg, 'head')
+          print('Database migration completed successfully!')
+          "
 
       - name: Run tests with coverage
         run: |
