@@ -1,6 +1,6 @@
 """Add report locking and collaboration features
 
-Revision ID: 20251009_add_report_locking_and_collaboration
+Revision ID: 20251009_add_reports
 Revises: 96687e9fd0aa
 Create Date: 2025-10-09 14:41:00.000000
 
@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "20251009_add_report_locking_and_collaboration"
+revision = "20251009_add_reports"
 down_revision = "96687e9fd0aa"
 branch_labels = None
 depends_on = None
