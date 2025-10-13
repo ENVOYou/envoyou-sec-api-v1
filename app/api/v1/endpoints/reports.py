@@ -6,21 +6,83 @@ SEC-compliant report generation in multiple formats
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.services.emissions_consolidation_service import EmissionsConsolidationService
+from app.services.report_generator_service import SECReportGenerator
 
 router = APIRouter()
 
 
-# Placeholder - will be implemented in later tasks
-@router.get("/")
-async def reports_placeholder():
-    """Placeholder for reports endpoints"""
-    return {"message": "Reports endpoints - Coming soon"}
+# SEC Report Generation Endpoints
+
+@router.get("/generate/{company_id}")
+async def generate_sec_report(
+    company_id: UUID,
+    reporting_year: int = Query(..., description="Reporting year for the SEC disclosure"),
+    consolidation_id: Optional[UUID] = Query(
+        None, description="Specific consolidation ID to use"
+    ),
+    format: str = Query("json", description="Report format: json, pdf, excel"),
+    include_entity_breakdown: bool = Query(
+        True, description="Include entity-level breakdown"
+    ),
+    include_audit_trail: bool = Query(
+        False, description="Include audit trail (admin only)"
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate SEC-compliant climate disclosure report
+
+    This endpoint creates comprehensive SEC Climate Disclosure Rule compliant
+    reports in multiple formats (JSON, PDF, Excel) based on consolidated
+    emissions data.
+
+    **Features:**
+    - Executive summary with key metrics
+    - Emissions tables formatted for SEC compliance
+    - Methodology and data quality disclosures
+    - Entity-level breakdown (optional)
+    - Audit trail integration (admin only)
+    """
+    report_generator = SECReportGenerator(db)
+
+    try:
+        result = await report_generator.generate_sec_report(
+            company_id=company_id,
+            reporting_year=reporting_year,
+            consolidation_id=consolidation_id,
+            format_type=format,
+            include_entity_breakdown=include_entity_breakdown,
+            include_audit_trail=include_audit_trail,
+            user=current_user,
+        )
+
+        if format.lower() in ["pdf", "excel"]:
+            # Return file download
+            return Response(
+                content=result["content"],
+                media_type=result["content_type"],
+                headers={
+                    "Content-Disposition": f"attachment; filename={result['filename']}"
+                }
+            )
+        else:
+            # Return JSON data
+            return result
+
+    except Exception as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating SEC report: {str(e)}",
+        )
 
 
 # Consolidation Integration for Reports
@@ -147,25 +209,39 @@ async def get_consolidation_report(
                 "message": "Audit trail integration pending - will be available in future version"
             }
 
-        # Handle different formats
-        if format.lower() == "json":
-            return report
-        elif format.lower() == "pdf":
-            return {
-                "message": "PDF generation not yet implemented",
-                "report_data": report,
-                "format": "pdf",
-            }
-        elif format.lower() == "excel":
-            return {
-                "message": "Excel generation not yet implemented",
-                "report_data": report,
-                "format": "excel",
-            }
-        else:
+        # Use new SEC report generator service
+        report_generator = SECReportGenerator(db)
+
+        try:
+            result = await report_generator.generate_sec_report(
+                company_id=company_id,
+                reporting_year=reporting_year,
+                consolidation_id=consolidation_id,
+                format_type=format,
+                include_entity_breakdown=include_entity_breakdown,
+                include_audit_trail=include_audit_trail,
+                user=current_user,
+            )
+
+            if format.lower() in ["pdf", "excel"]:
+                # Return file download
+                return Response(
+                    content=result["content"],
+                    media_type=result["content_type"],
+                    headers={
+                        "Content-Disposition": f"attachment; filename={result['filename']}"
+                    }
+                )
+            else:
+                # Return JSON data
+                return result
+
+        except Exception as e:
+            if "not found" in str(e).lower():
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported format: {format}. Supported formats: json, pdf, excel",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error generating consolidation report: {str(e)}",
             )
 
     except Exception as e:
