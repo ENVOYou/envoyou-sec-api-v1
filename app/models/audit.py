@@ -19,6 +19,7 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.dialects.sqlite import TEXT
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -29,7 +30,17 @@ class AuditEntry(Base):
 
     __tablename__ = "audit_entries"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(
+        (
+            PGUUID(as_uuid=True)
+            if "postgresql" in str(Base.metadata.bind.url)
+            else String(36)
+        ),
+        primary_key=True,
+        default=lambda: (
+            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
+        ),
+    )
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     user_id = Column(String(255), nullable=False, index=True)
     action = Column(String(100), nullable=False, index=True)
@@ -68,7 +79,17 @@ class AuditSession(Base):
 
     __tablename__ = "audit_sessions"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(
+        (
+            PGUUID(as_uuid=True)
+            if "postgresql" in str(Base.metadata.bind.url)
+            else String(36)
+        ),
+        primary_key=True,
+        default=lambda: (
+            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
+        ),
+    )
     user_id = Column(String(255), nullable=False, index=True)
     session_purpose = Column(String(255), nullable=False)
     status = Column(
@@ -103,7 +124,17 @@ class AuditAnomaly(Base):
 
     __tablename__ = "audit_anomalies"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(
+        (
+            PGUUID(as_uuid=True)
+            if "postgresql" in str(Base.metadata.bind.url)
+            else String(36)
+        ),
+        primary_key=True,
+        default=lambda: (
+            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
+        ),
+    )
     anomaly_id = Column(String(255), nullable=False, unique=True, index=True)
     detected_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     anomaly_type = Column(String(100), nullable=False)
@@ -134,7 +165,17 @@ class AuditReport(Base):
 
     __tablename__ = "audit_reports"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(
+        (
+            PGUUID(as_uuid=True)
+            if "postgresql" in str(Base.metadata.bind.url)
+            else String(36)
+        ),
+        primary_key=True,
+        default=lambda: (
+            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
+        ),
+    )
     report_id = Column(String(255), nullable=False, unique=True, index=True)
     report_type = Column(
         String(100), nullable=False
@@ -174,7 +215,17 @@ class DataLineage(Base):
 
     __tablename__ = "data_lineage"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(
+        (
+            PGUUID(as_uuid=True)
+            if "postgresql" in str(Base.metadata.bind.url)
+            else String(36)
+        ),
+        primary_key=True,
+        default=lambda: (
+            str(uuid4()) if "sqlite" in str(Base.metadata.bind.url) else uuid4
+        ),
+    )
     entity_type = Column(String(100), nullable=False)
     entity_id = Column(String(255), nullable=False)
     parent_entity_type = Column(String(100), nullable=True)
