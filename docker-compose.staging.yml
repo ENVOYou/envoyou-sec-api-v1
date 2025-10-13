@@ -18,7 +18,6 @@ services:
       retries: 3
     logging:
       driver: "journald"
-      
   # Redis cache untuk Staging
   redis:
     image: redis:7-alpine

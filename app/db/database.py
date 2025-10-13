@@ -32,7 +32,7 @@ else:
         pool_pre_ping=True,
         echo=settings.DEBUG,
         connect_args={
-            "sslmode": "require",  # Required for Neon
+            "sslmode": "prefer",  # Allow non-SSL for local development
             "connect_timeout": 10,  # Connection timeout
             "options": "-c statement_timeout=30000",  # 30 second query timeout
         },
