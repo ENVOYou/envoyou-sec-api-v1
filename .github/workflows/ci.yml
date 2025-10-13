@@ -9,6 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/envoyou_sec_test
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: test-secret-key-for-ci
+      ENVIRONMENT: testing
 
     services:
       postgres:
@@ -57,20 +62,10 @@ jobs:
           pip install -r requirements-dev.txt
           pip install pytest pytest-asyncio pytest-cov
 
-      - name: Set up environment variables
-        run: |
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/envoyou_sec_test" >> $GITHUB_ENV
-          echo "REDIS_URL=redis://localhost:6379/0" >> $GITHUB_ENV
-          echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
-          echo "ENVIRONMENT=testing" >> $GITHUB_ENV
+      # Environment variables now set at job level above
 
       - name: Run database migrations
-        run: |
-          export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/envoyou_sec_test
-          export REDIS_URL=redis://localhost:6379/0
-          export SECRET_KEY=test-secret-key-for-ci
-          export ENVIRONMENT=testing
-          alembic upgrade head
+        run: alembic upgrade head
 
       - name: Run tests with coverage
         run: |
