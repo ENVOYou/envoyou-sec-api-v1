@@ -85,6 +85,12 @@ class Report(Base):
                 return lock
         return None
 
+    @property
+    def locked_by(self):
+        """Returns the user ID of who locked the report, if locked."""
+        active_lock = self.active_lock
+        return active_lock.locked_by if active_lock else None
+
 
 class ReportLock(Base):
     """Report locking mechanism for audit periods"""
@@ -106,10 +112,13 @@ class ReportLock(Base):
     )  # "audit", "review", "compliance_check"
     expires_at = Column(DateTime)
     is_active = Column(Boolean, default=True)
+    unlocked_at = Column(DateTime)
+    unlocked_by = Column(String(36), ForeignKey("users.id"))
 
     # Relationships
     report = relationship("Report", back_populates="locks")
-    locked_by_user = relationship("User")
+    locked_by_user = relationship("User", foreign_keys=[locked_by])
+    unlocked_by_user = relationship("User", foreign_keys=[unlocked_by])
 
 
 class Comment(Base):

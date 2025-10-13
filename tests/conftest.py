@@ -73,7 +73,9 @@ def db_session():
         db.rollback()
         try:
             # Disable foreign key constraints temporarily for SQLite
-            db.execute("PRAGMA foreign_keys=OFF")
+            from sqlalchemy import text
+
+            db.execute(text("PRAGMA foreign_keys=OFF"))
 
             # Define cleanup order to handle foreign key dependencies
             cleanup_tables = [
@@ -94,7 +96,7 @@ def db_session():
             # Clean up specific tables first
             for table_name in cleanup_tables:
                 try:
-                    db.execute(f"DELETE FROM {table_name}")
+                    db.execute(text(f"DELETE FROM {table_name}"))
                 except Exception as e:
                     # Skip tables that don't exist
                     continue
@@ -108,10 +110,10 @@ def db_session():
                         continue
 
             # Reset sequences for SQLite
-            db.execute("DELETE FROM sqlite_sequence")
+            db.execute(text("DELETE FROM sqlite_sequence"))
 
             # Re-enable foreign key constraints
-            db.execute("PRAGMA foreign_keys=ON")
+            db.execute(text("PRAGMA foreign_keys=ON"))
             db.commit()
         except Exception as e:
             print(f"Warning: Database cleanup failed: {e}")

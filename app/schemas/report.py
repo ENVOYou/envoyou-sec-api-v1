@@ -96,6 +96,24 @@ class ReportRevisionList(BaseModel):
     revisions: List[RevisionResponse]
 
 
+class ReportLockInfo(BaseModel):
+    """Lock information for a report"""
+
+    is_locked: bool
+    locked_by: Optional[str] = None
+    locked_at: Optional[str] = None
+    lock_reason: Optional[str] = None
+    expires_at: Optional[str] = None
+
+
+class RevisionCreate(BaseModel):
+    """Request to create a revision"""
+
+    change_type: str = Field(..., pattern="^(create|update|approve|reject)$")
+    changes_summary: str = Field(..., min_length=1, max_length=1000)
+    previous_version: Optional[str] = None
+
+
 # Audit mixin for report-related models
 class ReportAuditMixin(AuditMixin):
     """Audit mixin specifically for report models"""

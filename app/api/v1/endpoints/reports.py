@@ -18,6 +18,7 @@ from app.schemas.report import (
     LockReportRequest,
     LockReportResponse,
     ReportCommentList,
+    ReportLockInfo,
     ReportLockStatus,
     ReportRevisionList,
     RevisionResponse,
@@ -46,13 +47,23 @@ async def lock_report(
     """Lock a report for audit or review purposes"""
     try:
         service = ReportLockService(db)
-        result = service.lock_report(
+        lock = service.lock_report(
             report_id=report_id,
-            user_id=str(current_user.id),
+            user=current_user,
             lock_reason=lock_data.lock_reason,
             expires_in_hours=lock_data.expires_in_hours or 24,
         )
-        return result
+        return LockReportResponse(
+            success=True,
+            message="Report locked successfully",
+            lock_info=ReportLockInfo(
+                is_locked=True,
+                locked_by=str(lock.locked_by),
+                locked_at=lock.locked_at.isoformat(),
+                lock_reason=lock.lock_reason,
+                expires_at=lock.expires_at.isoformat() if lock.expires_at else None,
+            ),
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:

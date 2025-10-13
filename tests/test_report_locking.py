@@ -15,34 +15,48 @@ from app.models.user import User, UserRole
 from app.schemas.report import CommentCreate, LockReportRequest
 
 
-@pytest.mark.parametrize("user_role", [UserRole.AUDITOR, UserRole.ADMIN, UserRole.CFO])
-def test_lock_report_success(
-    client: TestClient, db_session: Session, test_user: User, user_role: UserRole
+def test_lock_report_success_auditor(
+    client: TestClient, db_session: Session, auditor_user: User
 ):
-    """Test successful report locking by authorized users"""
+    """Test successful report locking by auditor"""
+    _test_lock_report_success(client, db_session, auditor_user)
+
+
+def test_lock_report_success_admin(
+    client: TestClient, db_session: Session, admin_user: User
+):
+    """Test successful report locking by admin"""
+    _test_lock_report_success(client, db_session, admin_user)
+
+
+def test_lock_report_success_cfo(
+    client: TestClient, db_session: Session, cfo_user: User
+):
+    """Test successful report locking by CFO"""
+    _test_lock_report_success(client, db_session, cfo_user)
+
+
+def _test_lock_report_success(client: TestClient, db_session: Session, user: User):
+    """Helper function for testing successful report locking"""
     # Create test report
     report = Report(
         title="Test Report",
         report_type="sec_10k",
         status="draft",
         version="1.0",
-        created_by=test_user.id,
+        created_by=user.id,
     )
     db_session.add(report)
     db_session.commit()
     db_session.refresh(report)
 
-    # Update user role for this test
-    test_user.role = user_role
-    db_session.commit()
-
-    print(f"DEBUG: test_user.id = {test_user.id}")
-    print(f"DEBUG: test_user.role = {test_user.role}")
+    print(f"DEBUG: user.id = {user.id}")
+    print(f"DEBUG: user.role = {user.role}")
 
     # Lock the report
     lock_data = LockReportRequest(lock_reason="audit", expires_in_hours=24)
-    token = generate_test_token(test_user)
-    print(f"DEBUG: JWT token generated for user {test_user.id}")
+    token = generate_test_token(user)
+    print(f"DEBUG: JWT token generated for user {user.id}")
 
     response = client.post(
         f"/v1/reports/{report.id}/lock",
@@ -58,7 +72,7 @@ def test_lock_report_success(
     # Verify in database
     db_report = db_session.query(Report).filter(Report.id == report.id).first()
     assert db_report.is_locked is True
-    assert db_report.locked_by == test_user.id
+    assert db_report.locked_by == user.id
 
 
 def test_lock_report_unauthorized(
