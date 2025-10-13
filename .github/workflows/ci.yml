@@ -66,7 +66,22 @@ jobs:
 
       - name: Run database migrations
         run: |
-          alembic upgrade head
+          python3 -c "
+          import os
+          from alembic.config import Config
+          from alembic import command
+
+          # Set environment variables for CI
+          os.environ['DATABASE_URL'] = 'postgresql://postgres:postgres@localhost:5432/envoyou_sec_test'
+          os.environ['REDIS_URL'] = 'redis://localhost:6379/0'
+          os.environ['SECRET_KEY'] = 'test-secret-key-for-ci'
+          os.environ['ENVIRONMENT'] = 'testing'
+
+          # Run migration
+          alembic_cfg = Config('alembic.ini')
+          command.upgrade(alembic_cfg, 'head')
+          print('Database migration completed successfully!')
+          "
 
       - name: Run tests with coverage
         run: |
