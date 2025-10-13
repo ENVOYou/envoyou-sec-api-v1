@@ -39,13 +39,13 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.DateTime(),
-            server_default=sa.text("(datetime('now'))"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
         sa.Column(
             "updated_at",
             sa.DateTime(),
-            server_default=sa.text("(datetime('now'))"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
         sa.Column("completed_at", sa.DateTime(), nullable=True),
@@ -79,7 +79,7 @@ def upgrade() -> None:
         sa.Column(
             "locked_at",
             sa.DateTime(),
-            server_default=sa.text("(datetime('now'))"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
         sa.Column("lock_reason", sa.String(length=255), nullable=False),
@@ -119,13 +119,13 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.DateTime(),
-            server_default=sa.text("(datetime('now'))"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
         sa.Column(
             "updated_at",
             sa.DateTime(),
-            server_default=sa.text("(datetime('now'))"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
         sa.ForeignKeyConstraint(
@@ -161,7 +161,7 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.DateTime(),
-            server_default=sa.text("(datetime('now'))"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
         sa.ForeignKeyConstraint(
