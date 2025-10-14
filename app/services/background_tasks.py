@@ -1,314 +1,256 @@
 """
-Background Task Service for EPA Data Management
-Handles automated refresh and maintenance tasks
+Background Task Processing Service
+Handles asynchronous job processing for heavy calculations and long-running tasks
 """
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.database import SessionLocal
-from app.services.epa_cache_service import EPACachedService
+from app.db.database import get_db
+from app.models.user import User
+from app.services.scope1_calculator import Scope1EmissionsCalculator
+from app.services.scope2_calculator import Scope2EmissionsCalculator
 
 logger = logging.getLogger(__name__)
 
 
-class BackgroundTaskManager:
-    """Manages background tasks for EPA data refresh and maintenance"""
+class BackgroundTaskService:
+    """Service for managing background tasks and job processing"""
 
-    def __init__(self):
-        self.tasks: Dict[str, asyncio.Task] = {}
-        self.is_running = False
+    def __init__(self, db: Optional[Session] = None):
+        self.db = db or next(get_db())
+        self.executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="bg_task")
+        self.active_tasks: Dict[str, asyncio.Task] = {}
 
-    async def start_all_tasks(self):
-        """Start all background tasks"""
-        if self.is_running:
-            logger.warning("Background tasks already running")
-            return
+    async def submit_emissions_calculation(
+        self,
+        calculation_type: str,  # "scope1" or "scope2"
+        calculation_data: Dict[str, Any],
+        user_id: str,
+        priority: str = "normal",  # "low", "normal", "high"
+    ) -> str:
+        """
+        Submit emissions calculation for background processing
 
-        self.is_running = True
-        logger.info("Starting background task manager")
+        Args:
+            calculation_type: Type of calculation ("scope1" or "scope2")
+            calculation_data: Calculation input data
+            user_id: User who initiated the calculation
+            priority: Task priority level
 
-        # Start EPA data refresh task
-        self.tasks["epa_refresh"] = asyncio.create_task(self._epa_refresh_task())
+        Returns:
+            Task ID for tracking
+        """
+        task_id = f"calc_{calculation_type}_{UUID().hex[:8]}"
 
-        # Start cache maintenance task
-        self.tasks["cache_maintenance"] = asyncio.create_task(
-            self._cache_maintenance_task()
+        # Create background task
+        task = asyncio.create_task(
+            self._process_emissions_calculation(
+                task_id, calculation_type, calculation_data, user_id
+            )
         )
 
-        # Start health check task
-        self.tasks["health_check"] = asyncio.create_task(self._health_check_task())
+        self.active_tasks[task_id] = task
 
-        logger.info(f"Started {len(self.tasks)} background tasks")
+        # Clean up completed tasks
+        task.add_done_callback(lambda t: self.active_tasks.pop(task_id, None))
 
-    async def stop_all_tasks(self):
-        """Stop all background tasks"""
-        if not self.is_running:
-            return
+        logger.info(f"Submitted background calculation task: {task_id}")
+        return task_id
 
-        logger.info("Stopping background task manager")
+    async def _process_emissions_calculation(
+        self,
+        task_id: str,
+        calculation_type: str,
+        calculation_data: Dict[str, Any],
+        user_id: str,
+    ) -> Dict[str, Any]:
+        """Process emissions calculation in background"""
+        try:
+            logger.info(f"Starting background calculation: {task_id}")
 
-        for task_name, task in self.tasks.items():
+            # Get fresh database session for this task
+            db = next(get_db())
+
+            try:
+                if calculation_type == "scope1":
+                    calculator = Scope1EmissionsCalculator(db)
+                    result = await calculator.calculate_scope1_emissions(
+                        calculation_data, user_id
+                    )
+                elif calculation_type == "scope2":
+                    calculator = Scope2EmissionsCalculator(db)
+                    result = await calculator.calculate_scope2_emissions(
+                        calculation_data, user_id
+                    )
+                else:
+                    raise ValueError(f"Unknown calculation type: {calculation_type}")
+
+                logger.info(f"Completed background calculation: {task_id}")
+                return {
+                    "task_id": task_id,
+                    "status": "completed",
+                    "result": result,
+                    "completed_at": datetime.utcnow().isoformat(),
+                }
+
+            finally:
+                db.close()
+
+        except Exception as e:
+            logger.error(f"Background calculation failed: {task_id} - {str(e)}")
+            return {
+                "task_id": task_id,
+                "status": "failed",
+                "error": str(e),
+                "failed_at": datetime.utcnow().isoformat(),
+            }
+
+    async def submit_bulk_calculation(
+        self, calculations: List[Dict[str, Any]], user_id: str, batch_size: int = 10
+    ) -> str:
+        """
+        Submit bulk calculations for background processing
+
+        Args:
+            calculations: List of calculation requests
+            user_id: User who initiated the calculations
+            batch_size: Number of calculations to process in parallel
+
+        Returns:
+            Batch task ID
+        """
+        batch_task_id = f"batch_calc_{UUID().hex[:8]}"
+
+        task = asyncio.create_task(
+            self._process_bulk_calculations(
+                batch_task_id, calculations, user_id, batch_size
+            )
+        )
+
+        self.active_tasks[batch_task_id] = task
+        task.add_done_callback(lambda t: self.active_tasks.pop(batch_task_id, None))
+
+        logger.info(f"Submitted bulk calculation batch: {batch_task_id}")
+        return batch_task_id
+
+    async def _process_bulk_calculations(
+        self,
+        batch_task_id: str,
+        calculations: List[Dict[str, Any]],
+        user_id: str,
+        batch_size: int,
+    ) -> Dict[str, Any]:
+        """Process bulk calculations in batches"""
+        try:
+            logger.info(f"Starting bulk calculation batch: {batch_task_id}")
+
+            results = []
+            total_calculations = len(calculations)
+
+            # Process in batches
+            for i in range(0, total_calculations, batch_size):
+                batch = calculations[i : i + batch_size]
+                logger.info(f"Processing batch {i//batch_size + 1} of {batch_task_id}")
+
+                # Process batch in parallel
+                batch_tasks = []
+                for calc_data in batch:
+                    calc_type = calc_data.get("scope", "scope1").replace("scope_", "")
+                    task = self.submit_emissions_calculation(
+                        calc_type, calc_data, user_id
+                    )
+                    batch_tasks.append(task)
+
+                # Wait for batch to complete
+                batch_results = await asyncio.gather(
+                    *batch_tasks, return_exceptions=True
+                )
+                results.extend(batch_results)
+
+                # Small delay between batches to prevent overwhelming the system
+                await asyncio.sleep(0.1)
+
+            successful = sum(
+                1
+                for r in results
+                if isinstance(r, dict) and r.get("status") == "completed"
+            )
+            failed = len(results) - successful
+
+            logger.info(
+                f"Completed bulk calculation batch: {batch_task_id} - {successful}/{total_calculations} successful"
+            )
+
+            return {
+                "batch_task_id": batch_task_id,
+                "status": "completed",
+                "total_calculations": total_calculations,
+                "successful": successful,
+                "failed": failed,
+                "results": results,
+                "completed_at": datetime.utcnow().isoformat(),
+            }
+
+        except Exception as e:
+            logger.error(f"Bulk calculation batch failed: {batch_task_id} - {str(e)}")
+            return {
+                "batch_task_id": batch_task_id,
+                "status": "failed",
+                "error": str(e),
+                "failed_at": datetime.utcnow().isoformat(),
+            }
+
+    async def get_task_status(self, task_id: str) -> Dict[str, Any]:
+        """Get status of a background task"""
+        if task_id in self.active_tasks:
+            task = self.active_tasks[task_id]
+            if task.done():
+                try:
+                    return task.result()
+                except Exception as e:
+                    return {"task_id": task_id, "status": "failed", "error": str(e)}
+            else:
+                return {"task_id": task_id, "status": "running"}
+        else:
+            return {"task_id": task_id, "status": "not_found"}
+
+    async def cancel_task(self, task_id: str) -> bool:
+        """Cancel a running background task"""
+        if task_id in self.active_tasks:
+            task = self.active_tasks[task_id]
             if not task.done():
-                logger.info(f"Cancelling task: {task_name}")
                 task.cancel()
                 try:
                     await task
                 except asyncio.CancelledError:
-                    logger.info(f"Task cancelled: {task_name}")
+                    pass
+                return True
+        return False
 
-        self.tasks.clear()
-        self.is_running = False
-        logger.info("All background tasks stopped")
+    async def get_active_tasks(self) -> List[Dict[str, Any]]:
+        """Get list of currently active tasks"""
+        active = []
+        for task_id, task in self.active_tasks.items():
+            if not task.done():
+                active.append({"task_id": task_id, "status": "running"})
+        return active
 
-    async def _epa_refresh_task(self):
-        """Background task for EPA data refresh"""
-        logger.info("EPA refresh task started")
-
-        while True:
-            try:
-                # Wait for the configured interval
-                await asyncio.sleep(settings.EPA_DATA_CACHE_HOURS * 3600)
-
-                logger.info("Starting scheduled EPA data refresh")
-
-                # Create database session
-                db = SessionLocal()
-                try:
-                    async with EPACachedService(db) as epa_service:
-                        refresh_results = await epa_service.refresh_epa_data()
-
-                        if refresh_results["overall_status"] == "success":
-                            logger.info(
-                                "Scheduled EPA data refresh completed successfully"
-                            )
-                        else:
-                            logger.warning(
-                                f"EPA refresh completed with issues: {refresh_results}"
-                            )
-
-                            # Send notification if configured
-                            await self._send_notification(
-                                "EPA Refresh Warning",
-                                f"EPA data refresh completed with issues: {refresh_results}",
-                            )
-
-                finally:
-                    db.close()
-
-            except asyncio.CancelledError:
-                logger.info("EPA refresh task cancelled")
-                break
-            except Exception as e:
-                logger.error(f"Error in EPA refresh task: {str(e)}")
-
-                # Send error notification
-                await self._send_notification(
-                    "EPA Refresh Error", f"EPA data refresh failed: {str(e)}"
-                )
-
-                # Wait before retrying
-                await asyncio.sleep(300)  # 5 minutes
-
-    async def _cache_maintenance_task(self):
-        """Background task for cache maintenance"""
-        logger.info("Cache maintenance task started")
-
-        while True:
-            try:
-                # Run maintenance every 6 hours
-                await asyncio.sleep(6 * 3600)
-
-                logger.info("Starting cache maintenance")
-
-                db = SessionLocal()
-                try:
-                    async with EPACachedService(db) as epa_service:
-                        # Get cache status
-                        cache_status = epa_service.get_cache_status()
-
-                        # Log cache statistics
-                        logger.info(f"Cache status: {cache_status}")
-
-                        # Check for stale cache entries
-                        await self._cleanup_stale_cache(epa_service)
-
-                        # Check memory usage
-                        await self._check_memory_usage(cache_status)
-
-                finally:
-                    db.close()
-
-            except asyncio.CancelledError:
-                logger.info("Cache maintenance task cancelled")
-                break
-            except Exception as e:
-                logger.error(f"Error in cache maintenance task: {str(e)}")
-                await asyncio.sleep(300)  # Wait before retrying
-
-    async def _health_check_task(self):
-        """Background task for system health checks"""
-        logger.info("Health check task started")
-
-        while True:
-            try:
-                # Run health check every 15 minutes
-                await asyncio.sleep(15 * 60)
-
-                db = SessionLocal()
-                try:
-                    async with EPACachedService(db) as epa_service:
-                        # Check database connectivity
-                        db_healthy = await self._check_database_health(db)
-
-                        # Check cache connectivity
-                        cache_healthy = await self._check_cache_health(epa_service)
-
-                        # Check EPA API availability
-                        api_healthy = await self._check_epa_api_health(epa_service)
-
-                        health_status = {
-                            "database": db_healthy,
-                            "cache": cache_healthy,
-                            "epa_api": api_healthy,
-                            "timestamp": datetime.utcnow().isoformat(),
-                        }
-
-                        # Log health status
-                        if all(health_status.values()):
-                            logger.debug(f"System health check: All systems healthy")
-                        else:
-                            logger.warning(f"System health check: {health_status}")
-
-                            # Send alert if any system is unhealthy
-                            await self._send_notification(
-                                "System Health Alert",
-                                f"System health issues detected: {health_status}",
-                            )
-
-                finally:
-                    db.close()
-
-            except asyncio.CancelledError:
-                logger.info("Health check task cancelled")
-                break
-            except Exception as e:
-                logger.error(f"Error in health check task: {str(e)}")
-                await asyncio.sleep(300)  # Wait before retrying
-
-    async def _cleanup_stale_cache(self, epa_service: EPACachedService):
-        """Clean up stale cache entries"""
-        try:
-            # This could be enhanced to remove very old cache entries
-            # For now, just log the cache status
-            cache_status = epa_service.get_cache_status()
-
-            # Check for sources with very old cache
-            for source, status in (
-                cache_status.get("cache", {}).get("sources", {}).items()
-            ):
-                if status.get("cached_at"):
-                    cached_at = datetime.fromisoformat(status["cached_at"])
-                    age_days = (datetime.utcnow() - cached_at).days
-
-                    if age_days > 30:  # Older than 30 days
-                        logger.warning(
-                            f"Very old cache detected for {source}: {age_days} days"
-                        )
-                        # Could implement automatic cleanup here
-
-        except Exception as e:
-            logger.error(f"Error in cache cleanup: {str(e)}")
-
-    async def _check_memory_usage(self, cache_status: Dict[str, Any]):
-        """Check cache memory usage"""
-        try:
-            cache_info = cache_status.get("cache", {})
-            memory_used = cache_info.get("memory_used", "0B")
-
-            # Log memory usage (could implement alerts for high usage)
-            logger.debug(f"Cache memory usage: {memory_used}")
-
-        except Exception as e:
-            logger.error(f"Error checking memory usage: {str(e)}")
-
-    async def _check_database_health(self, db) -> bool:
-        """Check database connectivity"""
-        try:
-            # Simple query to test database
-            db.execute("SELECT 1")
-            return True
-        except Exception as e:
-            logger.error(f"Database health check failed: {str(e)}")
-            return False
-
-    async def _check_cache_health(self, epa_service: EPACachedService) -> bool:
-        """Check cache connectivity"""
-        try:
-            cache_status = epa_service.get_cache_status()
-            return cache_status.get("cache", {}).get("connected", False)
-        except Exception as e:
-            logger.error(f"Cache health check failed: {str(e)}")
-            return False
-
-    async def _check_epa_api_health(self, epa_service: EPACachedService) -> bool:
-        """Check EPA API availability"""
-        try:
-            # This is a simplified check - could be enhanced
-            # to actually test API endpoints
-            return True  # Assume healthy for now
-        except Exception as e:
-            logger.error(f"EPA API health check failed: {str(e)}")
-            return False
-
-    async def _send_notification(self, subject: str, message: str):
-        """Send notification (placeholder for actual notification system)"""
-        # This could be enhanced to send actual notifications
-        # via email, Slack, etc.
-        logger.warning(f"NOTIFICATION - {subject}: {message}")
-
-    def get_task_status(self) -> Dict[str, Any]:
-        """Get status of all background tasks"""
-        status = {"is_running": self.is_running, "tasks": {}}
-
-        for task_name, task in self.tasks.items():
-            status["tasks"][task_name] = {
-                "running": not task.done(),
-                "cancelled": task.cancelled(),
-                "exception": (
-                    str(task.exception()) if task.done() and task.exception() else None
-                ),
-            }
-
-        return status
+    def cleanup(self):
+        """Clean up resources"""
+        self.executor.shutdown(wait=False)
+        # Cancel all active tasks
+        for task in self.active_tasks.values():
+            if not task.done():
+                task.cancel()
 
 
-# Global task manager instance - lazy initialization for testing
-import os
-
-if os.getenv("TESTING") != "true":
-    task_manager = BackgroundTaskManager()
-else:
-    # Mock task manager for testing
-    from unittest.mock import AsyncMock, MagicMock
-
-    task_manager = MagicMock()
-    task_manager.get_task_status.return_value = {"status": "not_running"}
-    task_manager.start_all_tasks = AsyncMock()
-    task_manager.stop_all_tasks = AsyncMock()
-
-
-@asynccontextmanager
-async def lifespan_manager():
-    """Context manager for application lifespan"""
-    try:
-        # Start background tasks
-        await task_manager.start_all_tasks()
-        yield
-    finally:
-        # Stop background tasks
-        await task_manager.stop_all_tasks()
+# Global background task service instance
+background_task_service = BackgroundTaskService()

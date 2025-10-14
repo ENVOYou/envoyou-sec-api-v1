@@ -13,7 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.database import get_db
+from app.db.database import get_connection_pool_stats, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +173,11 @@ class HealthChecker:
         # Database check
         db = next(get_db())
         try:
-            health_status["checks"]["database"] = await self.check_database(db)
+            db_health = await self.check_database(db)
+            # Add connection pool stats
+            pool_stats = get_connection_pool_stats()
+            db_health["pool_stats"] = pool_stats
+            health_status["checks"]["database"] = db_health
         finally:
             db.close()
 

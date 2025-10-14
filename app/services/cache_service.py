@@ -194,6 +194,113 @@ class CacheService:
             logger.error(f"Error caching calculation result: {str(e)}")
             return False
 
+    def set_company_emissions_summary(
+        self, company_id: str, year: int, summary: Dict[str, Any], ttl_hours: int = 6
+    ) -> bool:
+        """Cache company emissions summary for faster dashboard loading"""
+        if not self.redis_client:
+            return False
+
+        try:
+            key = self._get_key("company_summary", f"{company_id}_{year}")
+            serialized_data = self._serialize_data(
+                {
+                    "summary": summary,
+                    "cached_at": datetime.utcnow().isoformat(),
+                    "company_id": company_id,
+                    "year": year,
+                }
+            )
+
+            ttl_seconds = ttl_hours * 3600
+            result = self.redis_client.setex(key, ttl_seconds, serialized_data)
+
+            if result:
+                logger.debug(
+                    f"Cached company emissions summary for '{company_id}' year {year}"
+                )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error caching company emissions summary: {str(e)}")
+            return False
+
+    def get_company_emissions_summary(
+        self, company_id: str, year: int
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve cached company emissions summary"""
+        if not self.redis_client:
+            return None
+
+        try:
+            key = self._get_key("company_summary", f"{company_id}_{year}")
+            cached_data = self.redis_client.get(key)
+
+            if cached_data:
+                data = self._deserialize_data(cached_data)
+                if data:
+                    logger.debug(
+                        f"Cache hit for company emissions summary '{company_id}' year {year}"
+                    )
+                    return data
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error retrieving cached company emissions summary: {str(e)}")
+            return None
+
+    def set_validation_result(
+        self, validation_id: str, result: Dict[str, Any], ttl_hours: int = 12
+    ) -> bool:
+        """Cache validation results to avoid redundant checks"""
+        if not self.redis_client:
+            return False
+
+        try:
+            key = self._get_key("validation", validation_id)
+            serialized_data = self._serialize_data(
+                {
+                    "result": result,
+                    "cached_at": datetime.utcnow().isoformat(),
+                    "validation_id": validation_id,
+                }
+            )
+
+            ttl_seconds = ttl_hours * 3600
+            result = self.redis_client.setex(key, ttl_seconds, serialized_data)
+
+            if result:
+                logger.debug(f"Cached validation result '{validation_id}'")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error caching validation result: {str(e)}")
+            return False
+
+    def get_validation_result(self, validation_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve cached validation result"""
+        if not self.redis_client:
+            return None
+
+        try:
+            key = self._get_key("validation", validation_id)
+            cached_data = self.redis_client.get(key)
+
+            if cached_data:
+                data = self._deserialize_data(cached_data)
+                if data:
+                    logger.debug(f"Cache hit for validation result '{validation_id}'")
+                    return data
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error retrieving cached validation result: {str(e)}")
+            return None
+
     def get_calculation_result(self, calculation_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve cached calculation result"""
         if not self.redis_client:
@@ -290,8 +397,22 @@ class CacheService:
         try:
             info = self.redis_client.info()
 
-            # Count our keys
-            our_keys = self.redis_client.keys("envoyou:sec:*")
+            # Count our keys by type
+            all_keys = self.redis_client.keys("envoyou:sec:*")
+            epa_keys = self.redis_client.keys("envoyou:sec:epa_factors:*")
+            factor_keys = self.redis_client.keys("envoyou:sec:factor:*")
+            calculation_keys = self.redis_client.keys("envoyou:sec:calculation:*")
+            company_keys = self.redis_client.keys("envoyou:sec:company_summary:*")
+            validation_keys = self.redis_client.keys("envoyou:sec:validation:*")
+
+            # Get hit/miss statistics (if available)
+            keyspace_hits = info.get("keyspace_hits", 0)
+            keyspace_misses = info.get("keyspace_misses", 0)
+            hit_rate = (
+                keyspace_hits / (keyspace_hits + keyspace_misses) * 100
+                if (keyspace_hits + keyspace_misses) > 0
+                else 0
+            )
 
             return {
                 "status": "available",
@@ -299,8 +420,16 @@ class CacheService:
                 "used_memory": info.get("used_memory_human"),
                 "connected_clients": info.get("connected_clients"),
                 "total_commands_processed": info.get("total_commands_processed"),
-                "envoyou_keys": len(our_keys),
                 "uptime_seconds": info.get("uptime_in_seconds"),
+                "cache_hit_rate_percent": round(hit_rate, 2),
+                "envoyou_cache_stats": {
+                    "total_keys": len(all_keys),
+                    "epa_factors": len(epa_keys),
+                    "individual_factors": len(factor_keys),
+                    "calculations": len(calculation_keys),
+                    "company_summaries": len(company_keys),
+                    "validations": len(validation_keys),
+                },
             }
 
         except Exception as e:

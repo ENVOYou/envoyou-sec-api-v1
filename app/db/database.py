@@ -34,12 +34,14 @@ else:
         poolclass=QueuePool,
         pool_size=settings.DATABASE_POOL_SIZE,
         max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        pool_recycle=settings.DATABASE_POOL_RECYCLE,
+        pool_timeout=settings.DATABASE_POOL_TIMEOUT,
         pool_pre_ping=True,
         echo=settings.DEBUG,
         connect_args={
             "sslmode": ssl_mode,
             "connect_timeout": 10,  # Connection timeout
-            # "options": "-c statement_timeout=30000",  # 30 second query timeout
+            "options": f"-c statement_timeout={settings.DATABASE_STATEMENT_TIMEOUT}",  # Query timeout
         },
     )
 
@@ -67,3 +69,27 @@ def create_tables():
 def drop_tables():
     """Drop all database tables (use with caution)"""
     Base.metadata.drop_all(bind=engine)
+
+
+def get_connection_pool_stats():
+    """Get database connection pool statistics"""
+    pool = engine.pool
+    return {
+        "pool_size": getattr(pool, "size", 0),
+        "checkedin": getattr(pool, "_checkedin", 0),
+        "checkedout": getattr(pool, "_checkedout", 0),
+        "invalid": getattr(pool, "_invalid", 0),
+        "overflow": getattr(pool, "_overflow", 0),
+        "pool_timeout": getattr(pool, "timeout", 0),
+        "pool_recycle": getattr(pool, "recycle", 0),
+    }
+
+
+def health_check():
+    """Perform database health check"""
+    try:
+        with engine.connect() as conn:
+            conn.execute("SELECT 1")
+        return True, "Database connection healthy"
+    except Exception as e:
+        return False, f"Database connection failed: {str(e)}"

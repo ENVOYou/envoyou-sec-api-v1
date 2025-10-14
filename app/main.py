@@ -25,7 +25,7 @@ from app.core.rate_limiting import (
 )
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.db.database import get_db
-from app.services.background_tasks import task_manager
+from app.services.background_tasks import background_task_service
 
 if SLOWAPI_AVAILABLE:
     from slowapi.errors import RateLimitExceeded

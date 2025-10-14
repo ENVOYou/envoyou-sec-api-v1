@@ -10,12 +10,14 @@ from app.api.v1.endpoints import (
     anomaly_detection,
     audit,
     auth,
+    background_tasks,
     company_entities,
     emissions,
     emissions_validation,
     enhanced_audit,
     epa_cache,
     epa_ghgrp,
+    performance,
     reports,
     validation,
     workflow,
@@ -51,4 +53,10 @@ api_router.include_router(
     company_entities.router, prefix="/entities", tags=["Company Entities"]
 )
 api_router.include_router(workflow.router, prefix="/workflow", tags=["Workflow"])
+api_router.include_router(
+    background_tasks.router, prefix="/background", tags=["Background Tasks"]
+)
+api_router.include_router(
+    performance.router, prefix="/performance", tags=["Performance Monitoring"]
+)
 api_router.include_router(consolidation.router, tags=["Emissions Consolidation"])

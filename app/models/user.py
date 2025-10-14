@@ -57,7 +57,12 @@ class User(BaseModel, AuditMixin):
     )
 
     # Company association (for multi-tenant support)
-    company_id = Column(String(36), nullable=True)  # Will be foreign key later
+    company_id = Column(
+        String(36), nullable=True, index=True
+    )  # Will be foreign key later
+
+    # Soft delete support
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
 
     def __repr__(self):
         return f"<User(email='{self.email}', role='{self.role.value}')>"

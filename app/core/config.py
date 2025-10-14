@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/envoyou_sec"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
+    DATABASE_POOL_RECYCLE: int = 3600  # Recycle connections after 1 hour
+    DATABASE_POOL_TIMEOUT: int = 30  # Connection timeout in seconds
+    DATABASE_STATEMENT_TIMEOUT: int = 30000  # 30 second query timeout
 
     # Redis Cache
     REDIS_URL: str = "redis://localhost:6379/0"

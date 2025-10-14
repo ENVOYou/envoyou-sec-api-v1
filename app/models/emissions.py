@@ -136,6 +136,13 @@ class CompanyEntity(BaseModel, AuditMixin):
         "EmissionsCalculation", back_populates="entity", cascade="all, delete-orphan"
     )
 
+    # Additional indexes for performance
+    __table_args__ = (
+        Index("idx_company_entity_company_active", "company_id", "is_active"),
+        Index("idx_company_entity_ownership", "ownership_percentage"),
+        Index("idx_company_entity_type", "entity_type"),
+    )
+
     def __repr__(self):
         return f"<CompanyEntity(name='{self.name}', ownership='{self.ownership_percentage}%', level={self.level})>"
 
@@ -266,6 +273,14 @@ class EmissionsCalculation(BaseModel, AuditMixin):
         "ActivityData", back_populates="calculation", cascade="all, delete-orphan"
     )
 
+    # Additional indexes for performance
+    __table_args__ = (
+        Index("idx_emissions_calc_company_scope", "company_id", "scope"),
+        Index("idx_emissions_calc_status_date", "status", "calculation_timestamp"),
+        Index("idx_emissions_calc_year_scope", "reporting_year", "scope"),
+        Index("idx_emissions_calc_approved", "approved_by", "status"),
+    )
+
     def __repr__(self):
         return f"<EmissionsCalculation(code='{self.calculation_code}', scope='{self.scope}')>"
 
@@ -319,6 +334,13 @@ class ActivityData(BaseModel, AuditMixin):
 
     # Relationships
     calculation = relationship("EmissionsCalculation", back_populates="activity_data")
+
+    # Additional indexes for performance
+    __table_args__ = (
+        Index("idx_activity_calculation_type", "calculation_id", "activity_type"),
+        Index("idx_activity_fuel_type", "fuel_type"),
+        Index("idx_activity_location", "location"),
+    )
 
     def __repr__(self):
         return f"<ActivityData(type='{self.activity_type}', quantity={self.quantity} {self.unit})>"
@@ -498,6 +520,13 @@ class ConsolidationAuditTrail(BaseModel, AuditMixin):
     # Relationships
     consolidation = relationship("ConsolidatedEmissions")
     user = relationship("User")
+
+    # Additional indexes for performance
+    __table_args__ = (
+        Index("idx_calc_audit_calculation_event", "calculation_id", "event_type"),
+        Index("idx_calc_audit_user_timestamp", "user_id", "event_timestamp"),
+        Index("idx_calc_audit_timestamp", "event_timestamp"),
+    )
 
     __table_args__ = (
         Index("idx_consolidation_audit_consolidation", "consolidation_id"),
