@@ -260,6 +260,15 @@ class EmissionsCalculation(BaseModel, AuditMixin):
     validation_errors = Column(JSON, nullable=True)
     validation_warnings = Column(JSON, nullable=True)
 
+    # Encrypted sensitive data (for future use)
+    encrypted_input_data = Column(
+        Text, nullable=True
+    )  # Encrypted version of input_data
+    encrypted_emission_factors = Column(
+        Text, nullable=True
+    )  # Encrypted emission factors
+    data_integrity_hash = Column(String(64), nullable=True)  # SHA256 hash for integrity
+
     # External references
     source_documents = Column(JSON, nullable=True)  # References to source documents
     third_party_verification = Column(Boolean, default=False, nullable=False)

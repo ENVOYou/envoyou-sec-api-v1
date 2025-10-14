@@ -24,6 +24,21 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Encryption
+    ENCRYPTION_MASTER_KEY: Optional[str] = None  # Base64 encoded Fernet key
+    ENCRYPT_SENSITIVE_DATA: bool = True  # Enable/disable data encryption
+
+    # HTTPS/SSL Configuration
+    FORCE_HTTPS: bool = True  # Force HTTPS in production
+    SSL_CERT_PATH: Optional[str] = None  # Path to SSL certificate
+    SSL_KEY_PATH: Optional[str] = None  # Path to SSL private key
+
+    # Backup Configuration
+    BACKUP_DIR: str = "./backups"  # Directory for backups
+    BACKUP_RETENTION_DAYS: int = 30  # Days to keep backups
+    MAX_BACKUP_COUNT: int = 10  # Maximum number of backups to keep
+    BACKUP_SCHEDULE: str = "0 2 * * *"  # Daily at 2 AM (cron format)
+
     # CORS
     CORS_ORIGINS: List[str] = [
         "https://envoyou.com",

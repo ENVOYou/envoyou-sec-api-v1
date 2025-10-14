@@ -11,7 +11,9 @@ from app.api.v1.endpoints import (
     audit,
     auth,
     background_tasks,
+    backup,
     company_entities,
+    disaster_recovery,
     emissions,
     emissions_validation,
     enhanced_audit,
@@ -19,6 +21,7 @@ from app.api.v1.endpoints import (
     epa_ghgrp,
     performance,
     reports,
+    security,
     validation,
     workflow,
 )
@@ -58,5 +61,12 @@ api_router.include_router(
 )
 api_router.include_router(
     performance.router, prefix="/performance", tags=["Performance Monitoring"]
+)
+api_router.include_router(backup.router, prefix="/backup", tags=["Backup Management"])
+api_router.include_router(
+    security.router, prefix="/security", tags=["Security Monitoring"]
+)
+api_router.include_router(
+    disaster_recovery.router, prefix="/disaster-recovery", tags=["Disaster Recovery"]
 )
 api_router.include_router(consolidation.router, tags=["Emissions Consolidation"])

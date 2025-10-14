@@ -73,6 +73,13 @@ class TestEmissionsCalculations:
         self, db_session, test_company, test_emission_factors, test_user
     ):
         """Test Scope 1 calculation with natural gas"""
+        print(f"DEBUG: Starting test_scope1_calculation_natural_gas")
+        print(f"DEBUG: test_company.id = {test_company.id}")
+        print(f"DEBUG: test_user.id = {test_user.id}")
+        print(
+            f"DEBUG: test_emission_factors keys = {list(test_emission_factors.keys())}"
+        )
+
         calculator = Scope1EmissionsCalculator(db_session)
 
         # Create calculation request
@@ -287,6 +294,10 @@ class TestEmissionsAPI:
         self, client: TestClient, auth_headers, test_company, test_emission_factors
     ):
         """Test Scope 1 calculation API endpoint"""
+        print(f"DEBUG: Starting test_scope1_calculation_endpoint")
+        print(f"DEBUG: test_company.id = {test_company.id}")
+        print(f"DEBUG: auth_headers keys = {list(auth_headers.keys())}")
+
         request_data = {
             "calculation_name": "API Test Scope 1",
             "company_id": str(test_company.id),

@@ -3,6 +3,7 @@ Scope 1 Emissions Calculator Service
 Direct GHG emissions from sources owned or controlled by the company
 """
 
+import json
 import logging
 import uuid
 from datetime import datetime
@@ -12,6 +13,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
+from app.core.config import settings
 from app.models.emissions import (
     ActivityData,
     CalculationAuditTrail,
@@ -26,6 +28,7 @@ from app.schemas.emissions import (
     EmissionsCalculationResponse,
     Scope1CalculationRequest,
 )
+from app.services.encryption_service import encryption_service
 from app.services.epa_cache_service import EPACachedService
 
 logger = logging.getLogger(__name__)
@@ -75,6 +78,31 @@ class Scope1EmissionsCalculator:
                 "SC1", company.ticker or company.name
             )
 
+            # Encrypt sensitive input data if encryption is enabled
+            encrypted_input_data = None
+            encrypted_emission_factors = None
+            data_integrity_hash = None
+
+            if settings.ENCRYPT_SENSITIVE_DATA:
+                try:
+                    # Encrypt input data
+                    encrypted_input_data = encryption_service.encrypt_data(
+                        request.model_dump(), key_id="calculation_input"
+                    )
+
+                    # Create data integrity hash
+                    data_integrity_hash = encryption_service.hash_sensitive_data(
+                        json.dumps(request.model_dump(), sort_keys=True, default=str)
+                    )
+
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to encrypt calculation input data: {str(e)}"
+                    )
+                    # Continue without encryption in development
+                    if settings.ENVIRONMENT != "development":
+                        raise
+
             # Create calculation record
             calculation = EmissionsCalculation(
                 calculation_name=request.calculation_name,
@@ -87,10 +115,12 @@ class Scope1EmissionsCalculator:
                 reporting_period_end=request.reporting_period_end,
                 status="in_progress",
                 calculated_by=uuid.UUID(user_id),
-                input_data=request.dict(),
+                input_data=request.model_dump(),  # Keep original for now, will be replaced with encrypted
                 calculation_parameters=request.calculation_parameters or {},
                 emission_factors_used={},  # Initialize as empty dict
                 source_documents=request.source_documents or [],
+                # encrypted_input_data=encrypted_input_data,
+                # data_integrity_hash=data_integrity_hash,
             )
 
             self.db.add(calculation)
@@ -143,6 +173,16 @@ class Scope1EmissionsCalculator:
 
             # Convert from kg to metric tons CO2e
             calculated_co2e_mt = calculated_co2e / 1000.0
+
+            # Encrypt emission factors used if encryption is enabled
+            if settings.ENCRYPT_SENSITIVE_DATA:
+                try:
+                    encrypted_emission_factors = encryption_service.encrypt_data(
+                        emission_factors_used, key_id="emission_factors"
+                    )
+                    calculation.encrypted_emission_factors = encrypted_emission_factors
+                except Exception as e:
+                    logger.warning(f"Failed to encrypt emission factors: {str(e)}")
 
             # Update calculation with results
             calculation_duration = (datetime.utcnow() - start_time).total_seconds()

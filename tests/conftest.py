@@ -34,8 +34,110 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 
-# Create all tables once at module load
-Base.metadata.create_all(bind=engine)
+# Run Alembic migrations instead of just creating tables
+print("DEBUG: Running database migrations...")
+try:
+    from alembic import command
+    from alembic.config import Config
+
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
+
+    # Run migrations
+    command.upgrade(alembic_cfg, "head")
+    print("DEBUG: Database migrations completed")
+except Exception as e:
+    print(f"ERROR: Failed to run migrations: {e}")
+    print("DEBUG: Falling back to creating tables from models...")
+    Base.metadata.create_all(bind=engine)
+    print("DEBUG: Database tables created from models")
+
+    # Add missing columns to report_locks table that are in the model but not created by metadata.create_all
+    try:
+        with engine.connect() as conn:
+            from sqlalchemy import text
+
+            # Check if unlocked_at column exists, if not add it
+            result = conn.execute(text("PRAGMA table_info(report_locks)"))
+            columns = [col[1] for col in result.fetchall()]
+            if "unlocked_at" not in columns:
+                print("DEBUG: Adding missing unlocked_at column to report_locks table")
+                conn.execute(
+                    text("ALTER TABLE report_locks ADD COLUMN unlocked_at DATETIME")
+                )
+                conn.commit()
+            if "unlocked_by" not in columns:
+                print("DEBUG: Adding missing unlocked_by column to report_locks table")
+                conn.execute(
+                    text("ALTER TABLE report_locks ADD COLUMN unlocked_by VARCHAR(36)")
+                )
+                # Add foreign key constraint
+                conn.execute(
+                    text(
+                        "CREATE INDEX ix_report_locks_unlocked_by ON report_locks (unlocked_by)"
+                    )
+                )
+                conn.commit()
+            print("DEBUG: Report locks table schema updated")
+    except Exception as e:
+        print(f"ERROR: Failed to update report_locks table: {e}")
+
+    # Add missing columns to emissions_calculations table
+    try:
+        with engine.connect() as conn:
+            from sqlalchemy import text
+
+            # Check existing columns
+            result = conn.execute(text("PRAGMA table_info(emissions_calculations)"))
+            columns = [col[1] for col in result.fetchall()]
+
+            missing_columns = []
+            if "encrypted_input_data" not in columns:
+                missing_columns.append(("encrypted_input_data", "TEXT"))
+            if "encrypted_emission_factors" not in columns:
+                missing_columns.append(("encrypted_emission_factors", "TEXT"))
+            if "data_integrity_hash" not in columns:
+                missing_columns.append(("data_integrity_hash", "VARCHAR(64)"))
+            if "source_documents" not in columns:
+                missing_columns.append(("source_documents", "TEXT"))
+            if "third_party_verification" not in columns:
+                missing_columns.append(
+                    ("third_party_verification", "BOOLEAN DEFAULT 0")
+                )
+            if "validation_status" not in columns:
+                missing_columns.append(("validation_status", "VARCHAR(50)"))
+            if "calculation_date" not in columns:
+                missing_columns.append(("calculation_date", "DATETIME"))
+
+            for col_name, col_type in missing_columns:
+                print(
+                    f"DEBUG: Adding missing {col_name} column to emissions_calculations table"
+                )
+                conn.execute(
+                    text(
+                        f"ALTER TABLE emissions_calculations ADD COLUMN {col_name} {col_type}"
+                    )
+                )
+                conn.commit()
+
+            if missing_columns:
+                print("DEBUG: Emissions calculations table schema updated")
+    except Exception as e:
+        print(f"ERROR: Failed to update emissions_calculations table: {e}")
+
+# Check if report_locks table exists and has required columns
+try:
+    from sqlalchemy import text
+
+    result = engine.execute(text("PRAGMA table_info(report_locks)"))
+    columns = result.fetchall()
+    print(f"DEBUG: report_locks table columns: {[col[1] for col in columns]}")
+    if "unlocked_at" not in [col[1] for col in columns]:
+        print("WARNING: unlocked_at column missing from report_locks table")
+    if "unlocked_by" not in [col[1] for col in columns]:
+        print("WARNING: unlocked_by column missing from report_locks table")
+except Exception as e:
+    print(f"ERROR: Could not check report_locks table: {e}")
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -294,12 +396,15 @@ def sample_emission_factor():
 @pytest.fixture
 def test_company(db_session):
     """Create a test company for emissions calculations"""
+    import time
     import uuid
 
-    # Use unique CIK and ticker based on UUID to avoid conflicts
-    unique_suffix = uuid.uuid4().hex[:6].upper()
+    # Use unique CIK and ticker based on UUID and timestamp to avoid conflicts
+    unique_suffix = (
+        f"{uuid.uuid4().hex[:6].upper()}{int(time.time()*1000000) % 1000000}"
+    )
     unique_cik = f"{unique_suffix}"
-    unique_ticker = f"TST{unique_suffix[:3]}"
+    unique_ticker = f"TST{unique_suffix[:5]}"
 
     company = Company(
         name="Test Company Inc.",

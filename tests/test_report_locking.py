@@ -38,6 +38,26 @@ def test_lock_report_success_cfo(
 
 def _test_lock_report_success(client: TestClient, db_session: Session, user: User):
     """Helper function for testing successful report locking"""
+    print(
+        f"DEBUG: Starting _test_lock_report_success for user {user.id} with role {user.role}"
+    )
+
+    # Check if report_locks table exists
+    try:
+        from sqlalchemy import text
+
+        result = db_session.execute(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='report_locks'"
+            )
+        )
+        if not result.fetchone():
+            print("ERROR: report_locks table does not exist!")
+            raise Exception("report_locks table missing")
+    except Exception as e:
+        print(f"ERROR: Could not check report_locks table: {e}")
+        raise
+
     # Create test report
     report = Report(
         title="Test Report",
@@ -60,9 +80,12 @@ def _test_lock_report_success(client: TestClient, db_session: Session, user: Use
 
     response = client.post(
         f"/v1/reports/{report.id}/lock",
-        json=lock_data.dict(),
+        json=lock_data.model_dump(),
         headers={"Authorization": f"Bearer {token}"},
     )
+
+    print(f"DEBUG: Response status: {response.status_code}")
+    print(f"DEBUG: Response content: {response.text}")
 
     assert response.status_code == 200
     lock_response = response.json()
