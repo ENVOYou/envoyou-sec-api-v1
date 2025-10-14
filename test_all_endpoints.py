@@ -9,7 +9,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 # Configuration
 BASE_URL = "http://localhost:8000"
@@ -31,36 +31,101 @@ ENDPOINTS = {
         "register": {"method": "POST", "path": "/auth/register", "auth": False},
         "me": {"method": "GET", "path": "/auth/me", "auth": True},
         "refresh": {"method": "POST", "path": "/auth/refresh", "auth": True},
-        "change-password": {"method": "POST", "path": "/auth/change-password", "auth": True},
+        "change-password": {
+            "method": "POST",
+            "path": "/auth/change-password",
+            "auth": True,
+        },
     },
-
     # Emissions
     "emissions": {
-        "factors-summary": {"method": "GET", "path": "/emissions/factors/summary", "auth": True},
+        "factors-summary": {
+            "method": "GET",
+            "path": "/emissions/factors/summary",
+            "auth": True,
+        },
         "factors": {"method": "GET", "path": "/emissions/factors", "auth": True},
-        "factors-fuel": {"method": "POST", "path": "/emissions/factors/fuel", "auth": True},
-        "factors-electricity": {"method": "POST", "path": "/emissions/factors/electricity", "auth": True},
-        "calculate-scope1": {"method": "POST", "path": "/emissions/calculate/scope1", "auth": True},
-        "calculate-scope2": {"method": "POST", "path": "/emissions/calculate/scope2", "auth": True},
-        "calculations": {"method": "GET", "path": "/emissions/calculations", "auth": True},
-        "calculation-detail": {"method": "GET", "path": "/emissions/calculations/test-id", "auth": True},
-        "calculation-approve": {"method": "POST", "path": "/emissions/calculations/test-id/approve", "auth": True},
-        "calculation-audit": {"method": "GET", "path": "/emissions/calculations/test-id/audit-trail", "auth": True},
-        "forensic-report": {"method": "GET", "path": "/emissions/calculations/test-id/forensic-report", "auth": True},
-        "company-summary": {"method": "GET", "path": "/emissions/companies/test-id/summary", "auth": True},
-        "company-audit": {"method": "GET", "path": "/emissions/companies/test-id/audit-summary", "auth": True},
-        "consolidated-summary": {"method": "GET", "path": "/emissions/companies/test-id/consolidated-summary", "auth": True},
-        "entities-emissions": {"method": "GET", "path": "/emissions/companies/test-id/entities-with-emissions", "auth": True},
-        "trigger-consolidation": {"method": "POST", "path": "/emissions/companies/test-id/trigger-consolidation", "auth": True},
+        "factors-fuel": {
+            "method": "POST",
+            "path": "/emissions/factors/fuel",
+            "auth": True,
+        },
+        "factors-electricity": {
+            "method": "POST",
+            "path": "/emissions/factors/electricity",
+            "auth": True,
+        },
+        "calculate-scope1": {
+            "method": "POST",
+            "path": "/emissions/calculate/scope1",
+            "auth": True,
+        },
+        "calculate-scope2": {
+            "method": "POST",
+            "path": "/emissions/calculate/scope2",
+            "auth": True,
+        },
+        "calculations": {
+            "method": "GET",
+            "path": "/emissions/calculations",
+            "auth": True,
+        },
+        "calculation-detail": {
+            "method": "GET",
+            "path": "/emissions/calculations/test-id",
+            "auth": True,
+        },
+        "calculation-approve": {
+            "method": "POST",
+            "path": "/emissions/calculations/test-id/approve",
+            "auth": True,
+        },
+        "calculation-audit": {
+            "method": "GET",
+            "path": "/emissions/calculations/test-id/audit-trail",
+            "auth": True,
+        },
+        "forensic-report": {
+            "method": "GET",
+            "path": "/emissions/calculations/test-id/forensic-report",
+            "auth": True,
+        },
+        "company-summary": {
+            "method": "GET",
+            "path": "/emissions/companies/test-id/summary",
+            "auth": True,
+        },
+        "company-audit": {
+            "method": "GET",
+            "path": "/emissions/companies/test-id/audit-summary",
+            "auth": True,
+        },
+        "consolidated-summary": {
+            "method": "GET",
+            "path": "/emissions/companies/test-id/consolidated-summary",
+            "auth": True,
+        },
+        "entities-emissions": {
+            "method": "GET",
+            "path": "/emissions/companies/test-id/entities-with-emissions",
+            "auth": True,
+        },
+        "trigger-consolidation": {
+            "method": "POST",
+            "path": "/emissions/companies/test-id/trigger-consolidation",
+            "auth": True,
+        },
     },
-
     # EPA Data
     "epa": {
         "cache-status": {"method": "GET", "path": "/epa/cache/status", "auth": True},
-        "invalidate-cache": {"method": "POST", "path": "/epa/cache/clear", "auth": True},
+        "invalidate-cache": {
+            "method": "POST",
+            "path": "/epa/cache/clear",
+            "auth": True,
+        },
         "refresh-factors": {"method": "POST", "path": "/epa/refresh", "auth": True},
     },
-
     # Reports
     "reports": {
         "list": {"method": "GET", "path": "/reports", "auth": True},
@@ -70,36 +135,68 @@ ENDPOINTS = {
         "delete": {"method": "DELETE", "path": "/reports/test-id", "auth": True},
         "lock": {"method": "POST", "path": "/reports/test-id/lock", "auth": True},
         "unlock": {"method": "POST", "path": "/reports/test-id/unlock", "auth": True},
-        "comments": {"method": "GET", "path": "/reports/test-id/comments", "auth": True},
-        "add-comment": {"method": "POST", "path": "/reports/test-id/comments", "auth": True},
-        "resolve-comment": {"method": "PUT", "path": "/reports/test-id/comments/test-id/resolve", "auth": True},
-        "revisions": {"method": "GET", "path": "/reports/test-id/revisions", "auth": True},
-        "create-revision": {"method": "POST", "path": "/reports/test-id/revisions", "auth": True},
+        "comments": {
+            "method": "GET",
+            "path": "/reports/test-id/comments",
+            "auth": True,
+        },
+        "add-comment": {
+            "method": "POST",
+            "path": "/reports/test-id/comments",
+            "auth": True,
+        },
+        "resolve-comment": {
+            "method": "PUT",
+            "path": "/reports/test-id/comments/test-id/resolve",
+            "auth": True,
+        },
+        "revisions": {
+            "method": "GET",
+            "path": "/reports/test-id/revisions",
+            "auth": True,
+        },
+        "create-revision": {
+            "method": "POST",
+            "path": "/reports/test-id/revisions",
+            "auth": True,
+        },
     },
-
     # Audit
     "audit": {
         "logs": {"method": "GET", "path": "/audit/logs", "auth": True},
         "events": {"method": "GET", "path": "/audit/events", "auth": True},
         "export": {"method": "GET", "path": "/audit/export", "auth": True},
     },
-
     # Enhanced Audit
     "enhanced-audit": {
-        "dashboard": {"method": "GET", "path": "/enhanced-audit/dashboard", "auth": True},
-        "forensic-search": {"method": "POST", "path": "/enhanced-audit/forensic-search", "auth": True},
-        "data-integrity": {"method": "GET", "path": "/enhanced-audit/data-integrity", "auth": True},
+        "dashboard": {
+            "method": "GET",
+            "path": "/enhanced-audit/dashboard",
+            "auth": True,
+        },
+        "forensic-search": {
+            "method": "POST",
+            "path": "/enhanced-audit/forensic-search",
+            "auth": True,
+        },
+        "data-integrity": {
+            "method": "GET",
+            "path": "/enhanced-audit/data-integrity",
+            "auth": True,
+        },
     },
-
     # Company Entities
     "entities": {
-        "list": {"method": "GET", "path": "/entities/company/test-company-id", "auth": True},
+        "list": {
+            "method": "GET",
+            "path": "/entities/company/test-company-id",
+            "auth": True,
+        },
         "create": {"method": "POST", "path": "/entities", "auth": True},
         "detail": {"method": "GET", "path": "/entities/test-id", "auth": True},
         "update": {"method": "PUT", "path": "/entities/test-id", "auth": True},
         "delete": {"method": "DELETE", "path": "/entities/test-id", "auth": True},
     },
-
     # Workflow
     "workflow": {
         "list": {"method": "GET", "path": "/workflow", "auth": True},
@@ -108,21 +205,26 @@ ENDPOINTS = {
         "update": {"method": "PUT", "path": "/workflow/test-id/status", "auth": True},
         "execute": {"method": "POST", "path": "/workflow/test-id/submit", "auth": True},
     },
-
     # Background Tasks
     "background": {
         "status": {"method": "GET", "path": "/background/status", "auth": True},
         "list": {"method": "GET", "path": "/background/tasks", "auth": True},
-        "cancel": {"method": "POST", "path": "/background/tasks/test-id/cancel", "auth": True},
+        "cancel": {
+            "method": "POST",
+            "path": "/background/tasks/test-id/cancel",
+            "auth": True,
+        },
     },
-
     # Performance
     "performance": {
         "metrics": {"method": "GET", "path": "/performance/metrics", "auth": True},
         "health": {"method": "GET", "path": "/performance/health", "auth": True},
-        "slow-queries": {"method": "GET", "path": "/performance/slow-queries", "auth": True},
+        "slow-queries": {
+            "method": "GET",
+            "path": "/performance/slow-queries",
+            "auth": True,
+        },
     },
-
     # Backup
     "backup": {
         "list": {"method": "GET", "path": "/backup", "auth": True},
@@ -130,46 +232,72 @@ ENDPOINTS = {
         "restore": {"method": "POST", "path": "/backup/test-id/restore", "auth": True},
         "delete": {"method": "DELETE", "path": "/backup/test-id", "auth": True},
     },
-
     # Security
     "security": {
         "events": {"method": "GET", "path": "/security/events", "auth": True},
         "alerts": {"method": "GET", "path": "/security/alerts", "auth": True},
         "audit": {"method": "GET", "path": "/security/audit", "auth": True},
     },
-
     # Disaster Recovery
     "disaster-recovery": {
         "status": {"method": "GET", "path": "/disaster-recovery/status", "auth": True},
         "backup": {"method": "POST", "path": "/disaster-recovery/backup", "auth": True},
-        "restore": {"method": "POST", "path": "/disaster-recovery/restore", "auth": True},
+        "restore": {
+            "method": "POST",
+            "path": "/disaster-recovery/restore",
+            "auth": True,
+        },
     },
-
     # Validation
     "validation": {
         "rules": {"method": "GET", "path": "/validation/rules", "auth": True},
         "validate": {"method": "POST", "path": "/validation/validate", "auth": True},
     },
-
     # Emissions Validation
     "emissions-validation": {
-        "cross-validate": {"method": "POST", "path": "/emissions-validation/cross-validate", "auth": True},
-        "consistency-check": {"method": "POST", "path": "/emissions-validation/consistency-check", "auth": True},
+        "cross-validate": {
+            "method": "POST",
+            "path": "/emissions-validation/cross-validate",
+            "auth": True,
+        },
+        "consistency-check": {
+            "method": "POST",
+            "path": "/emissions-validation/consistency-check",
+            "auth": True,
+        },
     },
-
     # Anomaly Detection
     "anomaly-detection": {
-        "analyze": {"method": "POST", "path": "/anomaly-detection/analyze", "auth": True},
-        "patterns": {"method": "GET", "path": "/anomaly-detection/patterns", "auth": True},
-        "thresholds": {"method": "GET", "path": "/anomaly-detection/thresholds", "auth": True},
+        "analyze": {
+            "method": "POST",
+            "path": "/anomaly-detection/analyze",
+            "auth": True,
+        },
+        "patterns": {
+            "method": "GET",
+            "path": "/anomaly-detection/patterns",
+            "auth": True,
+        },
+        "thresholds": {
+            "method": "GET",
+            "path": "/anomaly-detection/thresholds",
+            "auth": True,
+        },
     },
-
     # Consolidation
     "consolidation": {
-        "list": {"method": "GET", "path": "/consolidation/company/test-company-id", "auth": True},
+        "list": {
+            "method": "GET",
+            "path": "/consolidation/company/test-company-id",
+            "auth": True,
+        },
         "create": {"method": "POST", "path": "/consolidation", "auth": True},
         "detail": {"method": "GET", "path": "/consolidation/test-id", "auth": True},
-        "update": {"method": "POST", "path": "/consolidation/test-id/approve", "auth": True},
+        "update": {
+            "method": "POST",
+            "path": "/consolidation/test-id/approve",
+            "auth": True,
+        },
         "delete": {"method": "DELETE", "path": "/consolidation/test-id", "auth": True},
     },
 }
@@ -183,12 +311,7 @@ class APIEndpointTester:
         self.api_prefix = api_prefix
         self.session = requests.Session()
         self.tokens = {}
-        self.results = {
-            "passed": [],
-            "failed": [],
-            "errors": [],
-            "skipped": []
-        }
+        self.results = {"passed": [], "failed": [], "errors": [], "skipped": []}
 
     def authenticate_users(self) -> bool:
         """Authenticate all test users and store tokens"""
@@ -201,14 +324,14 @@ class APIEndpointTester:
             "full_name": "Test User",
             "password": "TestPass123!",
             "confirm_password": "TestPass123!",
-            "role": "admin"
+            "role": "admin",
         }
 
         try:
             register_response = self.session.post(
                 f"{self.base_url}{self.api_prefix}/auth/register",
                 json=register_data,
-                timeout=10
+                timeout=10,
             )
             print(f"  📝 Registration attempt: {register_response.status_code}")
         except Exception as e:
@@ -219,7 +342,7 @@ class APIEndpointTester:
                 response = self.session.post(
                     f"{self.base_url}{self.api_prefix}/auth/login",
                     json=credentials,
-                    timeout=10
+                    timeout=10,
                 )
 
                 if response.status_code == 200:
@@ -227,22 +350,21 @@ class APIEndpointTester:
                     self.tokens[user_type] = token_data.get("access_token")
                     print(f"  ✅ {user_type}: Authenticated successfully")
                 else:
-                    print(f"  ❌ {user_type}: Authentication failed ({response.status_code}) - {response.text[:100]}")
+                    print(
+                        f"  ❌ {user_type}: Authentication failed ({response.status_code}) - {response.text[:100]}"
+                    )
 
             except Exception as e:
                 print(f"  ❌ {user_type}: Authentication error - {str(e)}")
 
         # If no users authenticated, try with test user
         if not self.tokens:
-            test_credentials = {
-                "email": "test@example.com",
-                "password": "TestPass123!"
-            }
+            test_credentials = {"email": "test@example.com", "password": "TestPass123!"}
             try:
                 response = self.session.post(
                     f"{self.base_url}{self.api_prefix}/auth/login",
                     json=test_credentials,
-                    timeout=10
+                    timeout=10,
                 )
 
                 if response.status_code == 200:
@@ -257,7 +379,9 @@ class APIEndpointTester:
 
         return len(self.tokens) > 0
 
-    def test_endpoint(self, group: str, endpoint_name: str, config: Dict) -> Tuple[bool, Optional[str]]:
+    def test_endpoint(
+        self, group: str, endpoint_name: str, config: Dict
+    ) -> Tuple[bool, Optional[str]]:
         """Test a single endpoint"""
         method = config["method"]
         path = config["path"]
@@ -279,9 +403,13 @@ class APIEndpointTester:
         try:
             # Make request
             if method == "GET":
-                response = self.session.get(url, headers=headers, params=data, timeout=10)
+                response = self.session.get(
+                    url, headers=headers, params=data, timeout=10
+                )
             elif method == "POST":
-                response = self.session.post(url, headers=headers, json=data, timeout=10)
+                response = self.session.post(
+                    url, headers=headers, json=data, timeout=10
+                )
             elif method == "PUT":
                 response = self.session.put(url, headers=headers, json=data, timeout=10)
             elif method == "DELETE":
@@ -296,9 +424,15 @@ class APIEndpointTester:
                 # These are expected for some endpoints (validation, auth, etc.)
                 return True, f"Status: {response.status_code} (expected)"
             elif response.status_code >= 500:
-                return False, f"Server error: {response.status_code} - {response.text[:200]}"
+                return (
+                    False,
+                    f"Server error: {response.status_code} - {response.text[:200]}",
+                )
             else:
-                return False, f"Unexpected status: {response.status_code} - {response.text[:200]}"
+                return (
+                    False,
+                    f"Unexpected status: {response.status_code} - {response.text[:200]}",
+                )
 
         except Timeout:
             return False, "Request timeout"
@@ -321,13 +455,13 @@ class APIEndpointTester:
                     "full_name": "Test User",
                     "password": "TestPass123!",
                     "confirm_password": "TestPass123!",
-                    "role": "finance_team"
+                    "role": "finance_team",
                 },
                 "change-password": {
                     "current_password": "AdminPass123!",
                     "new_password": "NewPass123!",
-                    "confirm_password": "NewPass123!"
-                }
+                    "confirm_password": "NewPass123!",
+                },
             },
             "emissions": {
                 "factors-fuel": {"fuel_type": "natural_gas"},
@@ -337,81 +471,71 @@ class APIEndpointTester:
                     "company_id": "test-company-id",
                     "reporting_period_start": "2023-01-01T00:00:00Z",
                     "reporting_period_end": "2023-12-31T23:59:59Z",
-                    "activity_data": [{
-                        "activity_type": "stationary_combustion",
-                        "fuel_type": "natural_gas",
-                        "quantity": 100.0,
-                        "unit": "MMBtu",
-                        "data_quality": "measured"
-                    }]
+                    "activity_data": [
+                        {
+                            "activity_type": "stationary_combustion",
+                            "fuel_type": "natural_gas",
+                            "quantity": 100.0,
+                            "unit": "MMBtu",
+                            "data_quality": "measured",
+                        }
+                    ],
                 },
                 "calculate-scope2": {
                     "calculation_name": "Test Scope 2",
                     "company_id": "test-company-id",
                     "reporting_period_start": "2023-01-01T00:00:00Z",
                     "reporting_period_end": "2023-12-31T23:59:59Z",
-                    "electricity_consumption": [{
-                        "activity_type": "electricity_consumption",
-                        "quantity": 1000.0,
-                        "unit": "MWh",
-                        "location": "California",
-                        "data_quality": "measured"
-                    }],
-                    "calculation_method": "location_based"
+                    "electricity_consumption": [
+                        {
+                            "activity_type": "electricity_consumption",
+                            "quantity": 1000.0,
+                            "unit": "MWh",
+                            "location": "California",
+                            "data_quality": "measured",
+                        }
+                    ],
+                    "calculation_method": "location_based",
                 },
                 "calculation-approve": {
                     "approval_status": "approved",
-                    "comments": "Test approval"
+                    "comments": "Test approval",
                 },
                 "trigger-consolidation": {
                     "reporting_year": 2023,
-                    "consolidation_method": "ownership_based"
-                }
+                    "consolidation_method": "ownership_based",
+                },
             },
             "reports": {
                 "create": {
                     "title": "Test Report",
                     "report_type": "sec_10k",
-                    "status": "draft"
+                    "status": "draft",
                 },
-                "update": {
-                    "title": "Updated Test Report",
-                    "status": "draft"
-                },
-                "lock": {
-                    "lock_reason": "audit",
-                    "expires_in_hours": 24
-                },
-                "add-comment": {
-                    "content": "Test comment",
-                    "comment_type": "general"
-                },
+                "update": {"title": "Updated Test Report", "status": "draft"},
+                "lock": {"lock_reason": "audit", "expires_in_hours": 24},
+                "add-comment": {"content": "Test comment", "comment_type": "general"},
                 "create-revision": {
                     "change_type": "update",
-                    "changes_summary": "Test changes"
-                }
+                    "changes_summary": "Test changes",
+                },
             },
             "entities": {
                 "create": {
                     "company_id": "test-company-id",
                     "name": "Test Entity",
-                    "entity_type": "facility"
+                    "entity_type": "facility",
                 },
-                "update": {
-                    "name": "Updated Test Entity"
-                }
+                "update": {"name": "Updated Test Entity"},
             },
             "workflow": {
                 "create": {
                     "title": "Test Workflow",
                     "description": "Test workflow description",
                     "workflow_type": "emissions_report",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
-                "update": {
-                    "status": "completed",
-                    "reason": "Test completion"
-                }
+                "update": {"status": "completed", "reason": "Test completion"},
             },
             "consolidation": {
                 "create": {
@@ -419,13 +543,10 @@ class APIEndpointTester:
                     "reporting_year": 2023,
                     "reporting_period_start": "2023-01-01",
                     "reporting_period_end": "2023-12-31",
-                    "consolidation_method": "ownership_based"
+                    "consolidation_method": "ownership_based",
                 },
-                "update": {
-                    "action": "approve",
-                    "approval_notes": "Test approval"
-                }
-            }
+                "update": {"action": "approve", "approval_notes": "Test approval"},
+            },
         }
 
         return test_data.get(group, {}).get(endpoint)
@@ -465,10 +586,9 @@ class APIEndpointTester:
                     tested_endpoints += 1
                 else:
                     print(f"❌ FAILED - {message}")
-                    self.results["failed"].append({
-                        "endpoint": f"{group_name}.{endpoint_name}",
-                        "error": message
-                    })
+                    self.results["failed"].append(
+                        {"endpoint": f"{group_name}.{endpoint_name}", "error": message}
+                    )
                     tested_endpoints += 1
 
                 # Small delay to avoid overwhelming the server
@@ -484,12 +604,16 @@ class APIEndpointTester:
         print(f"❌ Failed: {len(self.results['failed'])}")
         print(f"⏭️  Skipped: {len(self.results['skipped'])}")
 
-        if self.results['failed']:
+        if self.results["failed"]:
             print("\n❌ FAILED ENDPOINTS:")
-            for failure in self.results['failed']:
+            for failure in self.results["failed"]:
                 print(f"  • {failure['endpoint']}: {failure['error']}")
 
-        success_rate = (len(self.results['passed']) / tested_endpoints * 100) if tested_endpoints > 0 else 0
+        success_rate = (
+            (len(self.results["passed"]) / tested_endpoints * 100)
+            if tested_endpoints > 0
+            else 0
+        )
         print(f"📈 Success Rate: {success_rate:.1f}%")
         return self.results
 
@@ -520,5 +644,7 @@ def main():
         json.dump(results, f, indent=2)
 
     print("\n💾 Results saved to api_test_results.json")
+
+
 if __name__ == "__main__":
     main()
