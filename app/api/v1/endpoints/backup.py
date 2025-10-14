@@ -60,7 +60,9 @@ async def create_backup(
 
 @router.get("/list")
 async def list_backups(
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of backups to return"),
+    limit: int = Query(
+        20, ge=1, le=100, description="Maximum number of backups to return"
+    ),
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -123,7 +125,9 @@ async def get_backup_details(
 @router.post("/{backup_id}/restore")
 async def restore_backup(
     backup_id: str,
-    target_database: Optional[str] = Query(None, description="Target database URL (optional)"),
+    target_database: Optional[str] = Query(
+        None, description="Target database URL (optional)"
+    ),
     dry_run: bool = Query(True, description="Perform dry run (no actual restore)"),
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -247,7 +251,9 @@ async def get_backup_status(
         # Calculate statistics
         total_backups = len(backups)
         full_backups = len([b for b in backups if b.get("type") == "full"])
-        incremental_backups = len([b for b in backups if b.get("type") == "incremental"])
+        incremental_backups = len(
+            [b for b in backups if b.get("type") == "incremental"]
+        )
         successful_backups = len([b for b in backups if b.get("status") == "completed"])
         failed_backups = len([b for b in backups if b.get("status") == "failed"])
 
@@ -267,8 +273,12 @@ async def get_backup_status(
             stat = os.statvfs(settings.BACKUP_DIR)
             disk_stats = {
                 "total_space_gb": round((stat.f_blocks * stat.f_frsize) / (1024**3), 2),
-                "available_space_gb": round((stat.f_available * stat.f_frsize) / (1024**3), 2),
-                "used_space_gb": round(((stat.f_blocks - stat.f_available) * stat.f_frsize) / (1024**3), 2),
+                "available_space_gb": round(
+                    (stat.f_available * stat.f_frsize) / (1024**3), 2
+                ),
+                "used_space_gb": round(
+                    ((stat.f_blocks - stat.f_available) * stat.f_frsize) / (1024**3), 2
+                ),
             }
         except Exception:
             disk_stats = {"error": "Unable to get disk statistics"}
@@ -282,7 +292,12 @@ async def get_backup_status(
                 "successful_backups": successful_backups,
                 "failed_backups": failed_backups,
                 "success_rate_percent": round(
-                    (successful_backups / total_backups * 100) if total_backups > 0 else 0, 1
+                    (
+                        (successful_backups / total_backups * 100)
+                        if total_backups > 0
+                        else 0
+                    ),
+                    1,
                 ),
             },
             "storage": {

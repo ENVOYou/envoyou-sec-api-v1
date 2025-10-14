@@ -28,7 +28,7 @@ class EncryptionService:
     def __init__(self):
         self._fernet: Optional[Fernet] = None
         self._master_key: Optional[bytes] = None
-        self._salt = b'envoyou_sec_salt_2024'  # Should be configurable in production
+        self._salt = b"envoyou_sec_salt_2024"  # Should be configurable in production
 
         # Initialize encryption keys
         self._initialize_keys()
@@ -37,7 +37,7 @@ class EncryptionService:
         """Initialize encryption keys from environment or generate them"""
         try:
             # Get master key from environment or generate one
-            master_key_env = getattr(settings, 'ENCRYPTION_MASTER_KEY', None)
+            master_key_env = getattr(settings, "ENCRYPTION_MASTER_KEY", None)
 
             if master_key_env:
                 # Use provided key
@@ -51,7 +51,7 @@ class EncryptionService:
                     length=32,
                     salt=self._salt,
                     iterations=100000,
-                    backend=default_backend()
+                    backend=default_backend(),
                 )
                 self._master_key = base64.urlsafe_b64encode(kdf.derive(key_material))
 
@@ -84,7 +84,7 @@ class EncryptionService:
                 return f"DEV_UNENCRYPTED:{json.dumps(data)}"
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Encryption service not available"
+                detail="Encryption service not available",
             )
 
         try:
@@ -99,7 +99,7 @@ class EncryptionService:
                 "data": data_str,
                 "encrypted_at": datetime.utcnow().isoformat(),
                 "key_id": key_id or "default",
-                "version": "1.0"
+                "version": "1.0",
             }
 
             payload_json = json.dumps(payload)
@@ -114,7 +114,7 @@ class EncryptionService:
             logger.error(f"Encryption failed: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Data encryption failed"
+                detail="Data encryption failed",
             )
 
     def decrypt_data(self, encrypted_data: str) -> Any:
@@ -129,12 +129,14 @@ class EncryptionService:
         """
         if not self._fernet:
             # In development, handle unencrypted data
-            if settings.ENVIRONMENT == "development" and encrypted_data.startswith("DEV_UNENCRYPTED:"):
+            if settings.ENVIRONMENT == "development" and encrypted_data.startswith(
+                "DEV_UNENCRYPTED:"
+            ):
                 data_str = encrypted_data[16:]  # Remove DEV_UNENCRYPTED: prefix
                 return json.loads(data_str)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Encryption service not available"
+                detail="Encryption service not available",
             )
 
         try:
@@ -160,13 +162,13 @@ class EncryptionService:
         except InvalidToken:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid encrypted data or decryption key"
+                detail="Invalid encrypted data or decryption key",
             )
         except Exception as e:
             logger.error(f"Decryption failed: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Data decryption failed"
+                detail="Data decryption failed",
             )
 
     def hash_sensitive_data(self, data: str, salt: Optional[str] = None) -> str:
@@ -230,14 +232,14 @@ class EncryptionService:
 
         signing_key = key or self._master_key.decode()
         signature = hmac.new(
-            signing_key.encode(),
-            data_str.encode(),
-            hashlib.sha256
+            signing_key.encode(), data_str.encode(), hashlib.sha256
         ).digest()
 
         return base64.urlsafe_b64encode(signature).decode()
 
-    def verify_data_signature(self, data: Any, signature: str, key: Optional[str] = None) -> bool:
+    def verify_data_signature(
+        self, data: Any, signature: str, key: Optional[str] = None
+    ) -> bool:
         """
         Verify HMAC signature for data integrity
 
@@ -272,6 +274,7 @@ class EncryptionService:
             else:
                 # Generate new key (simplified - should use proper key management)
                 import secrets
+
                 self._master_key = base64.urlsafe_b64encode(secrets.token_bytes(32))
 
             self._fernet = Fernet(self._master_key)
@@ -289,7 +292,9 @@ class EncryptionService:
             "environment": settings.ENVIRONMENT,
             "key_rotation_supported": True,
             "supported_algorithms": ["Fernet", "SHA256", "HMAC-SHA256"],
-            "master_key_configured": bool(getattr(settings, 'ENCRYPTION_MASTER_KEY', None)),
+            "master_key_configured": bool(
+                getattr(settings, "ENCRYPTION_MASTER_KEY", None)
+            ),
         }
 
 

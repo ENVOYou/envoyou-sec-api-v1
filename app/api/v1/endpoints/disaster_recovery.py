@@ -17,12 +17,17 @@ router = APIRouter()
 
 @router.post("/initiate")
 async def initiate_disaster_recovery(
-    disaster_type: str = Query(..., description="Type of disaster (database_failure, service_outage, data_corruption, security_breach)"),
+    disaster_type: str = Query(
+        ...,
+        description="Type of disaster (database_failure, service_outage, data_corruption, security_breach)",
+    ),
     affected_services: List[str] = Query(..., description="List of affected services"),
-    priority: str = Query("high", description="Recovery priority (critical, high, medium, low)"),
+    priority: str = Query(
+        "high", description="Recovery priority (critical, high, medium, low)"
+    ),
     description: Optional[str] = Query(None, description="Description of the disaster"),
     current_user: User = Depends(require_admin),
-    db = Depends(get_db),
+    db=Depends(get_db),
 ):
     """
     Initiate disaster recovery procedure
@@ -30,7 +35,12 @@ async def initiate_disaster_recovery(
     This endpoint triggers the disaster recovery workflow and should only be used
     in actual disaster scenarios. Requires admin privileges.
     """
-    if disaster_type not in ["database_failure", "service_outage", "data_corruption", "security_breach"]:
+    if disaster_type not in [
+        "database_failure",
+        "service_outage",
+        "data_corruption",
+        "security_breach",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid disaster type. Must be one of: database_failure, service_outage, data_corruption, security_breach",
@@ -63,9 +73,11 @@ async def initiate_disaster_recovery(
 
 @router.get("/status")
 async def get_recovery_status(
-    recovery_id: Optional[str] = Query(None, description="Specific recovery ID to check"),
+    recovery_id: Optional[str] = Query(
+        None, description="Specific recovery ID to check"
+    ),
     current_user: User = Depends(require_admin),
-    db = Depends(get_db),
+    db=Depends(get_db),
 ):
     """
     Get status of disaster recovery operations
@@ -87,7 +99,7 @@ async def get_recovery_status(
 @router.post("/test")
 async def test_disaster_recovery(
     current_user: User = Depends(require_admin),
-    db = Depends(get_db),
+    db=Depends(get_db),
 ):
     """
     Test disaster recovery procedures (dry run)
@@ -122,7 +134,7 @@ async def test_disaster_recovery(
 @router.get("/recommendations")
 async def get_recovery_recommendations(
     current_user: User = Depends(require_admin),
-    db = Depends(get_db),
+    db=Depends(get_db),
 ):
     """
     Get disaster recovery recommendations
@@ -141,7 +153,9 @@ async def get_recovery_recommendations(
             "categories": {
                 "backup": [r for r in recommendations if "backup" in r.lower()],
                 "testing": [r for r in recommendations if "test" in r.lower()],
-                "documentation": [r for r in recommendations if "document" in r.lower()],
+                "documentation": [
+                    r for r in recommendations if "document" in r.lower()
+                ],
                 "monitoring": [r for r in recommendations if "monitor" in r.lower()],
                 "security": [r for r in recommendations if "security" in r.lower()],
             },
@@ -179,10 +193,13 @@ async def get_recovery_procedures(
                 "7. Perform comprehensive testing",
                 "8. Monitor system performance post-recovery",
             ],
-            "required_team": ["Database Administrator", "DevOps Engineer", "Application Owner"],
+            "required_team": [
+                "Database Administrator",
+                "DevOps Engineer",
+                "Application Owner",
+            ],
             "rollback_procedure": "Fail back to previous database instance if restore fails",
         },
-
         "service_outage": {
             "description": "Application service becomes unavailable",
             "estimated_duration": "15-30 minutes",
@@ -200,7 +217,6 @@ async def get_recovery_procedures(
             "required_team": ["DevOps Engineer", "Site Reliability Engineer"],
             "rollback_procedure": "Revert to previous service version",
         },
-
         "data_corruption": {
             "description": "Data integrity compromised",
             "estimated_duration": "45-90 minutes",
@@ -215,10 +231,13 @@ async def get_recovery_procedures(
                 "7. Update downstream systems and caches",
                 "8. Perform comprehensive business validation",
             ],
-            "required_team": ["Database Administrator", "Data Engineer", "Business Analyst"],
+            "required_team": [
+                "Database Administrator",
+                "Data Engineer",
+                "Business Analyst",
+            ],
             "rollback_procedure": "Maintain corrupted data in quarantine for forensic analysis",
         },
-
         "security_breach": {
             "description": "Security incident or breach detected",
             "estimated_duration": "2-4 hours",
@@ -233,7 +252,12 @@ async def get_recovery_procedures(
                 "7. Notify affected parties and regulators",
                 "8. Conduct post-incident review",
             ],
-            "required_team": ["Security Team", "Legal Team", "DevOps Engineer", "Incident Commander"],
+            "required_team": [
+                "Security Team",
+                "Legal Team",
+                "DevOps Engineer",
+                "Incident Commander",
+            ],
             "rollback_procedure": "Complete system rebuild if breach is severe",
         },
     }
@@ -261,14 +285,20 @@ async def conduct_recovery_drill(
     drill_type: str = Query(..., description="Type of drill to conduct"),
     notify_team: bool = Query(True, description="Whether to notify the team"),
     current_user: User = Depends(require_admin),
-    db = Depends(get_db),
+    db=Depends(get_db),
 ):
     """
     Conduct a disaster recovery drill
 
     Simulates disaster scenarios to test team response and procedures.
     """
-    if drill_type not in ["database_failure", "service_outage", "data_corruption", "security_breach", "full_system"]:
+    if drill_type not in [
+        "database_failure",
+        "service_outage",
+        "data_corruption",
+        "security_breach",
+        "full_system",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid drill type",

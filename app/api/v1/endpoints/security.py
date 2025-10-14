@@ -33,7 +33,9 @@ async def analyze_request_threats(
             detail="Admin access required for security analysis",
         )
 
-    analysis = security_service.analyze_request_for_threats(request, str(current_user.id))
+    analysis = security_service.analyze_request_for_threats(
+        request, str(current_user.id)
+    )
 
     return analysis
 
@@ -53,7 +55,9 @@ async def get_security_status(
 
 @router.get("/report")
 async def get_security_report(
-    hours: int = Query(24, ge=1, le=168, description="Time period in hours (max 1 week)"),
+    hours: int = Query(
+        24, ge=1, le=168, description="Time period in hours (max 1 week)"
+    ),
     current_user: User = Depends(require_admin),
 ):
     """
@@ -101,8 +105,7 @@ async def get_suspicious_activity(
     # Apply filters
     if risk_level:
         filtered_requests = [
-            req for req in all_requests
-            if req.get("risk_level") == risk_level
+            req for req in all_requests if req.get("risk_level") == risk_level
         ]
     else:
         filtered_requests = all_requests
@@ -122,7 +125,9 @@ async def get_suspicious_activity(
 async def block_ip_address(
     ip_address: str = Query(..., description="IP address to block"),
     reason: str = Query(..., description="Reason for blocking"),
-    duration_hours: int = Query(24, ge=1, le=168, description="Block duration in hours"),
+    duration_hours: int = Query(
+        24, ge=1, le=168, description="Block duration in hours"
+    ),
     current_user: User = Depends(require_admin),
 ):
     """
@@ -205,7 +210,8 @@ async def clear_failed_login_attempts(
     elif username:
         # Clear all entries for this username
         keys_to_remove = [
-            key for key in security_service.failed_login_attempts.keys()
+            key
+            for key in security_service.failed_login_attempts.keys()
             if key.startswith(f"{username}:")
         ]
         for key in keys_to_remove:
@@ -214,7 +220,8 @@ async def clear_failed_login_attempts(
     elif ip_address:
         # Clear all entries for this IP
         keys_to_remove = [
-            key for key in security_service.failed_login_attempts.keys()
+            key
+            for key in security_service.failed_login_attempts.keys()
             if key.endswith(f":{ip_address}")
         ]
         for key in keys_to_remove:
@@ -243,7 +250,9 @@ async def get_threat_patterns(
     """
     return {
         "threat_patterns": security_service.suspicious_patterns,
-        "pattern_count": sum(len(patterns) for patterns in security_service.suspicious_patterns.values()),
+        "pattern_count": sum(
+            len(patterns) for patterns in security_service.suspicious_patterns.values()
+        ),
         "threat_types": list(security_service.suspicious_patterns.keys()),
     }
 
@@ -273,24 +282,28 @@ async def test_threat_detection(
         patterns = security_service.suspicious_patterns[threat_type]
         for pattern in patterns:
             match = re.search(pattern, test_input, re.IGNORECASE)
-            test_results.append({
-                "threat_type": threat_type,
-                "pattern": pattern,
-                "matched": match is not None,
-                "match_details": match.group(0) if match else None,
-            })
+            test_results.append(
+                {
+                    "threat_type": threat_type,
+                    "pattern": pattern,
+                    "matched": match is not None,
+                    "match_details": match.group(0) if match else None,
+                }
+            )
     else:
         # Test all threat types
         for threat_type_name, patterns in security_service.suspicious_patterns.items():
             for pattern in patterns:
                 match = re.search(pattern, test_input, re.IGNORECASE)
                 if match:
-                    test_results.append({
-                        "threat_type": threat_type_name,
-                        "pattern": pattern,
-                        "matched": True,
-                        "match_details": match.group(0),
-                    })
+                    test_results.append(
+                        {
+                            "threat_type": threat_type_name,
+                            "pattern": pattern,
+                            "matched": True,
+                            "match_details": match.group(0),
+                        }
+                    )
 
     return {
         "test_input": test_input,

@@ -24,16 +24,20 @@ class DisasterRecoveryService:
         self.backup_service = create_backup_service(db)
 
         # Recovery configuration
-        self.recovery_timeout_minutes = getattr(settings, 'RECOVERY_TIMEOUT_MINUTES', 60)
-        self.max_recovery_attempts = getattr(settings, 'MAX_RECOVERY_ATTEMPTS', 3)
-        self.health_check_interval_seconds = getattr(settings, 'HEALTH_CHECK_INTERVAL', 30)
+        self.recovery_timeout_minutes = getattr(
+            settings, "RECOVERY_TIMEOUT_MINUTES", 60
+        )
+        self.max_recovery_attempts = getattr(settings, "MAX_RECOVERY_ATTEMPTS", 3)
+        self.health_check_interval_seconds = getattr(
+            settings, "HEALTH_CHECK_INTERVAL", 30
+        )
 
     async def initiate_disaster_recovery(
         self,
         disaster_type: str,
         affected_services: List[str],
         priority: str = "high",
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ) -> Dict[str, any]:
         """
         Initiate disaster recovery procedure
@@ -102,7 +106,9 @@ class DisasterRecoveryService:
                 ],
                 "estimated_duration_minutes": 45,
                 "required_resources": ["Database Administrator", "DevOps Engineer"],
-                "risk_assessment": "high" if "production" in affected_services else "medium",
+                "risk_assessment": (
+                    "high" if "production" in affected_services else "medium"
+                ),
             }
 
         elif disaster_type == "service_outage":
@@ -150,7 +156,11 @@ class DisasterRecoveryService:
                     "Notify affected parties",
                 ],
                 "estimated_duration_minutes": 120,
-                "required_resources": ["Security Team", "Legal Team", "DevOps Engineer"],
+                "required_resources": [
+                    "Security Team",
+                    "Legal Team",
+                    "DevOps Engineer",
+                ],
                 "risk_assessment": "critical",
             }
 
@@ -173,7 +183,9 @@ class DisasterRecoveryService:
 
         # Adjust based on priority
         if priority == "critical":
-            plan["estimated_duration_minutes"] = max(15, plan["estimated_duration_minutes"] // 2)
+            plan["estimated_duration_minutes"] = max(
+                15, plan["estimated_duration_minutes"] // 2
+            )
             plan["required_resources"].insert(0, "Incident Commander")
         elif priority == "low":
             plan["estimated_duration_minutes"] = plan["estimated_duration_minutes"] * 2
@@ -190,22 +202,26 @@ class DisasterRecoveryService:
 
         try:
             # Step 1: Initial assessment
-            execution_log.append({
-                "step": "assessment",
-                "timestamp": datetime.utcnow().isoformat(),
-                "status": "completed",
-                "message": "Initial disaster assessment completed",
-            })
+            execution_log.append(
+                {
+                    "step": "assessment",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "status": "completed",
+                    "message": "Initial disaster assessment completed",
+                }
+            )
 
             # Step 2: Backup current state (if possible)
             backup_result = await self._create_emergency_backup(recovery_id)
-            execution_log.append({
-                "step": "emergency_backup",
-                "timestamp": datetime.utcnow().isoformat(),
-                "status": "completed" if backup_result["success"] else "failed",
-                "message": f"Emergency backup: {backup_result['message']}",
-                "details": backup_result,
-            })
+            execution_log.append(
+                {
+                    "step": "emergency_backup",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "status": "completed" if backup_result["success"] else "failed",
+                    "message": f"Emergency backup: {backup_result['message']}",
+                    "details": backup_result,
+                }
+            )
 
             # Step 3: Execute recovery steps
             for i, step in enumerate(recovery_plan["steps"]):
@@ -215,37 +231,45 @@ class DisasterRecoveryService:
                     # Simulate step execution (in real implementation, call actual recovery functions)
                     success = await self._execute_recovery_step(step, i + 1)
 
-                    execution_log.append({
-                        "step": f"recovery_step_{i+1}",
-                        "description": step,
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "duration_seconds": (datetime.utcnow() - step_start).total_seconds(),
-                        "status": "completed" if success else "failed",
-                        "message": f"Step {i+1} {'completed' if success else 'failed'}: {step}",
-                    })
+                    execution_log.append(
+                        {
+                            "step": f"recovery_step_{i+1}",
+                            "description": step,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "duration_seconds": (
+                                datetime.utcnow() - step_start
+                            ).total_seconds(),
+                            "status": "completed" if success else "failed",
+                            "message": f"Step {i+1} {'completed' if success else 'failed'}: {step}",
+                        }
+                    )
 
                     if not success:
                         break
 
                 except Exception as e:
-                    execution_log.append({
-                        "step": f"recovery_step_{i+1}",
-                        "description": step,
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "status": "failed",
-                        "message": f"Step {i+1} failed: {str(e)}",
-                    })
+                    execution_log.append(
+                        {
+                            "step": f"recovery_step_{i+1}",
+                            "description": step,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "status": "failed",
+                            "message": f"Step {i+1} failed: {str(e)}",
+                        }
+                    )
                     break
 
             # Step 4: Validation
             validation_result = await self._validate_recovery()
-            execution_log.append({
-                "step": "validation",
-                "timestamp": datetime.utcnow().isoformat(),
-                "status": "completed" if validation_result["success"] else "failed",
-                "message": validation_result["message"],
-                "details": validation_result,
-            })
+            execution_log.append(
+                {
+                    "step": "validation",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "status": "completed" if validation_result["success"] else "failed",
+                    "message": validation_result["message"],
+                    "details": validation_result,
+                }
+            )
 
             # Calculate total duration
             total_duration = (datetime.utcnow() - start_time).total_seconds()
@@ -253,13 +277,21 @@ class DisasterRecoveryService:
             result = {
                 "success": validation_result["success"],
                 "total_duration_seconds": total_duration,
-                "steps_completed": len([log for log in execution_log if log["status"] == "completed"]),
-                "steps_failed": len([log for log in execution_log if log["status"] == "failed"]),
+                "steps_completed": len(
+                    [log for log in execution_log if log["status"] == "completed"]
+                ),
+                "steps_failed": len(
+                    [log for log in execution_log if log["status"] == "failed"]
+                ),
                 "execution_log": execution_log,
-                "final_status": "recovered" if validation_result["success"] else "recovery_failed",
+                "final_status": (
+                    "recovered" if validation_result["success"] else "recovery_failed"
+                ),
             }
 
-            logger.info(f"Disaster recovery {recovery_id} completed: {result['final_status']}")
+            logger.info(
+                f"Disaster recovery {recovery_id} completed: {result['final_status']}"
+            )
             return result
 
         except Exception as e:
@@ -325,7 +357,11 @@ class DisasterRecoveryService:
 
             return {
                 "success": all_healthy,
-                "message": "All systems healthy" if all_healthy else "Some systems still unhealthy",
+                "message": (
+                    "All systems healthy"
+                    if all_healthy
+                    else "Some systems still unhealthy"
+                ),
                 "health_checks": health_checks,
             }
 
@@ -345,7 +381,9 @@ class DisasterRecoveryService:
             "external_services": {"healthy": True, "response_time_ms": 300},
         }
 
-    async def get_recovery_status(self, recovery_id: Optional[str] = None) -> Dict[str, any]:
+    async def get_recovery_status(
+        self, recovery_id: Optional[str] = None
+    ) -> Dict[str, any]:
         """Get status of recovery operations"""
 
         # In a real implementation, you'd track recovery operations in a database
@@ -383,62 +421,78 @@ class DisasterRecoveryService:
 
         # Test backup creation
         try:
-            backup_result = await self.backup_service.create_full_backup("dr_test_backup")
-            test_results["tests"].append({
-                "test": "backup_creation",
-                "success": backup_result["status"] == "completed",
-                "details": backup_result,
-            })
+            backup_result = await self.backup_service.create_full_backup(
+                "dr_test_backup"
+            )
+            test_results["tests"].append(
+                {
+                    "test": "backup_creation",
+                    "success": backup_result["status"] == "completed",
+                    "details": backup_result,
+                }
+            )
         except Exception as e:
-            test_results["tests"].append({
-                "test": "backup_creation",
-                "success": False,
-                "error": str(e),
-            })
+            test_results["tests"].append(
+                {
+                    "test": "backup_creation",
+                    "success": False,
+                    "error": str(e),
+                }
+            )
             test_results["overall_success"] = False
 
         # Test backup restoration (dry run)
         try:
             # This would be a dry run restore in real implementation
-            test_results["tests"].append({
-                "test": "backup_restoration_dry_run",
-                "success": True,
-                "details": "Dry run completed successfully",
-            })
+            test_results["tests"].append(
+                {
+                    "test": "backup_restoration_dry_run",
+                    "success": True,
+                    "details": "Dry run completed successfully",
+                }
+            )
         except Exception as e:
-            test_results["tests"].append({
-                "test": "backup_restoration_dry_run",
-                "success": False,
-                "error": str(e),
-            })
+            test_results["tests"].append(
+                {
+                    "test": "backup_restoration_dry_run",
+                    "success": False,
+                    "error": str(e),
+                }
+            )
             test_results["overall_success"] = False
 
         # Test health checks
         try:
             health_result = await self._perform_health_checks()
             all_healthy = all(check["healthy"] for check in health_result.values())
-            test_results["tests"].append({
-                "test": "health_checks",
-                "success": all_healthy,
-                "details": health_result,
-            })
+            test_results["tests"].append(
+                {
+                    "test": "health_checks",
+                    "success": all_healthy,
+                    "details": health_result,
+                }
+            )
             if not all_healthy:
                 test_results["overall_success"] = False
         except Exception as e:
-            test_results["tests"].append({
-                "test": "health_checks",
-                "success": False,
-                "error": str(e),
-            })
+            test_results["tests"].append(
+                {
+                    "test": "health_checks",
+                    "success": False,
+                    "error": str(e),
+                }
+            )
             test_results["overall_success"] = False
 
         test_results["end_time"] = datetime.utcnow().isoformat()
         test_results["duration_seconds"] = (
-            datetime.fromisoformat(test_results["end_time"]) -
-            datetime.fromisoformat(test_results["start_time"])
+            datetime.fromisoformat(test_results["end_time"])
+            - datetime.fromisoformat(test_results["start_time"])
         ).total_seconds()
 
-        logger.info(f"Disaster recovery test completed: {test_results['overall_success']}")
+        logger.info(
+            f"Disaster recovery test completed: {test_results['overall_success']}"
+        )
 
         return test_results
 

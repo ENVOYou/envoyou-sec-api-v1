@@ -52,7 +52,9 @@ class SecurityService:
         }
 
         # Security monitoring
-        self.failed_login_attempts = defaultdict(lambda: {"count": 0, "last_attempt": None, "blocked_until": None})
+        self.failed_login_attempts = defaultdict(
+            lambda: {"count": 0, "last_attempt": None, "blocked_until": None}
+        )
         self.suspicious_requests = deque(maxlen=1000)
         self.ip_blocklist = set()
         self.rate_limit_violations = defaultdict(int)
@@ -62,7 +64,9 @@ class SecurityService:
         self.block_duration_minutes = 15
         self.max_rate_limit_violations = 10
 
-    def analyze_request_for_threats(self, request: Request, user_id: Optional[str] = None) -> Dict[str, any]:
+    def analyze_request_for_threats(
+        self, request: Request, user_id: Optional[str] = None
+    ) -> Dict[str, any]:
         """
         Analyze incoming request for security threats
 
@@ -87,44 +91,67 @@ class SecurityService:
         for threat_type, patterns in self.suspicious_patterns.items():
             for pattern in patterns:
                 if re.search(pattern, url_content, re.IGNORECASE):
-                    threats_detected.append({
-                        "type": threat_type,
-                        "pattern": pattern,
-                        "location": "url",
-                        "severity": "high" if threat_type in ["sql_injection", "command_injection"] else "medium",
-                    })
-                    risk_score += 10 if threat_type in ["sql_injection", "command_injection"] else 5
+                    threats_detected.append(
+                        {
+                            "type": threat_type,
+                            "pattern": pattern,
+                            "location": "url",
+                            "severity": (
+                                "high"
+                                if threat_type in ["sql_injection", "command_injection"]
+                                else "medium"
+                            ),
+                        }
+                    )
+                    risk_score += (
+                        10
+                        if threat_type in ["sql_injection", "command_injection"]
+                        else 5
+                    )
 
         # Check user agent for suspicious patterns
-        suspicious_uas = ["sqlmap", "nmap", "nikto", "dirbuster", "gobuster", "burpsuite"]
+        suspicious_uas = [
+            "sqlmap",
+            "nmap",
+            "nikto",
+            "dirbuster",
+            "gobuster",
+            "burpsuite",
+        ]
         for ua in suspicious_uas:
             if ua.lower() in user_agent.lower():
-                threats_detected.append({
-                    "type": "suspicious_user_agent",
-                    "pattern": ua,
-                    "location": "user_agent",
-                    "severity": "high",
-                })
+                threats_detected.append(
+                    {
+                        "type": "suspicious_user_agent",
+                        "pattern": ua,
+                        "location": "user_agent",
+                        "severity": "high",
+                    }
+                )
                 risk_score += 15
 
         # Check for unusual request patterns
         if self._is_unusual_request_pattern(method, path, client_ip):
-            threats_detected.append({
-                "type": "unusual_request_pattern",
-                "pattern": f"{method} {path}",
-                "location": "request_pattern",
-                "severity": "low",
-            })
+            threats_detected.append(
+                {
+                    "type": "unusual_request_pattern",
+                    "pattern": f"{method} {path}",
+                    "location": "request_pattern",
+                    "severity": "low",
+                }
+            )
             risk_score += 2
 
         # Check IP reputation (simplified)
         if client_ip in self.ip_blocklist:
-            threats_detected.append({
-                "type": "blocked_ip",
-                "pattern": client_ip,
-                "location": "ip_address",
-                "severity": "critical",
-            })
+            threats_detected.append(
+                {
+                    "type": "blocked_ip",
+                    "pattern": client_ip,
+                    "location": "ip_address",
+                    "severity": "critical",
+                }
+            )
             risk_score += 50
 
         # Determine overall risk level
@@ -132,20 +159,24 @@ class SecurityService:
 
         # Log suspicious activity
         if threats_detected:
-            self._log_suspicious_activity(client_ip, user_id, threats_detected, risk_level)
+            self._log_suspicious_activity(
+                client_ip, user_id, threats_detected, risk_level
+            )
 
             # Record suspicious request
-            self.suspicious_requests.append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "client_ip": client_ip,
-                "user_id": user_id,
-                "method": method,
-                "path": path,
-                "user_agent": user_agent,
-                "threats": threats_detected,
-                "risk_score": risk_score,
-                "risk_level": risk_level,
-            })
+            self.suspicious_requests.append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "client_ip": client_ip,
+                    "user_id": user_id,
+                    "method": method,
+                    "path": path,
+                    "user_agent": user_agent,
+                    "threats": threats_detected,
+                    "risk_score": risk_score,
+                    "risk_level": risk_level,
+                }
+            )
 
         return {
             "threats_detected": len(threats_detected) > 0,
@@ -177,7 +208,9 @@ class SecurityService:
 
         # Check if account should be blocked
         if attempt["count"] >= self.max_failed_logins:
-            attempt["blocked_until"] = now + timedelta(minutes=self.block_duration_minutes)
+            attempt["blocked_until"] = now + timedelta(
+                minutes=self.block_duration_minutes
+            )
 
             logger.warning(
                 f"Account blocked due to failed login attempts: {username} from {client_ip}"
@@ -218,7 +251,9 @@ class SecurityService:
 
         return False
 
-    def record_rate_limit_violation(self, client_ip: str, endpoint: str) -> Dict[str, any]:
+    def record_rate_limit_violation(
+        self, client_ip: str, endpoint: str
+    ) -> Dict[str, any]:
         """
         Record a rate limit violation
 
@@ -266,13 +301,16 @@ class SecurityService:
 
         # Calculate statistics
         active_blocks = sum(
-            1 for attempt in self.failed_login_attempts.values()
+            1
+            for attempt in self.failed_login_attempts.values()
             if attempt["blocked_until"] and attempt["blocked_until"] > now
         )
 
         recent_suspicious = [
-            req for req in self.suspicious_requests
-            if (now - datetime.fromisoformat(req["timestamp"])).seconds < 3600  # Last hour
+            req
+            for req in self.suspicious_requests
+            if (now - datetime.fromisoformat(req["timestamp"])).seconds
+            < 3600  # Last hour
         ]
 
         return {
@@ -367,7 +405,8 @@ class SecurityService:
 
         # Filter recent suspicious requests
         recent_requests = [
-            req for req in self.suspicious_requests
+            req
+            for req in self.suspicious_requests
             if datetime.fromisoformat(req["timestamp"]) > cutoff_time
         ]
 
@@ -413,17 +452,26 @@ class SecurityService:
             return real_ip
 
         # Fallback to direct client
-        if hasattr(request.client, 'host'):
+        if hasattr(request.client, "host"):
             return request.client.host
 
         return "unknown"
 
-    def _is_unusual_request_pattern(self, method: str, path: str, client_ip: str) -> bool:
+    def _is_unusual_request_pattern(
+        self, method: str, path: str, client_ip: str
+    ) -> bool:
         """Check if request pattern is unusual"""
         # This is a simplified check - in production you'd use ML/anomaly detection
         suspicious_paths = [
-            "/wp-admin", "/admin", "/phpmyadmin", "/.env", "/.git",
-            "/backup", "/config", "/database", "/dump"
+            "/wp-admin",
+            "/admin",
+            "/phpmyadmin",
+            "/.env",
+            "/.git",
+            "/backup",
+            "/config",
+            "/database",
+            "/dump",
         ]
 
         if any(suspicious_path in path.lower() for suspicious_path in suspicious_paths):
@@ -461,7 +509,11 @@ class SecurityService:
         return actions.get(risk_level, "Allow request")
 
     def _log_suspicious_activity(
-        self, client_ip: str, user_id: Optional[str], threats: List[Dict], risk_level: str
+        self,
+        client_ip: str,
+        user_id: Optional[str],
+        threats: List[Dict],
+        risk_level: str,
     ):
         """Log suspicious activity"""
         logger.warning(
@@ -478,7 +530,8 @@ class SecurityService:
         """Clean up expired account blocks"""
         now = datetime.utcnow()
         expired_keys = [
-            key for key, attempt in self.failed_login_attempts.items()
+            key
+            for key, attempt in self.failed_login_attempts.items()
             if attempt["blocked_until"] and attempt["blocked_until"] <= now
         ]
 
@@ -519,8 +572,12 @@ class SecurityService:
         if not recommendations:
             recommendations.append("Security posture is good - continue monitoring")
 
-        recommendations.append("Regular security audits and penetration testing recommended")
-        recommendations.append("Keep security signatures and threat intelligence updated")
+        recommendations.append(
+            "Regular security audits and penetration testing recommended"
+        )
+        recommendations.append(
+            "Keep security signatures and threat intelligence updated"
+        )
 
         return recommendations
 

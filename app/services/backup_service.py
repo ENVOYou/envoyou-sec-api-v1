@@ -26,14 +26,20 @@ class BackupService:
 
     def __init__(self, db: Session):
         self.db = db
-        self.backup_base_dir = Path(settings.BACKUP_DIR) if hasattr(settings, 'BACKUP_DIR') else Path("./backups")
+        self.backup_base_dir = (
+            Path(settings.BACKUP_DIR)
+            if hasattr(settings, "BACKUP_DIR")
+            else Path("./backups")
+        )
         self.backup_base_dir.mkdir(exist_ok=True, parents=True)
 
         # Backup retention settings
-        self.retention_days = getattr(settings, 'BACKUP_RETENTION_DAYS', 30)
-        self.max_backup_count = getattr(settings, 'MAX_BACKUP_COUNT', 10)
+        self.retention_days = getattr(settings, "BACKUP_RETENTION_DAYS", 30)
+        self.max_backup_count = getattr(settings, "MAX_BACKUP_COUNT", 10)
 
-    async def create_full_backup(self, backup_name: Optional[str] = None) -> Dict[str, any]:
+    async def create_full_backup(
+        self, backup_name: Optional[str] = None
+    ) -> Dict[str, any]:
         """
         Create a full database and file backup
 
@@ -98,7 +104,9 @@ class BackupService:
                 "error": str(e),
             }
 
-    async def create_incremental_backup(self, backup_name: Optional[str] = None) -> Dict[str, any]:
+    async def create_incremental_backup(
+        self, backup_name: Optional[str] = None
+    ) -> Dict[str, any]:
         """
         Create an incremental backup (changes since last full backup)
 
@@ -109,7 +117,9 @@ class BackupService:
             Backup metadata
         """
         timestamp = datetime.utcnow()
-        backup_id = backup_name or f"incremental_backup_{timestamp.strftime('%Y%m%d_%H%M%S')}"
+        backup_id = (
+            backup_name or f"incremental_backup_{timestamp.strftime('%Y%m%d_%H%M%S')}"
+        )
 
         backup_dir = self.backup_base_dir / backup_id
         backup_dir.mkdir(exist_ok=True)
@@ -121,7 +131,9 @@ class BackupService:
             last_full_backup = await self._find_last_full_backup()
 
             if not last_full_backup:
-                logger.warning("No previous full backup found, creating full backup instead")
+                logger.warning(
+                    "No previous full backup found, creating full backup instead"
+                )
                 return await self.create_full_backup(backup_name)
 
             # Create incremental database backup
@@ -165,7 +177,9 @@ class BackupService:
                 "error": str(e),
             }
 
-    async def _create_database_backup(self, backup_dir: Path, backup_id: str) -> Dict[str, any]:
+    async def _create_database_backup(
+        self, backup_dir: Path, backup_id: str
+    ) -> Dict[str, any]:
         """Create PostgreSQL database backup using pg_dump"""
         try:
             # Create database backup directory
@@ -173,8 +187,8 @@ class BackupService:
             db_backup_dir.mkdir(exist_ok=True)
 
             # Use pg_dump for PostgreSQL backup
-            import subprocess
             import os
+            import subprocess
 
             # Get database connection details
             db_url = settings.DATABASE_URL
@@ -202,11 +216,16 @@ class BackupService:
                 # Run pg_dump
                 cmd = [
                     "pg_dump",
-                    "-h", db_host,
-                    "-p", db_port,
-                    "-U", db_user,
-                    "-d", db_name,
-                    "-f", str(backup_file),
+                    "-h",
+                    db_host,
+                    "-p",
+                    db_port,
+                    "-U",
+                    db_user,
+                    "-d",
+                    db_name,
+                    "-f",
+                    str(backup_file),
                     "--compress=9",  # gzip compression
                     "--format=custom",  # custom format for better compression
                     "--no-owner",  # don't set ownership
@@ -245,7 +264,9 @@ class BackupService:
         try:
             # For PostgreSQL, incremental backups are complex
             # This is a simplified approach - in production you'd use tools like pgBackRest
-            logger.warning("Incremental database backup not fully implemented for PostgreSQL")
+            logger.warning(
+                "Incremental database backup not fully implemented for PostgreSQL"
+            )
 
             # For now, create a backup of WAL files or recent changes
             wal_backup_dir = backup_dir / "database" / "incremental"
@@ -256,13 +277,13 @@ class BackupService:
 
             # Save changes to file
             changes_file = wal_backup_dir / f"{backup_id}_changes.sql.gz"
-            async with aiofiles.open(changes_file, 'wb') as f:
+            async with aiofiles.open(changes_file, "wb") as f:
                 # Compress the changes data
                 import gzip
                 import io
 
                 changes_sql = "\n".join(recent_changes)
-                compressed_data = gzip.compress(changes_sql.encode('utf-8'))
+                compressed_data = gzip.compress(changes_sql.encode("utf-8"))
                 await f.write(compressed_data)
 
             return {
@@ -281,7 +302,9 @@ class BackupService:
                 "method": "incremental_sql",
             }
 
-    async def _create_file_backup(self, backup_dir: Path, backup_id: str) -> Dict[str, any]:
+    async def _create_file_backup(
+        self, backup_dir: Path, backup_id: str
+    ) -> Dict[str, any]:
         """Create backup of important files (logs, configs, etc.)"""
         try:
             file_backup_dir = backup_dir / "files"
@@ -343,8 +366,12 @@ class BackupService:
             }
 
     async def _create_backup_manifest(
-        self, backup_dir: Path, backup_id: str, timestamp: datetime,
-        db_result: Dict, file_result: Dict
+        self,
+        backup_dir: Path,
+        backup_id: str,
+        timestamp: datetime,
+        db_result: Dict,
+        file_result: Dict,
     ) -> Path:
         """Create backup manifest file"""
         manifest_path = backup_dir / "backup_manifest.json"
@@ -357,12 +384,12 @@ class BackupService:
             "file_backup": file_result,
             "backup_service_version": "1.0",
             "system_info": {
-                "hostname": os.uname().nodename if hasattr(os, 'uname') else "unknown",
-                "platform": os.uname().sysname if hasattr(os, 'uname') else "unknown",
+                "hostname": os.uname().nodename if hasattr(os, "uname") else "unknown",
+                "platform": os.uname().sysname if hasattr(os, "uname") else "unknown",
             },
         }
 
-        async with aiofiles.open(manifest_path, 'w') as f:
+        async with aiofiles.open(manifest_path, "w") as f:
             await f.write(json.dumps(manifest, indent=2, default=str))
 
         return manifest_path
@@ -386,7 +413,9 @@ class BackupService:
                 return {"success": False, "error": "Database backup files missing"}
 
             # Check file sizes are reasonable
-            total_size = sum(f.stat().st_size for f in backup_dir.rglob("*") if f.is_file())
+            total_size = sum(
+                f.stat().st_size for f in backup_dir.rglob("*") if f.is_file()
+            )
 
             return {
                 "success": True,
@@ -405,14 +434,18 @@ class BackupService:
             # Get all backup directories
             backup_dirs = []
             for item in self.backup_base_dir.iterdir():
-                if item.is_dir() and item.name.startswith(("full_backup_", "incremental_backup_")):
+                if item.is_dir() and item.name.startswith(
+                    ("full_backup_", "incremental_backup_")
+                ):
                     # Extract timestamp from directory name
                     try:
                         # Parse timestamp from directory name
                         name_parts = item.name.split("_")
                         if len(name_parts) >= 3:
                             timestamp_str = name_parts[2] + "_" + name_parts[3]
-                            timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+                            timestamp = datetime.strptime(
+                                timestamp_str, "%Y%m%d_%H%M%S"
+                            )
                             backup_dirs.append((item, timestamp))
                     except ValueError:
                         continue
@@ -430,7 +463,7 @@ class BackupService:
 
             # Keep only the most recent backups (up to max_backup_count)
             if len(backup_dirs) > self.max_backup_count:
-                backups_to_remove = backup_dirs[self.max_backup_count:]
+                backups_to_remove = backup_dirs[self.max_backup_count :]
                 for backup_dir, _ in backups_to_remove:
                     logger.info(f"Removing excess backup: {backup_dir.name}")
                     shutil.rmtree(backup_dir)
@@ -465,14 +498,21 @@ class BackupService:
             # Get recent audit trail entries
             from app.models.audit import AuditTrail
 
-            recent_audits = self.db.query(AuditTrail).order_by(
-                AuditTrail.timestamp.desc()
-            ).limit(100).all()
+            recent_audits = (
+                self.db.query(AuditTrail)
+                .order_by(AuditTrail.timestamp.desc())
+                .limit(100)
+                .all()
+            )
 
             changes = []
             for audit in recent_audits:
-                changes.append(f"-- Audit: {audit.action} on {audit.entity_type} {audit.entity_id}")
-                changes.append(f"-- User: {audit.user_id}, Timestamp: {audit.timestamp}")
+                changes.append(
+                    f"-- Audit: {audit.action} on {audit.entity_type} {audit.entity_id}"
+                )
+                changes.append(
+                    f"-- User: {audit.user_id}, Timestamp: {audit.timestamp}"
+                )
 
             return changes
 
@@ -499,10 +539,12 @@ class BackupService:
         try:
             backups = []
             for item in self.backup_base_dir.iterdir():
-                if item.is_dir() and item.name.startswith(("full_backup_", "incremental_backup_")):
+                if item.is_dir() and item.name.startswith(
+                    ("full_backup_", "incremental_backup_")
+                ):
                     manifest_path = item / "backup_manifest.json"
                     if manifest_path.exists():
-                        async with aiofiles.open(manifest_path, 'r') as f:
+                        async with aiofiles.open(manifest_path, "r") as f:
                             manifest = json.loads(await f.read())
                             backups.append(manifest)
 
@@ -514,7 +556,9 @@ class BackupService:
             logger.error(f"Error listing backups: {str(e)}")
             return []
 
-    async def restore_backup(self, backup_id: str, target_db_url: Optional[str] = None) -> Dict[str, any]:
+    async def restore_backup(
+        self, backup_id: str, target_db_url: Optional[str] = None
+    ) -> Dict[str, any]:
         """
         Restore from a backup
 
