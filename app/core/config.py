@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # reCAPTCHA Configuration
+    RECAPTCHA_SECRET_KEY: Optional[str] = None
+    RECAPTCHA_MIN_SCORE: float = 0.5  # Minimum score for verification (0.0-1.0)
+    SKIP_RECAPTCHA: bool = False  # Skip verification in development/testing
+
     # Encryption
     ENCRYPTION_MASTER_KEY: Optional[str] = None  # Base64 encoded Fernet key
     ENCRYPT_SENSITIVE_DATA: bool = True  # Enable/disable data encryption

@@ -11,6 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.audit_logger import AuditLogger
+from app.core.config import settings
 from app.core.dependencies import (
     get_admin_user,
     get_current_active_user,
@@ -18,6 +19,7 @@ from app.core.dependencies import (
 )
 from app.core.rate_limiting import SLOWAPI_AVAILABLE, limiter
 from app.core.security import JWTManager
+from app.services.recaptcha_service import RecaptchaService
 
 if SLOWAPI_AVAILABLE:
     from slowapi.util import get_remote_address
@@ -80,6 +82,42 @@ async def login(
     user_agent = request.headers.get("user-agent")
 
     try:
+        # Verify reCAPTCHA token if provided and enabled
+        if credentials.recaptcha_token and not settings.SKIP_RECAPTCHA:
+            try:
+                recaptcha_service = RecaptchaService()
+                verification_result = await recaptcha_service.verify_token(
+                    credentials.recaptcha_token, expected_action="login"
+                )
+
+                # Log reCAPTCHA verification
+                audit_logger.log_authentication_event(
+                    event_type="RECAPTCHA_VERIFICATION",
+                    user_email=credentials.email,
+                    success=True,
+                    request_id=request_id,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    additional_data={
+                        "recaptcha_score": verification_result.get("score"),
+                        "recaptcha_action": verification_result.get("action"),
+                    },
+                )
+
+            except HTTPException as recaptcha_error:
+                # Log failed reCAPTCHA verification
+                audit_logger.log_authentication_event(
+                    event_type="RECAPTCHA_VERIFICATION_FAILED",
+                    user_email=credentials.email,
+                    success=False,
+                    request_id=request_id,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    error_message=str(recaptcha_error.detail),
+                )
+                raise recaptcha_error
+
+        # Authenticate user
         token_response = auth_service.authenticate_user(credentials)
 
         # Log successful authentication

@@ -18,6 +18,7 @@ class UserCredentials(BaseModel):
 
     email: EmailStr
     password: str
+    recaptcha_token: Optional[str] = None
 
     @validator("password")
     def validate_password(cls, v):
