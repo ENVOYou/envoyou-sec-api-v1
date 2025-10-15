@@ -3,13 +3,12 @@ Security Monitoring Endpoints
 API endpoints for security monitoring, threat detection, and security management
 """
 
+import re
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, require_admin
-from app.db.database import get_db
 from app.models.user import User
 from app.services.security_service import security_service
 
@@ -147,7 +146,9 @@ async def block_ip_address(
         "reason": reason,
         "blocked_by": current_user.username,
         "duration_hours": duration_hours,
-        "blocked_until": "manual_unblock_required",  # In production, calculate actual timestamp
+        "blocked_until": (
+            "manual_unblock_required"  # In production, calculate actual timestamp
+        ),
     }
 
 
