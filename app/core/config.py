@@ -43,7 +43,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = [
         "https://envoyou.com",
         "https://app.envoyou.com",
+        "https://staging.envoyou.com",
         "http://localhost:3000",
+        "http://localhost:3001",  # Dashboard port
         "http://localhost:5173",
         "https://envoyou-sec-api-v1.onrender.com",
     ]
@@ -116,7 +118,7 @@ class Settings(BaseSettings):
                     "127.0.0.1",
                     "testserver",
                     "api.envoyou.com",
-                    "envoyou-sec-api.onrender.com",
+                    "envoyou-sec-api-v1.onrender.com",
                 ]
             return [host.strip() for host in v.split(",")]
         return v
