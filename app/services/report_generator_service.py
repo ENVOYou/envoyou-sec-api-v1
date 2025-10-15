@@ -4,23 +4,24 @@ Handles PDF and Excel export for SEC Climate Disclosure Rule compliance
 """
 
 import io
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.styles import Font
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.models.user import User
 from app.services.emissions_consolidation_service import EmissionsConsolidationService
+
+logger = logging.getLogger(__name__)
 
 
 class SECReportGenerator:
@@ -67,7 +68,10 @@ class SECReportGenerator:
             if not consolidations:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"No consolidations found for company {company_id} in year {reporting_year}",
+                    detail=(
+                        f"No consolidations found for company {company_id} in year "
+                        f"{reporting_year}"
+                    ),
                 )
             consolidation = await self.consolidation_service.get_consolidation(
                 consolidations[0].id
@@ -94,7 +98,9 @@ class SECReportGenerator:
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unsupported format: {format_type}. Supported: json, pdf, excel",
+                detail=(
+                    f"Unsupported format: {format_type}. Supported: json, pdf, excel"
+                ),
             )
 
     def _build_report_structure(
@@ -107,7 +113,7 @@ class SECReportGenerator:
             "company_id": str(consolidation.company_id),
             "reporting_year": reporting_year,
             "consolidation_id": str(consolidation.id),
-            "report_generated_at": datetime.now().isoformat() + "Z",
+            "report_generated_at": (datetime.now().isoformat() + "Z"),
             "compliance_standard": "SEC Climate Disclosure Rule",
             # Executive Summary
             "executive_summary": {
@@ -118,38 +124,42 @@ class SECReportGenerator:
                 "emissions_intensity": None,  # Will be calculated based on revenue
                 "year_over_year_change": None,  # Will be calculated from previous year
                 "data_completeness_score": consolidation.data_completeness_score,
-                "reporting_boundary": f"{consolidation.total_entities_included} consolidated entities",
+                "reporting_boundary": (
+                    f"{consolidation.total_entities_included} consolidated entities"
+                ),
             },
             # Methodology and Data Quality
             "methodology": {
                 "calculation_methodology": "GHG Protocol Corporate Standard",
                 "consolidation_method": consolidation.consolidation_method.value,
-                "emission_factors_source": "EPA emission factors database",
-                "data_collection_period": f"January 1 - December 31, {reporting_year}",
+                "emission_factors_source": ("EPA emission factors database"),
+                "data_collection_period": (
+                    f"January 1 - December 31, {reporting_year}"
+                ),
                 "organizational_boundary": "Equity share (ownership percentage)",
                 "operational_boundary": "All facilities under operational control",
                 "data_quality_assessment": {
                     "completeness": consolidation.data_completeness_score,
                     "accuracy": consolidation.consolidation_confidence_score,
-                    "consistency": "Cross-validated against EPA GHGRP data",
-                    "transparency": "Full audit trail available",
+                    "consistency": ("Cross-validated against EPA GHGRP data"),
+                    "transparency": ("Full audit trail available"),
                 },
             },
             # Emissions Data Tables
             "emissions_tables": {
                 "table_1_scope1_emissions": {
-                    "title": "Scope 1 GHG Emissions by Source",
-                    "units": "Metric tons CO2 equivalent (MTCO2e)",
+                    "title": ("Scope 1 GHG Emissions by Source"),
+                    "units": ("Metric tons CO2 equivalent (MTCO2e)"),
                     "data": self._format_scope1_table(consolidation),
                 },
                 "table_2_scope2_emissions": {
-                    "title": "Scope 2 GHG Emissions by Source",
-                    "units": "Metric tons CO2 equivalent (MTCO2e)",
+                    "title": ("Scope 2 GHG Emissions by Source"),
+                    "units": ("Metric tons CO2 equivalent (MTCO2e)"),
                     "data": self._format_scope2_table(consolidation),
                 },
                 "table_3_emissions_by_business_segment": {
-                    "title": "GHG Emissions by Business Segment",
-                    "units": "Metric tons CO2 equivalent (MTCO2e)",
+                    "title": ("GHG Emissions by Business Segment"),
+                    "units": ("Metric tons CO2 equivalent (MTCO2e)"),
                     "data": self._format_segment_table(consolidation),
                 },
             },
@@ -157,14 +167,20 @@ class SECReportGenerator:
             "climate_related_risks": {
                 "transition_risks": [],
                 "physical_risks": [],
-                "risk_management_strategy": "Integrated climate risk assessment framework",
-                "scenario_analysis": "Climate scenarios considered: 2°C, 4°C pathways",
+                "risk_management_strategy": (
+                    "Integrated climate risk assessment framework"
+                ),
+                "scenario_analysis": (
+                    "Climate scenarios considered: 2°C, 4°C pathways"
+                ),
             },
             # Governance
             "governance": {
-                "board_oversight": "Board-level climate committee established",
-                "management_responsibility": "Chief Sustainability Officer appointed",
-                "stakeholder_engagement": "Regular engagement with investors and NGOs",
+                "board_oversight": ("Board-level climate committee established"),
+                "management_responsibility": ("Chief Sustainability Officer appointed"),
+                "stakeholder_engagement": (
+                    "Regular engagement with investors and NGOs"
+                ),
             },
             # Status and Approval
             "status": {
@@ -283,8 +299,10 @@ class SECReportGenerator:
                         "total_emissions": round(
                             contrib.consolidated_total_co2e or 0, 2
                         ),
-                        "revenue_millions": None,  # Would need to be added from financial data
-                        "emissions_intensity": None,  # Revenue / emissions
+                        "revenue_millions": (
+                            None  # Would need to be added from financial data
+                        ),
+                        "emissions_intensity": (None),  # Revenue / emissions
                     }
                 )
 
@@ -359,18 +377,30 @@ class SECReportGenerator:
             fontSize=10,
             spaceAfter=20,
         )
-        company_info = f"Company ID: {report_data['company_id']}<br/>Reporting Year: {report_data['reporting_year']}<br/>Generated: {report_data['report_generated_at']}"
+        company_info = (
+            f"Company ID: {report_data['company_id']}<br/>Reporting Year: "
+            f"{report_data['reporting_year']}<br/>Generated: "
+            f"{report_data['report_generated_at']}"
+        )
         story.append(Paragraph(company_info, info_style))
 
         # Executive Summary
         story.append(Paragraph("Executive Summary", styles["Heading2"]))
         summary_data = report_data["executive_summary"]
         summary_text = f"""
-        Total GHG Emissions: {summary_data['total_ghg_emissions_mtco2e'] or 0:.2f} MTCO2e<br/>
+
+
+        Total GHG Emissions: {summary_data['total_ghg_emissions_mtco2e'] or 0:.2f} \
+
+MTCO2e<br/>
         Scope 1: {summary_data['scope1_emissions_mtco2e'] or 0:.2f} MTCO2e<br/>
+
         Scope 2: {summary_data['scope2_emissions_mtco2e'] or 0:.2f} MTCO2e<br/>
+
         Scope 3: {summary_data['scope3_emissions_mtco2e'] or 0:.2f} MTCO2e<br/>
+
         Data Completeness: {summary_data['data_completeness_score'] or 0:.1%}
+
         """
         story.append(Paragraph(summary_text, styles["Normal"]))
         story.append(Spacer(1, 12))
@@ -421,7 +451,10 @@ class SECReportGenerator:
         buffer.seek(0)
 
         return {
-            "filename": f"SEC_Climate_Disclosure_{report_data['company_id']}_{report_data['reporting_year']}.pdf",
+            "filename": (
+                f"SEC_Climate_Disclosure_{report_data['company_id']}_"
+                f"{report_data['reporting_year']}.pdf"
+            ),
             "content_type": "application/pdf",
             "content": buffer.getvalue(),
         }
@@ -438,12 +471,6 @@ class SECReportGenerator:
         header_font = Font(bold=True, size=12)
         subheader_font = Font(bold=True, size=10)
         normal_font = Font(size=10)
-        border = Border(
-            left=Side(style="thin"),
-            right=Side(style="thin"),
-            top=Side(style="thin"),
-            bottom=Side(style="thin"),
-        )
 
         # Title
         ws["A1"] = "SEC Climate Disclosure Report"
@@ -520,8 +547,10 @@ class SECReportGenerator:
                 try:
                     if cell.value and len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning(
+                        f"Could not calculate width for cell {cell.coordinate}: {e}"
+                    )
             if max_length > 0:
                 adjusted_width = min(max_length + 2, 50)  # Cap at 50 chars
                 column_letter = chr(64 + col_num)  # A=1, B=2, etc.
@@ -533,7 +562,12 @@ class SECReportGenerator:
         buffer.seek(0)
 
         return {
-            "filename": f"SEC_Climate_Disclosure_{report_data['company_id']}_{report_data['reporting_year']}.xlsx",
-            "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "filename": (
+                f"SEC_Climate_Disclosure_{report_data['company_id']}_"
+                f"{report_data['reporting_year']}.xlsx"
+            ),
+            "content_type": (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
             "content": buffer.getvalue(),
         }

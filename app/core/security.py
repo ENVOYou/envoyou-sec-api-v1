@@ -4,10 +4,6 @@ JWT token handling, password hashing, and security functions
 """
 
 import hashlib
-
-# Password hashing context
-# Use pbkdf2_sha256 for testing to avoid bcrypt issues
-import os
 import secrets
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
@@ -17,6 +13,10 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.models.user import UserRole
+
+# Password hashing context
+# Use pbkdf2_sha256 for testing to avoid bcrypt issues
+
 
 # Always use pbkdf2_sha256 to avoid bcrypt 72-byte limit issues
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
@@ -98,7 +98,7 @@ class JWTManager:
         return encoded_jwt
 
     @staticmethod
-    def verify_token(
+    def verify_token(  # nosec B107
         token: str, token_type: str = "access"
     ) -> Optional[Dict[str, Any]]:
         """Verify and decode JWT token"""

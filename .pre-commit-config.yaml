@@ -1,20 +1,37 @@
+# File: .pre-commit-config.yaml
+
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0 # Gunakan versi terbaru jika perlu
+    rev: v6.0.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
+    -   id: trailing-whitespace         # Menghapus spasi di akhir baris
+    -   id: end-of-file-fixer           # Memastikan file diakhiri dengan newline
+    -   id: check-yaml                  # Memeriksa sintaks file .yaml
+    -   id: check-json                  # Memeriksa sintaks file .json
+    -   id: check-toml                  # Memeriksa sintaks file .toml
+    -   id: check-merge-conflict        # WAJIB: Mencegah sisa merge conflict
+    -   id: check-added-large-files     # WAJIB: Mencegah file besar masuk repo
+        args: ['--maxkb=5120']         # Batas ukuran file 5 MB
 
 -   repo: https://github.com/psf/black
-    rev: 24.4.2 # Gunakan versi terbaru jika perlu
+    rev: 25.9.0
     hooks:
-    -   id: black
-        args: [--line-length=88]
+    -   id: black                       # Pemformat kode Python
 
--   repo: https://github.com/pycqa/isort
-    rev: 5.13.2 # Gunakan versi terbaru jika perlu
+-   repo: https://github.com/PyCQA/isort
+    rev: 7.0.0
     hooks:
-    -   id: isort
+    -   id: isort                       # Merapikan urutan import
         name: isort (python)
-        args: [--settings-path=pyproject.toml, --line-length=88]
+
+-   repo: https://github.com/PyCQA/flake8
+    rev: 7.3.0
+    hooks:
+    -   id: flake8                      # Pengecek error dan gaya penulisan kode Python
+        args: ["--max-line-length=88", "--extend-ignore=E203"]
+
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+    -   id: bandit                      # Pengecek keamanan kode Python
+        args: ["-r", "app/"]          # Hanya scan direktori 'app'

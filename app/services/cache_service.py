@@ -5,12 +5,11 @@ High-performance caching with TTL and fallback mechanisms
 
 import json
 import logging
-import pickle
-from datetime import datetime, timedelta
+import os
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import redis
-from fastapi import HTTPException, status
 
 from app.core.config import settings
 
@@ -44,27 +43,24 @@ class CacheService:
         return f"envoyou:sec:{prefix}:{identifier}"
 
     def _serialize_data(self, data: Any) -> bytes:
-        """Serialize data for Redis storage"""
+        """Serialize data for Redis storage using ONLY JSON."""
         try:
-            if isinstance(data, (dict, list)):
-                return json.dumps(data, default=str).encode("utf-8")
-            else:
-                return pickle.dumps(data)
+            # Selalu gunakan json.dumps untuk semua tipe data.
+            # Argumen `default=str` akan membantu mengubah tipe data
+            # yang tidak dikenal JSON (seperti datetime) menjadi string.
+            return json.dumps(data, default=str).encode("utf-8")
         except Exception as e:
-            logger.error(f"Serialization error: {str(e)}")
+            logger.error(f"JSON Serialization error: {str(e)}")
             raise
 
     def _deserialize_data(self, data: bytes) -> Any:
-        """Deserialize data from Redis"""
+        """Deserialize data from Redis using ONLY JSON."""
         try:
-            # Try JSON first (more common)
-            try:
-                return json.loads(data.decode("utf-8"))
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                # Fall back to pickle
-                return pickle.loads(data)
-        except Exception as e:
-            logger.error(f"Deserialization error: {str(e)}")
+            # Hanya coba deserialize sebagai JSON.
+            return json.loads(data.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            # Jika gagal, catat error dan kembalikan None. Jangan fallback ke pickle.
+            logger.error(f"Failed to deserialize JSON data from cache: {str(e)}")
             return None
 
     def set_epa_factors(
@@ -91,7 +87,8 @@ class CacheService:
 
             if result:
                 logger.info(
-                    f"Cached {len(factors)} EPA factors for category '{category}' with TTL {ttl_seconds}s"
+                    f"Cached {len(factors)} EPA factors for category '{category}' "
+                    f"with TTL {ttl_seconds}s"
                 )
 
             return result
@@ -217,7 +214,8 @@ class CacheService:
 
             if result:
                 logger.debug(
-                    f"Cached company emissions summary for '{company_id}' year {year}"
+                    f"Cached company emissions summary for '{company_id}' "
+                    f"year {year}"
                 )
 
             return result
@@ -241,7 +239,8 @@ class CacheService:
                 data = self._deserialize_data(cached_data)
                 if data:
                     logger.debug(
-                        f"Cache hit for company emissions summary '{company_id}' year {year}"
+                        f"Cache hit for company emissions summary '{company_id}' "
+                        f"year {year}"
                     )
                     return data
 
@@ -450,8 +449,6 @@ class CacheService:
 
 
 # Global cache service instance - lazy initialization for testing
-import os
-
 if os.getenv("TESTING") != "true":
     cache_service = CacheService()
 else:

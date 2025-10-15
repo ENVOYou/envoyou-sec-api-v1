@@ -3,8 +3,9 @@ reCAPTCHA verification service
 Handles Google reCAPTCHA v3 token verification
 """
 
+from typing import Any, Dict
+
 import httpx
-from typing import Dict, Any, Optional
 from fastapi import HTTPException, status
 
 from app.core.config import settings
@@ -16,11 +17,13 @@ class RecaptchaService:
     RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
 
     def __init__(self):
-        self.secret_key = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
+        self.secret_key = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
         if not self.secret_key and not settings.SKIP_RECAPTCHA:
             raise ValueError("RECAPTCHA_SECRET_KEY not configured")
 
-    async def verify_token(self, token: str, expected_action: str = "login") -> Dict[str, Any]:
+    async def verify_token(
+        self, token: str, expected_action: str = "login"
+    ) -> Dict[str, Any]:
         """
         Verify reCAPTCHA token with Google
 
@@ -37,7 +40,7 @@ class RecaptchaService:
         if not token or not token.strip():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="reCAPTCHA token is required"
+                detail="reCAPTCHA token is required",
             )
 
         try:
@@ -46,14 +49,14 @@ class RecaptchaService:
                     self.RECAPTCHA_VERIFY_URL,
                     data={
                         "secret": self.secret_key,
-                        "response": token.strip()
-                    }
+                        "response": token.strip(),
+                    },
                 )
 
                 if response.status_code != 200:
                     raise HTTPException(
                         status_code=status.HTTP_502_BAD_GATEWAY,
-                        detail="Failed to verify reCAPTCHA token"
+                        detail="Failed to verify reCAPTCHA token",
                     )
 
                 result = response.json()
@@ -63,7 +66,9 @@ class RecaptchaService:
                     error_codes = result.get("error-codes", [])
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"reCAPTCHA verification failed: {', '.join(error_codes)}"
+                        detail=(
+                            f"reCAPTCHA verification failed: {', '.join(error_codes)}"
+                        ),
                     )
 
                 # Check action (for v3)
@@ -71,7 +76,10 @@ class RecaptchaService:
                 if action and action != expected_action:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"reCAPTCHA action mismatch: expected '{expected_action}', got '{action}'"
+                        detail=(
+                            f"reCAPTCHA action mismatch: expected '{expected_action}', "
+                            f"got '{action}'"
+                        ),
                     )
 
                 # Check score (for v3)
@@ -79,7 +87,10 @@ class RecaptchaService:
                 if score < 0.5:  # Threshold for suspicious activity
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="reCAPTCHA verification failed: suspicious activity detected"
+                        detail=(
+                            "reCAPTCHA verification failed: suspicious "
+                            "activity detected"
+                        ),
                     )
 
                 return {
@@ -87,23 +98,23 @@ class RecaptchaService:
                     "score": score,
                     "action": action,
                     "challenge_ts": result.get("challenge_ts"),
-                    "hostname": result.get("hostname")
+                    "hostname": result.get("hostname"),
                 }
 
         except httpx.TimeoutException:
             raise HTTPException(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                detail="reCAPTCHA verification timeout"
+                detail="reCAPTCHA verification timeout",
             )
         except httpx.RequestError as e:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"reCAPTCHA verification request failed: {str(e)}"
+                detail=f"reCAPTCHA verification request failed: {str(e)}",
             )
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"reCAPTCHA verification error: {str(e)}"
+                detail=f"reCAPTCHA verification error: {str(e)}",
             )
 
     def is_recaptcha_enabled(self) -> bool:
@@ -112,8 +123,10 @@ class RecaptchaService:
 
     def get_min_score_threshold(self) -> float:
         """Get minimum score threshold for verification"""
-        return getattr(settings, 'RECAPTCHA_MIN_SCORE', 0.5)
+        return getattr(settings, "RECAPTCHA_MIN_SCORE", 0.5)
 
     def is_testing_mode(self) -> bool:
         """Check if we're in testing mode (skip verification)"""
-        return getattr(settings, 'TESTING', False) or getattr(settings, 'SKIP_RECAPTCHA', False)
+        return getattr(settings, "TESTING", False) or getattr(
+            settings, "SKIP_RECAPTCHA", False
+        )

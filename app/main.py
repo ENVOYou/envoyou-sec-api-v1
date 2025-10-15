@@ -25,7 +25,6 @@ from app.core.rate_limiting import (
 )
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.db.database import get_db
-from app.services.background_tasks import background_task_service
 
 if SLOWAPI_AVAILABLE:
     from slowapi.errors import RateLimitExceeded
@@ -34,7 +33,7 @@ if SLOWAPI_AVAILABLE:
 # Create FastAPI application
 app = FastAPI(
     title="ENVOYOU SEC API",
-    description="Climate Disclosure Rule Compliance Platform for US Public Companies",
+    description=("Climate Disclosure Rule Compliance Platform for US Public Companies"),
     version="1.0.0",
     docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
@@ -91,7 +90,8 @@ app.include_router(api_router, prefix="/v1")
 async def health_check(db: Session = Depends(get_db)):
     """Basic health check endpoint for load balancers and monitoring"""
     # Simple health check - just verify the service is running
-    # Don't do comprehensive checks that might fail due to external dependencies
+    # Don't do comprehensive checks that might fail due to external
+    # dependencies
     return {
         "status": "healthy",
         "service": "envoyou-sec-api",
@@ -105,13 +105,16 @@ async def health_check(db: Session = Depends(get_db)):
 async def prometheus_health_metrics():
     """Prometheus-compatible health metrics endpoint"""
     # Return basic health metrics in Prometheus format
-    metrics = f"""# HELP envoyou_api_health_status API health status (1=healthy, 0=unhealthy)
+    uptime_seconds = int((datetime.utcnow() - datetime(2025, 1, 1)).total_seconds())
+
+    metrics = f"""# HELP envoyou_api_health_status API health status
+# (1=healthy, 0=unhealthy)
 # TYPE envoyou_api_health_status gauge
 envoyou_api_health_status 1
 
 # HELP envoyou_api_uptime_seconds API uptime in seconds
 # TYPE envoyou_api_uptime_seconds counter
-envoyou_api_uptime_seconds {int((datetime.utcnow() - datetime(2025, 1, 1)).total_seconds())}
+envoyou_api_uptime_seconds {uptime_seconds}
 
 # HELP envoyou_api_info API information
 # TYPE envoyou_api_info gauge
@@ -138,7 +141,7 @@ async def detailed_health_check(db: Session = Depends(get_db)):
             "environment": settings.ENVIRONMENT,
             "error": f"Detailed health check failed: {str(e)}",
             "timestamp": datetime.utcnow().isoformat(),
-            "note": "Service is running but some dependencies may be unavailable",
+            "note": ("Service is running but some dependencies may be unavailable"),
         }
 
 
@@ -230,7 +233,7 @@ async def root():
 if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104
         port=8000,
         reload=settings.ENVIRONMENT == "development",
     )

@@ -3,8 +3,8 @@ Automated Backup Service
 Handles database backups, file backups, and backup verification
 """
 
-import asyncio
 import gzip
+import json
 import logging
 import os
 import shutil
@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import aiofiles
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -79,7 +78,7 @@ class BackupService:
                 "backup_id": backup_id,
                 "timestamp": timestamp.isoformat(),
                 "type": "full",
-                "status": "completed" if verification_result["success"] else "failed",
+                "status": ("completed" if verification_result["success"] else "failed"),
                 "database_backup": db_backup_result,
                 "file_backup": file_backup_result,
                 "verification": verification_result,
@@ -132,7 +131,7 @@ class BackupService:
 
             if not last_full_backup:
                 logger.warning(
-                    "No previous full backup found, creating full backup instead"
+                    "No previous full backup found, creating full backup " "instead"
                 )
                 return await self.create_full_backup(backup_name)
 
@@ -153,7 +152,7 @@ class BackupService:
                 "backup_id": backup_id,
                 "timestamp": timestamp.isoformat(),
                 "type": "incremental",
-                "status": "completed" if verification_result["success"] else "failed",
+                "status": ("completed" if verification_result["success"] else "failed"),
                 "database_backup": db_backup_result,
                 "reference_backup": last_full_backup,
                 "verification": verification_result,
@@ -188,7 +187,7 @@ class BackupService:
 
             # Use pg_dump for PostgreSQL backup
             import os
-            import subprocess
+            import subprocess  # nosec B404
 
             # Get database connection details
             db_url = settings.DATABASE_URL
@@ -232,7 +231,9 @@ class BackupService:
                     "--no-privileges",  # don't dump privileges
                 ]
 
-                result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+                result = subprocess.run(
+                    cmd, env=env, capture_output=True, text=True
+                )  # nosec B603
 
                 if result.returncode != 0:
                     raise Exception(f"pg_dump failed: {result.stderr}")
@@ -263,7 +264,8 @@ class BackupService:
         """Create incremental database backup"""
         try:
             # For PostgreSQL, incremental backups are complex
-            # This is a simplified approach - in production you'd use tools like pgBackRest
+            # This is a simplified approach
+            # In production you'd use tools like pgBackRest
             logger.warning(
                 "Incremental database backup not fully implemented for PostgreSQL"
             )
@@ -279,8 +281,6 @@ class BackupService:
             changes_file = wal_backup_dir / f"{backup_id}_changes.sql.gz"
             async with aiofiles.open(changes_file, "wb") as f:
                 # Compress the changes data
-                import gzip
-                import io
 
                 changes_sql = "\n".join(recent_changes)
                 compressed_data = gzip.compress(changes_sql.encode("utf-8"))
@@ -384,8 +384,10 @@ class BackupService:
             "file_backup": file_result,
             "backup_service_version": "1.0",
             "system_info": {
-                "hostname": os.uname().nodename if hasattr(os, "uname") else "unknown",
-                "platform": os.uname().sysname if hasattr(os, "uname") else "unknown",
+                "hostname": (
+                    os.uname().nodename if hasattr(os, "uname") else "unknown"
+                ),
+                "platform": (os.uname().sysname if hasattr(os, "uname") else "unknown"),
             },
         }
 
@@ -508,7 +510,8 @@ class BackupService:
             changes = []
             for audit in recent_audits:
                 changes.append(
-                    f"-- Audit: {audit.action} on {audit.entity_type} {audit.entity_id}"
+                    f"-- Audit: {audit.action} on {audit.entity_type} "
+                    f"{audit.entity_id}"
                 )
                 changes.append(
                     f"-- User: {audit.user_id}, Timestamp: {audit.timestamp}"

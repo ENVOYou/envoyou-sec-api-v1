@@ -1,7 +1,13 @@
-# Development and testing
+# Testing Framework
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
-black==24.4.2
-isort==5.13.2
-flake8==6.1.0
+requests
+
+# Code Formatting & Linting (versi disamakan dengan pre-commit)
+black==25.9.0
+isort==7.0.0
+flake8==7.3.0
+
+# Security Analysis
+bandit==1.8.6

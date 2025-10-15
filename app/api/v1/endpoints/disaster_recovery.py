@@ -3,6 +3,7 @@ Disaster Recovery Endpoints
 API endpoints for disaster recovery operations and system restoration
 """
 
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -19,7 +20,10 @@ router = APIRouter()
 async def initiate_disaster_recovery(
     disaster_type: str = Query(
         ...,
-        description="Type of disaster (database_failure, service_outage, data_corruption, security_breach)",
+        description=(
+            "Type of disaster (database_failure, service_outage, "
+            "data_corruption, security_breach)"
+        ),
     ),
     affected_services: List[str] = Query(..., description="List of affected services"),
     priority: str = Query(
@@ -32,8 +36,8 @@ async def initiate_disaster_recovery(
     """
     Initiate disaster recovery procedure
 
-    This endpoint triggers the disaster recovery workflow and should only be used
-    in actual disaster scenarios. Requires admin privileges.
+    This endpoint triggers the disaster recovery workflow and should only be
+    used in actual disaster scenarios. Requires admin privileges.
     """
     if disaster_type not in [
         "database_failure",
@@ -43,13 +47,16 @@ async def initiate_disaster_recovery(
     ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid disaster type. Must be one of: database_failure, service_outage, data_corruption, security_breach",
+            detail=(
+                "Invalid disaster type. Must be one of: database_failure, "
+                "service_outage, data_corruption, security_breach"
+            ),
         )
 
     if priority not in ["critical", "high", "medium", "low"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid priority. Must be one of: critical, high, medium, low",
+            detail=("Invalid priority. Must be one of: critical, high, medium, low"),
         )
 
     dr_service = create_disaster_recovery_service(db)
@@ -67,7 +74,7 @@ async def initiate_disaster_recovery(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to initiate disaster recovery: {str(e)}",
+            detail=(f"Failed to initiate disaster recovery: {str(e)}"),
         )
 
 
@@ -82,7 +89,8 @@ async def get_recovery_status(
     """
     Get status of disaster recovery operations
 
-    Returns current recovery status or details for a specific recovery operation.
+    Returns current recovery status or details for a specific recovery
+    operation.
     """
     dr_service = create_disaster_recovery_service(db)
 
@@ -92,7 +100,7 @@ async def get_recovery_status(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get recovery status: {str(e)}",
+            detail=(f"Failed to get recovery status: {str(e)}"),
         )
 
 
@@ -104,9 +112,9 @@ async def test_disaster_recovery(
     """
     Test disaster recovery procedures (dry run)
 
-    Performs a comprehensive test of all disaster recovery procedures without
-    affecting production systems. This should be run regularly to ensure
-    recovery procedures are working correctly.
+    Performs a comprehensive test of all disaster recovery procedures
+    without affecting production systems. This should be run regularly
+    to ensure recovery procedures are working correctly.
     """
     dr_service = create_disaster_recovery_service(db)
 
@@ -127,7 +135,7 @@ async def test_disaster_recovery(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Disaster recovery test failed: {str(e)}",
+            detail=(f"Disaster recovery test failed: {str(e)}"),
         )
 
 
@@ -139,8 +147,8 @@ async def get_recovery_recommendations(
     """
     Get disaster recovery recommendations
 
-    Returns a list of best practices and recommendations for maintaining
-    effective disaster recovery capabilities.
+    Returns a list of best practices and recommendations for
+    maintaining effective disaster recovery capabilities.
     """
     dr_service = create_disaster_recovery_service(db)
 
@@ -164,7 +172,7 @@ async def get_recovery_recommendations(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get recovery recommendations: {str(e)}",
+            detail=(f"Failed to get recovery recommendations: {str(e)}"),
         )
 
 
@@ -176,7 +184,8 @@ async def get_recovery_procedures(
     """
     Get detailed recovery procedures
 
-    Returns step-by-step procedures for different types of disasters.
+    Returns step-by-step procedures for different types of
+    disasters.
     """
     procedures = {
         "database_failure": {
@@ -198,7 +207,9 @@ async def get_recovery_procedures(
                 "DevOps Engineer",
                 "Application Owner",
             ],
-            "rollback_procedure": "Fail back to previous database instance if restore fails",
+            "rollback_procedure": (
+                "Fail back to previous database instance if restore fails"
+            ),
         },
         "service_outage": {
             "description": "Application service becomes unavailable",
@@ -236,7 +247,9 @@ async def get_recovery_procedures(
                 "Data Engineer",
                 "Business Analyst",
             ],
-            "rollback_procedure": "Maintain corrupted data in quarantine for forensic analysis",
+            "rollback_procedure": (
+                "Maintain corrupted data in quarantine for forensic analysis"
+            ),
         },
         "security_breach": {
             "description": "Security incident or breach detected",
@@ -258,7 +271,7 @@ async def get_recovery_procedures(
                 "DevOps Engineer",
                 "Incident Commander",
             ],
-            "rollback_procedure": "Complete system rebuild if breach is severe",
+            "rollback_procedure": ("Complete system rebuild if breach is severe"),
         },
     }
 
@@ -266,7 +279,9 @@ async def get_recovery_procedures(
         if disaster_type not in procedures:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Recovery procedure not found for disaster type: {disaster_type}",
+                detail=(
+                    f"Recovery procedure not found for disaster type: {disaster_type}"
+                ),
             )
         return {
             "disaster_type": disaster_type,
@@ -312,12 +327,14 @@ async def conduct_recovery_drill(
 
     return {
         "message": f"Disaster recovery drill initiated: {drill_type}",
-        "drill_id": f"drill_{drill_type}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+        "drill_id": (
+            f"drill_{drill_type}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        ),
         "status": "initiated",
         "notify_team": notify_team,
         "estimated_duration": "30-60 minutes",
         "next_steps": [
-            "Team notification sent" if notify_team else "Team notification skipped",
+            ("Team notification sent" if notify_team else "Team notification skipped"),
             "Drill scenario deployed",
             "Monitoring response times",
             "Will generate completion report",
