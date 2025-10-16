@@ -44,14 +44,16 @@ if settings.ENVIRONMENT in ["production", "staging"] and SLOWAPI_AVAILABLE:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-# CORS middleware for web dashboard integration (simplified)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
+# CORS middleware for web dashboard integration
+# Only enable in development - nginx handles CORS in production/staging
+if settings.ENVIRONMENT == "development":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_headers=["*"],
+    )
 
 # Response compression middleware (only in production/staging)
 if settings.ENVIRONMENT in ["production", "staging"]:

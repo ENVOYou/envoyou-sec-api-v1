@@ -49,6 +49,7 @@ class Settings(BaseSettings):
         "https://envoyou.com",
         "https://app.envoyou.com",
         "https://staging.envoyou.com",
+        "https://staging-api.envoyou.com",  # Allow API to API calls
         "http://localhost:3000",
         "http://localhost:3001",  # Dashboard port
         "http://localhost:5173",
