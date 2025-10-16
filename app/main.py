@@ -54,6 +54,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Custom middleware to handle nginx basic auth bypass for Bearer tokens
+@app.middleware("http")
+async def nginx_auth_bypass(request, call_next):
+    """
+    Middleware to handle nginx basic auth bypass for Bearer tokens.
+    When a Bearer token is present, we add a header that nginx can check
+    to skip basic auth validation.
+    """
+    auth_header = request.headers.get("authorization", "")
+
+    # If this is a Bearer token request, add a header for nginx to detect
+    if auth_header.startswith("Bearer "):
+        # Add a custom header that nginx can check
+        request.headers["X-Skip-Basic-Auth"] = "true"
+
+    response = await call_next(request)
+    return response
+
+
 # Response compression middleware (only in production/staging)
 if settings.ENVIRONMENT in ["production", "staging"]:
     app.add_middleware(GZipMiddleware, minimum_size=1000)
