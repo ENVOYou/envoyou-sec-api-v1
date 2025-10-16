@@ -138,7 +138,6 @@ jobs:
                 STAGING_HOST=${{ secrets.STAGING_HOST }}
                 STAGING_USER=${{ secrets.STAGING_USER }}
                 SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
-
                 EOF
 
                 log "🔒 Mengamankan file .env..."
