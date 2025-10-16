@@ -142,6 +142,11 @@ jobs:
                 log "🔒 Mengamankan file .env..."
                 chmod 600 .env
 
+                # ✅ Muat variabel environment
+                set -a
+                source .env
+                set +a
+
                 # 4. Hentikan dan bersihkan kontainer lama
                 log "🛑 Menghentikan dan membersihkan kontainer lama..."
                 docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans || true
