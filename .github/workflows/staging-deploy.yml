@@ -80,14 +80,14 @@ jobs:
 
                 log "⏳ Menunggu $service_name agar siap..."
                 while (( attempt < max_attempts )); do
-                    if curl -fsS --max-time 10 "$health_url" > /dev/null 2>&1; then
-                        log "✅ $service_name sudah sehat!"
+                    if curl -fsS -L --max-time 10 "$health_url" > /dev/null 2>&1; then
+                        log "✅ $service_name already healthy!"
                         return 0
                     fi
                     sleep 10
                     attempt=$((attempt + 1))
                 done
-                log "❌ $service_name gagal menjadi sehat setelah beberapa kali percobaan."
+                log "❌ $service_name failed to become healthy after several attempts."
                 return 1
             }
 
@@ -128,6 +128,7 @@ jobs:
 
             # ---- Security / Auth ----
             RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }}
+            RECAPTCHA_SCORE_THRESHOLD=${{ secrets.RECAPTCHA_SCORE_THRESHOLD }}
             STACK_SECRET_SERVER_KEY=${{ secrets.STACK_SECRET_SERVER_KEY }}
 
             # ---- Feature Flags ----
@@ -168,23 +169,7 @@ jobs:
 
                 # 9. Jalankan migrasi database
                 log "🗄️ Menjalankan migrasi database..."
-                retry docker compose -f "$COMPOSE_FILE" exec -T api python3 -c "
-            import os
-            from alembic.config import Config
-            from alembic import command
-
-            # Set environment variables from .env file
-            with open('.env', 'r') as f:
-                for line in f:
-                    if '=' in line:
-                        key, value = line.strip().split('=', 1)
-                        os.environ[key] = value
-
-            # Run migration
-            alembic_cfg = Config('alembic.ini')
-            command.upgrade(alembic_cfg, 'head')
-            print('Database migration completed successfully!')
-            "
+                retry docker compose -f "$COMPOSE_FILE" run --rm api alembic upgrade head
 
                 # 10. Lakukan pengecekan kesehatan akhir
                 log "🏥 Melakukan pengecekan kesehatan akhir untuk semua layanan..."
