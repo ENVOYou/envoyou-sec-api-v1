@@ -112,37 +112,35 @@ jobs:
                 # 3. Buat file .env lengkap dari GitHub Secrets
                 log "📝 Membuat file .env..."
                 cat <<EOF > .env
-                # ---- General ----
-                ENVIRONMENT=${{ secrets.ENVIRONMENT }}
-                DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-                DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}
+              # ---- General ----
+              ENVIRONMENT=${{ secrets.ENVIRONMENT }}
+              DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+              DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}
 
-                # ---- Django / FastAPI ----
-                DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
-                REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
-                SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
-                JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
-                ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
-                CORS_ORIGINS=${{ secrets.STAGING_CORS_ORIGINS }}
-                LOCAL_HEALTH_URL=${{ secrets.LOCAL_HEALTH_URL }}
+              # ---- Django / FastAPI ----
+              DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+              REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
+              SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+              JWT_ALGORITHM=${{ secrets.STAGING_JWT_ALGORITHM }}
+              ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+              CORS_ORIGINS=${{ secrets.STAGING_CORS_ORIGINS }}
+              LOCAL_HEALTH_URL=${{ secrets.LOCAL_HEALTH_URL }}
 
-                # ---- Security / Auth ----
-                RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }}
-                STACK_SECRET_SERVER_KEY=${{ secrets.STACK_SECRET_SERVER_KEY }}
+              # ---- Security / Auth ----
+              RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }}
+              STACK_SECRET_SERVER_KEY=${{ secrets.STACK_SECRET_SERVER_KEY }}
 
-                # ---- Feature Flags ----
-                ENABLE_METRICS=${{ secrets.ENABLE_METRICS }}
-                ENABLE_RATE_LIMITING=${{ secrets.ENABLE_RATE_LIMITING }}
+              # ---- Feature Flags ----
+              ENABLE_METRICS=${{ secrets.ENABLE_METRICS }}
+              ENABLE_RATE_LIMITING=${{ secrets.ENABLE_RATE_LIMITING }}
 
-                # ---- Misc ----
-                STAGING_HOST=${{ secrets.STAGING_HOST }}
-                STAGING_USER=${{ secrets.STAGING_USER }}
-                SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
-                EOF
-
+              # ---- Misc ----
+              STAGING_HOST=${{ secrets.STAGING_HOST }}
+              STAGING_USER=${{ secrets.STAGING_USER }}
+              SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+              EOF
                 log "🔒 Mengamankan file .env..."
                 chmod 600 .env
-
 
                 # 4. Hentikan dan bersihkan kontainer lama
                 log "🛑 Menghentikan dan membersihkan kontainer lama..."
