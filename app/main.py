@@ -61,11 +61,11 @@ if settings.ENVIRONMENT in ["production", "staging"]:
 if settings.ENVIRONMENT in ["production", "staging"]:
     app.add_middleware(SecurityHeadersMiddleware)
 
-# HTTPS enforcement middleware (only in production/staging)
-if settings.ENVIRONMENT in ["production", "staging"]:
-    from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+# tugas mengelola HTTPS adalah tanggung jawab reverse proxy (Nginx)
+# if settings.ENVIRONMENT in ["production", "staging"]:
+#     from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 
-    app.add_middleware(HTTPSRedirectMiddleware)
+#     app.add_middleware(HTTPSRedirectMiddleware)
 
 # Metrics middleware (only in production/staging)
 if settings.ENVIRONMENT in ["production", "staging"] and PROMETHEUS_AVAILABLE:
