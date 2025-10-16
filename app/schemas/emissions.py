@@ -3,12 +3,9 @@ Emissions calculation schemas for request/response validation
 """
 
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
-
-from app.models.emissions import CalculationMethod, CalculationStatus, EmissionScope
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ActivityDataInput(BaseModel):
@@ -50,7 +47,8 @@ class ActivityDataInput(BaseModel):
         None, description="Additional metadata"
     )
 
-    @validator("data_quality")
+    @field_validator("data_quality")
+    @classmethod
     def validate_data_quality(cls, v):
         valid_qualities = ["measured", "calculated", "estimated"]
         if v and v not in valid_qualities:
@@ -84,13 +82,18 @@ class Scope1CalculationRequest(BaseModel):
     )
     notes: Optional[str] = Field(None, description="Calculation notes")
 
-    @validator("reporting_period_end")
-    def validate_reporting_period(cls, v, values):
-        if "reporting_period_start" in values and v <= values["reporting_period_start"]:
+    @field_validator("reporting_period_end")
+    @classmethod
+    def validate_reporting_period(cls, v, info):
+        if (
+            info.data.get("reporting_period_start")
+            and v <= info.data["reporting_period_start"]
+        ):
             raise ValueError("Reporting period end must be after start")
         return v
 
-    @validator("activity_data")
+    @field_validator("activity_data")
+    @classmethod
     def validate_scope1_activities(cls, v):
         valid_scope1_activities = [
             "stationary_combustion",
@@ -137,19 +140,22 @@ class Scope2CalculationRequest(BaseModel):
     )
     notes: Optional[str] = Field(None, description="Calculation notes")
 
-    @validator("calculation_method")
+    @field_validator("calculation_method")
+    @classmethod
     def validate_calculation_method(cls, v):
         valid_methods = ["location_based", "market_based"]
         if v not in valid_methods:
             raise ValueError(f"Calculation method must be one of: {valid_methods}")
         return v
 
-    @validator("electricity_consumption")
+    @field_validator("electricity_consumption")
+    @classmethod
     def validate_scope2_activities(cls, v):
         for activity in v:
             if activity.activity_type != "electricity_consumption":
                 raise ValueError(
-                    "Scope 2 calculations only accept electricity_consumption activities"
+                    "Scope 2 calculations only accept electricity_consumption "
+                    "activities"
                 )
         return v
 
@@ -178,8 +184,7 @@ class ActivityDataResponse(BaseModel):
     data_quality: Optional[str]
     notes: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EmissionsCalculationResponse(BaseModel):
@@ -222,8 +227,7 @@ class EmissionsCalculationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CalculationSummary(BaseModel):
@@ -237,8 +241,7 @@ class CalculationSummary(BaseModel):
     total_co2e: Optional[float]
     calculation_timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CompanyEmissionsSummary(BaseModel):
@@ -258,8 +261,7 @@ class CompanyEmissionsSummary(BaseModel):
 
     data_quality_average: Optional[float]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CalculationValidationResult(BaseModel):
@@ -283,7 +285,8 @@ class CalculationApprovalRequest(BaseModel):
     approval_status: str = Field(..., description="approved, rejected, needs_revision")
     comments: Optional[str] = Field(None, description="Approval comments")
 
-    @validator("approval_status")
+    @field_validator("approval_status")
+    @classmethod
     def validate_approval_status(cls, v):
         valid_statuses = ["approved", "rejected", "needs_revision"]
         if v not in valid_statuses:
@@ -310,8 +313,7 @@ class CalculationAuditTrailResponse(BaseModel):
 
     reason: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BulkCalculationRequest(BaseModel):
@@ -320,7 +322,8 @@ class BulkCalculationRequest(BaseModel):
     calculations: List[Scope1CalculationRequest]
     processing_mode: str = Field("sequential", description="sequential or parallel")
 
-    @validator("processing_mode")
+    @field_validator("processing_mode")
+    @classmethod
     def validate_processing_mode(cls, v):
         valid_modes = ["sequential", "parallel"]
         if v not in valid_modes:
@@ -338,7 +341,8 @@ class CalculationExportRequest(BaseModel):
     )
     include_source_data: bool = Field(True, description="Include source activity data")
 
-    @validator("export_format")
+    @field_validator("export_format")
+    @classmethod
     def validate_export_format(cls, v):
         valid_formats = ["excel", "csv", "pdf"]
         if v not in valid_formats:

@@ -4,7 +4,7 @@ Handles environment variables and application settings
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import validator
 from pydantic_settings import BaseSettings
@@ -114,17 +114,12 @@ class Settings(BaseSettings):
         return v
 
     @validator("ALLOWED_HOSTS", pre=True)
-    def parse_allowed_hosts(cls, v):
+    def parse_allowed_hosts(cls, v: Union[str, List[str]]) -> List[str]:
+        """Converts a comma-separated string from .env to a list of strings."""
         if isinstance(v, str):
-            # Handle empty string case
             if not v.strip():
-                return [
-                    "localhost",
-                    "127.0.0.1",
-                    "testserver",
-                    "api.envoyou.com",
-                    "envoyou-sec-api-v1.onrender.com",
-                ]
+                # Jika string dari .env kosong, gunakan nilai default yang ada di kelas
+                return cls.__fields__["ALLOWED_HOSTS"].default
             return [host.strip() for host in v.split(",")]
         return v
 

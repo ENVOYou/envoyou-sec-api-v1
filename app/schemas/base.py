@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class AuditMixin(BaseModel):
@@ -19,5 +19,4 @@ class AuditMixin(BaseModel):
     updated_by: Optional[UUID] = None
     audit_trail_id: Optional[UUID] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

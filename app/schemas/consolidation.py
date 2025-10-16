@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ConsolidationMethod(str, Enum):
@@ -143,7 +143,7 @@ class ConsolidationResponse(BaseModel):
     approved_by: Optional[UUID]
     approved_at: Optional[datetime]
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConsolidationDetailResponse(ConsolidationResponse):
@@ -153,7 +153,7 @@ class ConsolidationDetailResponse(ConsolidationResponse):
     consolidation_adjustments: Optional[Dict] = None
     exclusions: Optional[Dict] = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConsolidationSummary(BaseModel):
@@ -225,4 +225,4 @@ class ConsolidationAuditEvent(BaseModel):
     affected_entities: Optional[List[UUID]]
     processing_time_ms: Optional[int]
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

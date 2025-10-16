@@ -5,9 +5,8 @@ Pydantic models for report locking, comments, and revision tracking
 
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.base import AuditMixin
 
@@ -70,8 +69,7 @@ class CommentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReportCommentList(BaseModel):
@@ -93,8 +91,7 @@ class RevisionResponse(BaseModel):
     previous_version: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReportRevisionList(BaseModel):

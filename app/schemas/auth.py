@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from app.models.user import UserRole, UserStatus
 
@@ -20,7 +20,8 @@ class UserCredentials(BaseModel):
     password: str
     recaptcha_token: Optional[str] = None
 
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -54,7 +55,8 @@ class UserCreate(BaseModel):
     role: UserRole
     company_id: Optional[str] = None
 
-    @validator("username")
+    @field_validator("username")
+    @classmethod
     def validate_username(cls, v):
         if len(v) < 3:
             raise ValueError("Username must be at least 3 characters long")
@@ -64,7 +66,8 @@ class UserCreate(BaseModel):
             )
         return v
 
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -94,8 +97,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdate(BaseModel):
@@ -115,13 +117,15 @@ class PasswordChange(BaseModel):
     new_password: str
     confirm_password: str
 
-    @validator("confirm_password")
-    def passwords_match(cls, v, values):
-        if "new_password" in values and v != values["new_password"]:
+    @field_validator("confirm_password")
+    @classmethod
+    def passwords_match(cls, v, info):
+        if info.data.get("new_password") and v != info.data["new_password"]:
             raise ValueError("Passwords do not match")
         return v
 
-    @validator("new_password")
+    @field_validator("new_password")
+    @classmethod
     def validate_new_password(cls, v):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -143,5 +147,4 @@ class UserPermissions(BaseModel):
     role: UserRole
     permissions: dict
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
