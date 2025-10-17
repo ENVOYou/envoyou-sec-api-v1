@@ -3,14 +3,12 @@ Test emissions calculations functionality
 Comprehensive tests for Scope 1 and Scope 2 calculations
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from app.models.emissions import Company, CompanyEntity, EmissionsCalculation
-from app.models.epa_data import EmissionFactor
 from app.schemas.emissions import (
     ActivityDataInput,
     Scope1CalculationRequest,
@@ -26,19 +24,24 @@ class TestEmissionsCalculations:
     @pytest.fixture
     def test_company(self, db_session):
         """Create test company"""
+        import time
         import uuid
 
-        # Use unique CIK and ticker to avoid conflicts
-        unique_suffix = uuid.uuid4().hex[:6].upper()
-        unique_cik = f"EC{unique_suffix}"
-        unique_ticker = f"TEC{unique_suffix[:3]}"
+        # Use unique CIK and ticker based on UUID and timestamp to avoid conflicts
+        unique_suffix = (
+            f"{uuid.uuid4().hex[:6].upper()}{int(time.time()*1000000) % 1000000}"
+        )
+        unique_cik = f"{unique_suffix}"
+        unique_ticker = f"TST{unique_suffix[:5]}"
 
         company = Company(
-            name="Test Energy Corp",
+            name="Test Company Inc.",
             ticker=unique_ticker,
             cik=unique_cik,
-            industry="Energy",
-            sector="Oil & Gas",
+            industry="Manufacturing",
+            sector="Industrial",
+            headquarters_country="United States",
+            fiscal_year_end="12-31",
             reporting_year=2023,
             is_public_company=True,
             market_cap_category="mid-cap",
@@ -73,7 +76,7 @@ class TestEmissionsCalculations:
         self, db_session, test_company, test_emission_factors, test_user
     ):
         """Test Scope 1 calculation with natural gas"""
-        print(f"DEBUG: Starting test_scope1_calculation_natural_gas")
+        print("DEBUG: Starting test_scope1_calculation_natural_gas")
         print(f"DEBUG: test_company.id = {test_company.id}")
         print(f"DEBUG: test_user.id = {test_user.id}")
         print(
@@ -114,7 +117,8 @@ class TestEmissionsCalculations:
         assert result.total_co2e > 0
         assert len(result.activity_data) == 1
 
-        # Verify calculation accuracy (1000 MMBtu * 53.11 kg CO2e/MMBtu = 53,110 kg = 53.11 tCO2e)
+        # Verify calculation accuracy
+        # (1000 MMBtu * 53.11 kg CO2e/MMBtu = 53,110 kg = 53.11 tCO2e)
         expected_co2e = 53.11  # metric tons CO2e
         assert abs(result.total_co2e - expected_co2e) < 0.01
 
@@ -162,7 +166,8 @@ class TestEmissionsCalculations:
         assert result.total_co2e > 0
         assert len(result.activity_data) == 1
 
-        # Verify calculation accuracy (1000 MWh * 200.5 kg CO2e/MWh = 200,500 kg = 200.5 tCO2e)
+        # Verify calculation accuracy
+        # (1000 MWh * 200.5 kg CO2e/MWh = 200,500 kg = 200.5 tCO2e)
         expected_co2e = 200.5  # metric tons CO2e
         assert abs(result.total_co2e - expected_co2e) < 0.01
 
@@ -205,7 +210,8 @@ class TestEmissionsCalculations:
 
         result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
 
-        # Verify results (may be completed or failed depending on emission factor availability)
+        # Verify results
+        # (may be completed or failed depending on emission factor availability)
         assert result.status in ["completed", "failed"]
         if result.status == "completed":
             assert len(result.activity_data) == 2
@@ -241,11 +247,23 @@ class TestEmissionsCalculations:
         # Calculator is designed to be resilient and complete successfully
         result = await calculator.calculate_scope1_emissions(request, str(test_user.id))
 
-        # Check that calculation completed successfully (calculator uses fallback factors)
+        # Check that calculation completed successfully
+        # (calculator uses fallback factors)
         assert result.status == "completed"
         # Should have calculated some emissions using fallback factor
         assert result.total_co2e is not None
         assert result.total_co2e > 0
+
+        # Clean up the calculation to avoid unique constraint issues in subsequent tests
+        # Delete the calculation from database
+        calculation = (
+            db_session.query(EmissionsCalculation)
+            .filter(EmissionsCalculation.id == result.id)  # noqa: E501
+            .first()
+        )
+        if calculation:
+            db_session.delete(calculation)
+            db_session.commit()
 
     async def test_data_quality_scoring(self, db_session, test_company, test_user):
         """Test data quality scoring"""
@@ -294,7 +312,7 @@ class TestEmissionsAPI:
         self, client: TestClient, auth_headers, test_company, test_emission_factors
     ):
         """Test Scope 1 calculation API endpoint"""
-        print(f"DEBUG: Starting test_scope1_calculation_endpoint")
+        print("DEBUG: Starting test_scope1_calculation_endpoint")
         print(f"DEBUG: test_company.id = {test_company.id}")
         print(f"DEBUG: auth_headers keys = {list(auth_headers.keys())}")
 
@@ -465,7 +483,7 @@ class TestAuditTrail:
         # Verify calculation was created
         calculation = (
             db_session.query(EmissionsCalculation)
-            .filter(EmissionsCalculation.id == result.id)
+            .filter(EmissionsCalculation.id == result.id)  # noqa: E501
             .first()
         )
 

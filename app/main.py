@@ -40,6 +40,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
+    debug=settings.DEBUG,  # Enable debug mode for detailed error logging
 )
 
 # Security for staging authentication
