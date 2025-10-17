@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     RECAPTCHA_MIN_SCORE: float = 0.5  # Minimum score for verification (0.0-1.0)
     SKIP_RECAPTCHA: bool = False  # Skip verification in development/testing
 
+    # Staging Authentication
+    STAGING_USERNAME: str = "husni"
+    STAGING_PASSWORD: str = "0258520258"
+
     # Encryption
     ENCRYPTION_MASTER_KEY: Optional[str] = None  # Base64 encoded Fernet key
     ENCRYPT_SENSITIVE_DATA: bool = True  # Enable/disable data encryption

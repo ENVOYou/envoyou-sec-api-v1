@@ -135,6 +135,10 @@ jobs:
             ENABLE_METRICS=${{ secrets.ENABLE_METRICS }}
             ENABLE_RATE_LIMITING=${{ secrets.ENABLE_RATE_LIMITING }}
 
+            # ---- Credentials Staging ----
+            STAGING_USERNAME=${{ secrets.STAGING_USERNAME }}
+            STAGING_PASSWORD=${{ secrets.STAGING_PASSWORD }}
+
             # ---- Misc ----
             STAGING_HOST=${{ secrets.STAGING_HOST }}
             STAGING_USER=${{ secrets.STAGING_USER }}

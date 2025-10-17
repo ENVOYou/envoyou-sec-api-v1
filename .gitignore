@@ -182,3 +182,5 @@ Thumbs.db
 
 # log test error
 log_error.txt
+.env.staging
+scripts/create_staging_users.py

@@ -6,12 +6,14 @@ Climate Disclosure Rule Compliance Platform for US Public Companies
 from datetime import datetime
 
 import uvicorn
-from fastapi import Depends, FastAPI, Response
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.security import HTTPBasic
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.api.v1.api import api_router
 from app.core.config import settings
@@ -39,6 +41,9 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
+# Security for staging authentication
+security = HTTPBasic()
+
 # Set up rate limiting (only in production/staging)
 if settings.ENVIRONMENT in ["production", "staging"] and SLOWAPI_AVAILABLE:
     app.state.limiter = limiter
@@ -55,20 +60,39 @@ app.add_middleware(
 )
 
 
-# Custom middleware to handle nginx basic auth bypass for Bearer tokens
+# Staging authentication middleware
 @app.middleware("http")
-async def nginx_auth_bypass(request, call_next):
-    """
-    Middleware to handle nginx basic auth bypass for Bearer tokens.
-    When a Bearer token is present, we add a header that nginx can check
-    to skip basic auth validation.
-    """
-    auth_header = request.headers.get("authorization", "")
+async def staging_auth_middleware(request, call_next):
+    """Basic authentication middleware for staging environments"""
+    if settings.ENVIRONMENT in ["staging", "production"]:
+        # Skip auth for health check
+        if request.url.path == "/health":
+            return await call_next(request)
 
-    # If this is a Bearer token request, add a header for nginx to detect
-    if auth_header.startswith("Bearer "):
-        # Add a custom header that nginx can check
-        request.headers["X-Skip-Basic-Auth"] = "true"
+        # Check for Bearer token first (authenticated requests)
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            # Valid Bearer token present, allow request
+            pass
+        else:
+            # No Bearer token, require basic auth
+            try:
+                credentials = await security(request)
+                if not (
+                    credentials.username == settings.STAGING_USERNAME
+                    and credentials.password == settings.STAGING_PASSWORD
+                ):
+                    raise HTTPException(
+                        status_code=HTTP_401_UNAUTHORIZED,
+                        detail="Invalid staging credentials",
+                        headers={"WWW-Authenticate": "Basic"},
+                    )
+            except Exception:
+                raise HTTPException(
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    detail="Staging authentication required",
+                    headers={"WWW-Authenticate": "Basic"},
+                )
 
     response = await call_next(request)
     return response
