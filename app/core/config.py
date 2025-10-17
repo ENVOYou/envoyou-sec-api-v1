@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     SKIP_RECAPTCHA: bool = False  # Skip verification in development/testing
 
     # Staging Authentication
-    STAGING_USERNAME: str = "husni"
-    STAGING_PASSWORD: str = "0258520258"
+    STAGING_USERNAME: Optional[str] = None
+    STAGING_PASSWORD: Optional[str] = None
 
     # Encryption
     ENCRYPTION_MASTER_KEY: Optional[str] = None  # Base64 encoded Fernet key
