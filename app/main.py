@@ -65,8 +65,8 @@ app.add_middleware(
 async def staging_auth_middleware(request, call_next):
     """Basic authentication middleware for staging environments"""
     if settings.ENVIRONMENT in ["staging", "production"]:
-        # Skip auth for health check
-        if request.url.path == "/health":
+        # Skip auth for health check and CORS preflight requests
+        if request.url.path == "/health" or request.method == "OPTIONS":
             return await call_next(request)
 
         # Check for Bearer token first (authenticated requests)
