@@ -29,6 +29,18 @@ else:
         "require" if settings.ENVIRONMENT in ["staging", "production"] else "prefer"
     )
 
+    # Build connect_args conditionally
+    connect_args = {
+        "sslmode": ssl_mode,
+        "connect_timeout": 10,  # Connection timeout
+    }
+
+    # Only add statement_timeout for non-Neon connections
+    if settings.DATABASE_STATEMENT_TIMEOUT and "neon.tech" not in settings.DATABASE_URL:
+        connect_args["options"] = (
+            f"-c statement_timeout={settings.DATABASE_STATEMENT_TIMEOUT}"
+        )
+
     engine = create_engine(
         settings.DATABASE_URL,
         poolclass=QueuePool,
@@ -38,11 +50,7 @@ else:
         pool_timeout=settings.DATABASE_POOL_TIMEOUT,
         pool_pre_ping=True,
         echo=settings.DEBUG,
-        connect_args={
-            "sslmode": ssl_mode,
-            "connect_timeout": 10,  # Connection timeout
-            "options": f"-c statement_timeout={settings.DATABASE_STATEMENT_TIMEOUT}",  # Query timeout
-        },
+        connect_args=connect_args,
     )
 
 # Create session factory

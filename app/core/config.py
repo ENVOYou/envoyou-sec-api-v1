@@ -145,6 +145,12 @@ class Settings(BaseSettings):
             self.DATABASE_URL = "sqlite:///./test_envoyou_sec.db"
             self.ENVIRONMENT = "testing"
 
+        # Handle Neon connection parameters
+        if "neon.tech" in self.DATABASE_URL:
+            # Neon pooled connections don't support statement_timeout
+            # Remove it to avoid connection errors
+            self.DATABASE_STATEMENT_TIMEOUT = None
+
 
 # Global settings instance
 settings = Settings()
