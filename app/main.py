@@ -6,13 +6,14 @@ Climate Disclosure Rule Compliance Platform for US Public Companies
 from datetime import datetime
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBasic
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.api.v1.api import api_router
@@ -44,6 +45,53 @@ app = FastAPI(
 # Security for staging authentication
 security = HTTPBasic()
 
+
+class StagingAuthMiddleware(BaseHTTPMiddleware):
+    """Basic authentication middleware for staging environments"""
+
+    async def dispatch(self, request, call_next):
+        if settings.ENVIRONMENT in ["staging", "production"]:
+            # Skip auth for health check and public auth endpoints
+            if (
+                request.url.path == "/health"
+                or request.url.path.startswith("/v1/auth/")
+                or request.method == "OPTIONS"
+            ):
+                return await call_next(request)
+
+            # Check for Bearer token first (authenticated requests)
+            auth_header = request.headers.get("authorization", "")
+            if auth_header.startswith("Bearer "):
+                # Valid Bearer token present, allow request
+                pass
+            else:
+                # No Bearer token, require basic auth
+                try:
+                    credentials = await security(request)
+                    if not (
+                        credentials.username == settings.STAGING_USERNAME
+                        and credentials.password == settings.STAGING_PASSWORD
+                    ):
+                        from fastapi import HTTPException
+
+                        raise HTTPException(
+                            status_code=HTTP_401_UNAUTHORIZED,
+                            detail="Invalid staging credentials",
+                            headers={"WWW-Authenticate": "Basic"},
+                        )
+                except Exception:
+                    from fastapi import HTTPException
+
+                    raise HTTPException(
+                        status_code=HTTP_401_UNAUTHORIZED,
+                        detail="Staging authentication required",
+                        headers={"WWW-Authenticate": "Basic"},
+                    )
+
+        response = await call_next(request)
+        return response
+
+
 # Set up rate limiting (only in production/staging)
 if settings.ENVIRONMENT in ["production", "staging"] and SLOWAPI_AVAILABLE:
     app.state.limiter = limiter
@@ -59,43 +107,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Staging authentication middleware
-@app.middleware("http")
-async def staging_auth_middleware(request, call_next):
-    """Basic authentication middleware for staging environments"""
-    if settings.ENVIRONMENT in ["staging", "production"]:
-        # Skip auth for health check and CORS preflight requests
-        if request.url.path == "/health" or request.method == "OPTIONS":
-            return await call_next(request)
-
-        # Check for Bearer token first (authenticated requests)
-        auth_header = request.headers.get("authorization", "")
-        if auth_header.startswith("Bearer "):
-            # Valid Bearer token present, allow request
-            pass
-        else:
-            # No Bearer token, require basic auth
-            try:
-                credentials = await security(request)
-                if not (
-                    credentials.username == settings.STAGING_USERNAME
-                    and credentials.password == settings.STAGING_PASSWORD
-                ):
-                    raise HTTPException(
-                        status_code=HTTP_401_UNAUTHORIZED,
-                        detail="Invalid staging credentials",
-                        headers={"WWW-Authenticate": "Basic"},
-                    )
-            except Exception:
-                raise HTTPException(
-                    status_code=HTTP_401_UNAUTHORIZED,
-                    detail="Staging authentication required",
-                    headers={"WWW-Authenticate": "Basic"},
-                )
-
-    response = await call_next(request)
-    return response
+# Staging authentication middleware - runs AFTER CORS to allow preflight requests
+if settings.ENVIRONMENT in ["staging", "production"]:
+    app.add_middleware(StagingAuthMiddleware)
 
 
 # Response compression middleware (only in production/staging)
