@@ -255,7 +255,7 @@ class AuthService:
                     if verification_token
                     else None
                 ),
-                email_verified=not settings.EMAIL_VERIFICATION_REQUIRED,  
+                email_verified=not settings.EMAIL_VERIFICATION_REQUIRED,
             )
 
             self.db.add(user)
