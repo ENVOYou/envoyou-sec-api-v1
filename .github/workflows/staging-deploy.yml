@@ -138,6 +138,8 @@ jobs:
             # ---- Credentials Staging ----
             STAGING_USERNAME=${{ secrets.STAGING_USERNAME }}
             STAGING_PASSWORD=${{ secrets.STAGING_PASSWORD }}
+            STAGING_API_USER=${{ secrets.STAGING_API_USER }}
+            STAGING_API_PASS=${{ secrets.STAGING_API_PASS }}
 
             # ---- Misc ----
             STAGING_HOST=${{ secrets.STAGING_HOST }}
