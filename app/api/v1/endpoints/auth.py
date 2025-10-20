@@ -359,14 +359,14 @@ async def reset_password(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired token"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token"
         )
 
     # Hash new password
     hashed_password = auth_service.security.get_password_hash(new_password)
     user.hashed_password = hashed_password
     from datetime import datetime
+
     user.password_changed_at = datetime.utcnow()
 
     db.commit()
