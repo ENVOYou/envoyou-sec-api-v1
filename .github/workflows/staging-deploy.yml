@@ -143,6 +143,24 @@ jobs:
             STAGING_HOST=${{ secrets.STAGING_HOST }}
             STAGING_USER=${{ secrets.STAGING_USER }}
             SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+
+            # ---- Email ----
+            MAILGUN_SMTP_LOGIN=${{ secrets.MAILGUN_SMTP_LOGIN }}
+            MAILGUN_SMTP_PASSWORD=${{ secrets.MAILGUN_SMTP_PASSWORD }}
+            MAILGUN_SMTP_SERVER=${{ secrets.MAILGUN_SMTP_SERVER }}
+            MAILGUN_SMTP_PORT=${{ secrets.MAILGUN_SMTP_PORT }}
+            MAILGUN_SMTP_USE_TLS=${{ secrets.MAILGUN_SMTP_USE_TLS }}
+            MAILGUN_SMTP_USERNAME=${{ secrets.MAILGUN_SMTP_USERNAME }}
+            EMAIL_SERVICE=${{ secrets.EMAIL_SERVICE }}
+            MAILGUN_API_KEY=${{ secrets.MAILGUN_API_KEY }}
+            MAILGUN_DOMAIN=${{ secrets.MAILGUN_DOMAIN }}
+            MAILGUN_API_BASE_URL=${{ secrets.MAILGUN_API_BASE_URL }}
+            SUPPORT_EMAIL=${{ secrets.SUPPORT_EMAIL }}
+            TEAM_EMAIL=${{ secrets.TEAM_EMAIL }}
+            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+            EMAIL_FROM_NAME=${{ secrets.EMAIL_FROM_NAME }}
+            INFO_EMAIL=${{ secrets.INFO_EMAIL }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
             EOF
                 log "🔒 Mengamankan file .env..."
                 chmod 600 .env
