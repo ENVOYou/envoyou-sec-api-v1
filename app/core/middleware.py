@@ -61,10 +61,30 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             # Get request ID if available
             request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
 
-            # Log the error
+            # Check if this is a stream-related error that we should not log
+            error_str = str(exc)
+            if any(
+                err in error_str
+                for err in [
+                    "EndOfStream",
+                    "WouldBlock",
+                    "Connection reset",
+                    "Broken pipe",
+                ]
+            ):
+                # These are client-side connection issues, not server errors
+                # Log at debug level only
+                logger.debug(
+                    f"Client connection issue - Request ID: {request_id}, "
+                    f"Error: {error_str}"
+                )
+                # Re-raise to let FastAPI handle it normally
+                raise exc
+
+            # Log actual server errors
             logger.error(
                 f"Unhandled exception - Request ID: {request_id}, "
-                f"Error: {str(exc)}",
+                f"Error: {error_str}",
                 exc_info=True,
             )
 
