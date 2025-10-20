@@ -125,6 +125,43 @@ except Exception as e:
     except Exception as e:
         print(f"ERROR: Failed to update emissions_calculations table: {e}")
 
+    # Add missing email verification columns to users table
+    try:
+        with engine.connect() as conn:
+            from sqlalchemy import text
+
+            # Check existing columns in users table
+            result = conn.execute(text("PRAGMA table_info(users)"))
+            columns = [col[1] for col in result.fetchall()]
+
+            missing_user_columns = []
+            if "email_verification_token" not in columns:
+                missing_user_columns.append(
+                    ("email_verification_token", "VARCHAR(255)")
+                )
+            if "email_verification_token_expires" not in columns:
+                missing_user_columns.append(
+                    ("email_verification_token_expires", "DATETIME")
+                )
+            if "email_verified" not in columns:
+                missing_user_columns.append(("email_verified", "BOOLEAN DEFAULT 0"))
+            if "email_verified_at" not in columns:
+                missing_user_columns.append(("email_verified_at", "DATETIME"))
+
+            for col_name, col_type in missing_user_columns:
+                print(f"DEBUG: Adding missing {col_name} column to users table")
+                conn.execute(
+                    text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+                )
+                conn.commit()
+
+            if missing_user_columns:
+                print(
+                    "DEBUG: Users table schema updated with email verification fields"
+                )
+    except Exception as e:
+        print(f"ERROR: Failed to update users table: {e}")
+
 # Check if report_locks table exists and has required columns
 try:
     from sqlalchemy import text
@@ -236,10 +273,11 @@ def test_user(db_session):
     """Create a test user"""
     security = SecurityUtils()
 
-    # Check if user already exists
+    # Always recreate the test user with correct password
     existing_user = db_session.query(User).filter(User.username == "testuser").first()
     if existing_user:
-        return existing_user
+        db_session.delete(existing_user)
+        db_session.commit()
 
     user = User(
         email="test@example.com",
@@ -249,6 +287,7 @@ def test_user(db_session):
         role=UserRole.FINANCE_TEAM,
         status=UserStatus.ACTIVE,
         is_active=True,
+        email_verified=True,  # Set to verified for test user
     )
 
     db_session.add(user)

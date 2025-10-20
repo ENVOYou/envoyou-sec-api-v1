@@ -3,11 +3,10 @@ Audit logging service for SEC compliance
 Comprehensive logging of all authentication and authorization events
 """
 
-import json
 import logging
-import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from sqlalchemy import Boolean, Column, DateTime, String, Text
 from sqlalchemy.orm import Session
@@ -97,7 +96,10 @@ class AuditLogger:
 
         except Exception as e:
             logger.error(f"Failed to log authentication audit: {str(e)}")
-            self.db.rollback()
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
 
     def log_authorization_event(
         self,
@@ -118,7 +120,7 @@ class AuditLogger:
                 event_type=event_type,
                 event_category="AUTHZ",
                 event_description=f"Authorization event: {action} on {resource}",
-                user_id=user.id,
+                user_id=user.id,  # This is already a UUID object from the User model
                 user_email=user.email,
                 user_role=user.role.value,
                 request_id=request_id,
@@ -143,7 +145,10 @@ class AuditLogger:
 
         except Exception as e:
             logger.error(f"Failed to log authorization audit: {str(e)}")
-            self.db.rollback()
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
 
     def log_data_access_event(
         self,
@@ -164,7 +169,7 @@ class AuditLogger:
                 event_type="DATA_ACCESS",
                 event_category="DATA",
                 event_description=f"Data access: {action} on {resource_type}",
-                user_id=user.id,
+                user_id=user.id,  # This is already a UUID object from the User model
                 user_email=user.email,
                 user_role=user.role.value,
                 request_id=request_id,
@@ -191,7 +196,10 @@ class AuditLogger:
 
         except Exception as e:
             logger.error(f"Failed to log data access audit: {str(e)}")
-            self.db.rollback()
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
 
     def log_calculation_event(
         self,
@@ -233,7 +241,10 @@ class AuditLogger:
 
         except Exception as e:
             logger.error(f"Failed to log calculation audit: {str(e)}")
-            self.db.rollback()
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
 
     def get_audit_trail(
         self,
@@ -248,7 +259,12 @@ class AuditLogger:
             query = self.db.query(AuditLog)
 
             if user_id:
-                query = query.filter(AuditLog.user_id == user_id)
+                try:
+                    user_uuid = UUID(user_id)
+                    query = query.filter(AuditLog.user_id == user_uuid)
+                except ValueError:
+                    logger.warning(f"Invalid user ID format in audit query: {user_id}")
+                    return []
 
             if event_category:
                 query = query.filter(AuditLog.event_category == event_category)
