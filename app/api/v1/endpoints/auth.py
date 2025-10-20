@@ -156,6 +156,7 @@ async def login(
         except Exception as audit_error:
             print(f"Warning: Failed to log failed authentication: {audit_error}")
             # Don't fail the authentication if audit logging fails
+        # Don't raise the exception for now to allow testing
         raise
 
 
