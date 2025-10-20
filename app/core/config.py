@@ -93,6 +93,27 @@ class Settings(BaseSettings):
     PROMETHEUS_METRICS_ENABLED: bool = True
     LOG_LEVEL: str = "INFO"
 
+    # Email Configuration
+    EMAIL_SERVICE: str = "mailgun"  # mailgun, smtp, sendgrid
+    MAILGUN_API_KEY: Optional[str] = None
+    MAILGUN_DOMAIN: str = "envoyou.com"
+    MAILGUN_API_BASE_URL: str = "https://api.mailgun.net"
+    MAILGUN_SMTP_SERVER: str = "smtp.mailgun.org"
+    MAILGUN_SMTP_PORT: int = 587
+    MAILGUN_SMTP_USERNAME: Optional[str] = None
+    MAILGUN_SMTP_PASSWORD: Optional[str] = None
+    MAILGUN_SMTP_USE_TLS: bool = True
+    EMAIL_FROM: str = "noreply@envoyou.com"
+    EMAIL_FROM_NAME: str = "Envoyou"
+    SUPPORT_EMAIL: str = "support@envoyou.com"
+    TEAM_EMAIL: str = "team@envoyou.com"
+    INFO_EMAIL: str = "info@envoyou.com"
+    ADMIN_EMAIL: str = "hello@envoyou.com"
+
+    # Email Verification
+    EMAIL_VERIFICATION_REQUIRED: bool = True
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 24
+
     # File Storage
     UPLOAD_MAX_SIZE_MB: int = 50
     REPORT_STORAGE_PATH: str = "./storage/reports"

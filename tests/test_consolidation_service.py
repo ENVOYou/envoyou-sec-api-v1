@@ -62,7 +62,6 @@ class TestEmissionsConsolidationService:
 
         # Entity 1: 100% owned subsidiary
         entity1 = CompanyEntity(
-            id=uuid4(),
             company_id=sample_company.id,
             name="Subsidiary A",
             entity_type="subsidiary",
@@ -74,7 +73,6 @@ class TestEmissionsConsolidationService:
 
         # Entity 2: 75% owned subsidiary
         entity2 = CompanyEntity(
-            id=uuid4(),
             company_id=sample_company.id,
             name="Subsidiary B",
             entity_type="subsidiary",
@@ -86,7 +84,6 @@ class TestEmissionsConsolidationService:
 
         # Entity 3: 25% owned joint venture
         entity3 = CompanyEntity(
-            id=uuid4(),
             company_id=sample_company.id,
             name="Joint Venture C",
             entity_type="joint_venture",

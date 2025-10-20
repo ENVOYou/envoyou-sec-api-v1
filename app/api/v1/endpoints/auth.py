@@ -225,12 +225,18 @@ async def register_user(
     user_data: UserCreate,
     request: Request,
     db: Session = Depends(get_db),
-    # Temporarily allow public registration for testing
-    # current_user: User = Depends(get_admin_user),  # Use admin dependency
+    current_user: User = Depends(get_current_active_user),  # Require authentication
 ):
     """
-    Register new user (Public registration for now)
+    Register new user (Admin only)
     """
+    # Check if current user is admin
+    if current_user.role.value != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can register new users",
+        )
+
     auth_service = AuthService(db)
     audit_logger = AuditLogger(db)
 
@@ -372,6 +378,117 @@ async def reset_password(
     db.commit()
 
     return {"message": "Password reset successfully"}
+
+
+@router.post("/verify-email")
+async def verify_email(
+    request_data: dict, request: Request, db: Session = Depends(get_db)
+):
+    """
+    Verify user email with token
+    """
+    token = request_data.get("token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification token is required",
+        )
+
+    auth_service = AuthService(db)
+    audit_logger = AuditLogger(db)
+
+    success = auth_service.verify_email(token)
+
+    if success:
+        # Log successful verification
+        try:
+            audit_logger.log_authentication_event(
+                event_type="EMAIL_VERIFICATION_SUCCESS",
+                user_email="unknown",  # We don't know email from token
+                success=True,
+                request_id=getattr(request.state, "request_id", None),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                additional_data={
+                    "token": token[:10] + "..."
+                },  # Partial token for logging
+            )
+        except:
+            pass  # Skip audit logging if it fails
+
+        return {"message": "Email verified successfully"}
+    else:
+        # Log failed verification
+        try:
+            audit_logger.log_authentication_event(
+                event_type="EMAIL_VERIFICATION_FAILED",
+                user_email="unknown",
+                success=False,
+                request_id=getattr(request.state, "request_id", None),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                additional_data={"token": token[:10] + "..."},
+            )
+        except:
+            pass  # Skip audit logging if it fails
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token",
+        )
+
+
+@router.post("/resend-verification")
+async def resend_verification_email(
+    request_data: dict, request: Request, db: Session = Depends(get_db)
+):
+    """
+    Resend email verification to user
+    """
+    email = request_data.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required"
+        )
+
+    auth_service = AuthService(db)
+    audit_logger = AuditLogger(db)
+
+    success = auth_service.resend_verification_email(email)
+
+    if success:
+        # Log successful resend
+        try:
+            audit_logger.log_authentication_event(
+                event_type="EMAIL_VERIFICATION_RESENT",
+                user_email=email,
+                success=True,
+                request_id=getattr(request.state, "request_id", None),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            )
+        except:
+            pass  # Skip audit logging if it fails
+
+        return {"message": "Verification email sent successfully"}
+    else:
+        # Log failed resend
+        try:
+            audit_logger.log_authentication_event(
+                event_type="EMAIL_VERIFICATION_RESEND_FAILED",
+                user_email=email,
+                success=False,
+                request_id=getattr(request.state, "request_id", None),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            )
+        except:
+            pass  # Skip audit logging if it fails
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to send verification email",
+        )
 
 
 @router.post("/audit-session")
