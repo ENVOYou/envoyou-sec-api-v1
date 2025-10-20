@@ -65,6 +65,8 @@ class Settings(BaseSettings):
         "testserver",
         "api.envoyou.com",
         "envoyou-sec-api-v1.onrender.com",
+        "10.209.27.249",
+        "10.210.251.177",
     ]
 
     # Database
