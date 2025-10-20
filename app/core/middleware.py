@@ -18,36 +18,55 @@ class AuditMiddleware(BaseHTTPMiddleware):
     """Middleware for comprehensive audit logging of all API requests"""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Generate unique request ID
-        request_id = str(uuid.uuid4())
-        request.state.request_id = request_id
+        try:
+            # Generate unique request ID
+            request_id = str(uuid.uuid4())
+            request.state.request_id = request_id
 
-        # Start timing
-        start_time = time.time()
+            # Start timing
+            start_time = time.time()
 
-        # Log request
-        logger.info(
-            f"Request started - ID: {request_id}, Method: {request.method}, "
-            f"URL: {request.url}, Client: {request.client.host if request.client else 'unknown'}"
-        )
+            # Log request
+            logger.info(
+                f"Request started - ID: {request_id}, Method: {request.method}, "
+                f"URL: {request.url}, Client: {request.client.host if request.client else 'unknown'}"
+            )
 
-        # Process request
-        response = await call_next(request)
+            # Process request
+            response = await call_next(request)
 
-        # Calculate processing time
-        process_time = time.time() - start_time
+            # Calculate processing time
+            process_time = time.time() - start_time
 
-        # Log response
-        logger.info(
-            f"Request completed - ID: {request_id}, Status: {response.status_code}, "
-            f"Time: {process_time:.3f}s"
-        )
+            # Log response
+            logger.info(
+                f"Request completed - ID: {request_id}, Status: {response.status_code}, "
+                f"Time: {process_time:.3f}s"
+            )
 
-        # Add request ID to response headers
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Process-Time"] = str(process_time)
+            # Add request ID to response headers
+            response.headers["X-Request-ID"] = request_id
+            response.headers["X-Process-Time"] = str(process_time)
 
-        return response
+            return response
+        except Exception as exc:
+            # Check if this is a stream-related error that we should not log
+            error_str = str(exc)
+            if any(
+                err in error_str
+                for err in [
+                    "EndOfStream",
+                    "WouldBlock",
+                    "Connection reset",
+                    "Broken pipe",
+                ]
+            ):
+                # These are client-side connection issues, not server errors
+                # Re-raise to let ErrorHandlingMiddleware handle it
+                raise exc
+
+            # For other errors, just re-raise to let ErrorHandlingMiddleware handle it
+            raise exc
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
