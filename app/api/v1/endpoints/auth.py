@@ -125,29 +125,37 @@ async def login(
         # Authenticate user
         token_response = auth_service.authenticate_user(credentials)
 
-        # Log successful authentication
-        audit_logger.log_authentication_event(
-            event_type="LOGIN_SUCCESS",
-            user_email=credentials.email,
-            success=True,
-            request_id=request_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
+        # Log successful authentication (with error handling)
+        try:
+            audit_logger.log_authentication_event(
+                event_type="LOGIN_SUCCESS",
+                user_email=credentials.email,
+                success=True,
+                request_id=request_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+        except Exception as audit_error:
+            print(f"Warning: Failed to log successful authentication: {audit_error}")
+            # Don't fail the authentication if audit logging fails
 
         return token_response
 
     except HTTPException as e:
-        # Log failed authentication
-        audit_logger.log_authentication_event(
-            event_type="LOGIN_FAILED",
-            user_email=credentials.email,
-            success=False,
-            request_id=request_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            error_message=e.detail,
-        )
+        # Log failed authentication (with error handling)
+        try:
+            audit_logger.log_authentication_event(
+                event_type="LOGIN_FAILED",
+                user_email=credentials.email,
+                success=False,
+                request_id=request_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                error_message=e.detail,
+            )
+        except Exception as audit_error:
+            print(f"Warning: Failed to log failed authentication: {audit_error}")
+            # Don't fail the authentication if audit logging fails
         raise
 
 

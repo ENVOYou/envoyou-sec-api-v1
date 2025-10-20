@@ -6,6 +6,7 @@ Handles user authentication, token management, and security operations
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -120,7 +121,21 @@ class AuthService:
 
             # Get user
             user_id = payload.get("sub")
-            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token payload",
+                )
+
+            # Convert string ID to UUID for database query
+            try:
+                user_uuid = UUID(user_id)
+                user = self.db.query(User).filter(User.id == user_uuid).first()
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid user ID format",
+                )
 
             if not user or not user.is_active or user.status != UserStatus.ACTIVE:
                 raise HTTPException(
@@ -213,7 +228,12 @@ class AuthService:
 
     def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
-        return self.db.query(User).filter(User.id == user_id).first()
+        try:
+            user_uuid = UUID(user_id)
+            return self.db.query(User).filter(User.id == user_uuid).first()
+        except ValueError:
+            logger.warning(f"Invalid user ID format: {user_id}")
+            return None
 
     def get_user_permissions(self, user: User) -> Dict[str, Any]:
         """Get user permissions based on role"""
@@ -238,7 +258,14 @@ class AuthService:
 
     def create_audit_session(self, user_id: str) -> Dict[str, Any]:
         """Create audit session for external auditors"""
-        user = self.get_user_by_id(user_id)
+        try:
+            user_uuid = UUID(user_id)
+            user = self.db.query(User).filter(User.id == user_uuid).first()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format",
+            )
 
         if not user or user.role != UserRole.AUDITOR:
             raise HTTPException(
