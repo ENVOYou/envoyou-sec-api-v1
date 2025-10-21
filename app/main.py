@@ -107,6 +107,9 @@ if settings.ENVIRONMENT in ["production", "staging"] and SLOWAPI_AVAILABLE:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
+app.add_middleware(ErrorHandlingMiddleware)
+app.add_middleware(AuditMiddleware)
+
 # CORS middleware for web dashboard integration
 # Enable CORS in all environments - nginx handles auth, FastAPI handles CORS
 app.add_middleware(
@@ -147,9 +150,6 @@ if settings.ENVIRONMENT in ["production", "staging"] and SLOWAPI_AVAILABLE:
 # Security and audit middleware (only in production/staging for TrustedHost)
 if settings.ENVIRONMENT in ["production", "staging"]:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
-
-app.add_middleware(ErrorHandlingMiddleware)
-app.add_middleware(AuditMiddleware)
 
 # Include API routes
 app.include_router(api_router, prefix="/v1")
