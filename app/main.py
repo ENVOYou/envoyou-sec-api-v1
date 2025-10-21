@@ -63,11 +63,15 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
             )
 
             # Skip auth for health check and public auth endpoints
-            if (
+            skip_auth = (
                 request.url.path.rstrip("/") == "/health"
                 or request.url.path.startswith("/v1/auth/")
                 or request.method == "OPTIONS"
-            ):
+            )
+
+            logger.info(f"StagingAuthMiddleware: skip_auth={skip_auth}")
+
+            if skip_auth:
                 logger.info(
                     "StagingAuthMiddleware: Skipping auth for health or auth endpoint"
                 )
