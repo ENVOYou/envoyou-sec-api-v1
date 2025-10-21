@@ -7,7 +7,8 @@ import time
 import uuid
 from typing import Callable
 
-from fastapi import Request, Response, HTTPException
+import anyio
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -75,26 +76,32 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             # Coba jalankan request seperti biasa
             response = await call_next(request)
             return response
-        except HTTPException as http_exc:
-            # JANGAN tangani HTTPException di sini. Biarkan FastAPI/Starlette yang urus.
-            # Cukup catat jika perlu, lalu lempar kembali errornya.
-            logger.debug(f"HTTPException encountered: {http_exc.status_code} - {http_exc.detail}")
-            raise http_exc # Penting: Lempar kembali!
         except Exception as exc:
-            # Blok ini HANYA untuk error tak terduga (bukan HTTPException)
-            request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
-            error_str = str(exc)
+            # Blok ini HANYA untuk error tak terduga (BUKAN HTTPException)
 
-            # Penanganan khusus untuk client disconnect (opsional, bisa di-log saja)
-            if any(err in error_str for err in ["EndOfStream", "WouldBlock", "Connection reset", "Broken pipe"]):
-                logger.debug(f"Client connection issue - Request ID: {request_id}, Error: {error_str}")
-                # Pertimbangkan untuk raise exc di sini juga agar tidak mengembalikan 500
-                raise exc # Biarkan server menangani disconnect
+            # Periksa apakah ini HTTPException, JIKA YA, lempar kembali agar ditangani FastAPI
+            if isinstance(exc, HTTPException):
+                logger.debug(
+                    f"HTTPException encountered, letting FastAPI handle: {exc.status_code} - {exc.detail}"
+                )
+                raise exc  # Penting: Lempar kembali!
 
-            # Ini adalah error server yang sebenarnya
+            # Tangani Client Disconnect/Stream Errors (Jangan dianggap error 500)
+            if isinstance(exc, (anyio.EndOfStream, anyio.WouldBlock)):
+                request_id_stream = getattr(request.state, "request_id", "N/A")
+                logger.debug(
+                    f"Client connection issue (ignored) - Request ID: {request_id_stream}, Error: {type(exc).__name__}"
+                )
+                # Cukup lempar kembali, biarkan server menangani disconnect
+                raise exc
+
+            # Ini adalah error server yang sebenarnya dan tak terduga
+            request_id_unhandled = getattr(
+                request.state, "request_id", str(uuid.uuid4())
+            )
             logger.error(
-                f"Unhandled server exception - Request ID: {request_id}, Error: {error_str}",
-                exc_info=True,
+                f"Unhandled server exception - Request ID: {request_id_unhandled}, Error: {str(exc)}",
+                exc_info=True,  # Sertakan traceback lengkap di log
             )
 
             # Kembalikan respons 500 yang terstruktur
@@ -103,7 +110,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                 content={
                     "error_code": "INTERNAL_SERVER_ERROR",
                     "message": "An internal server error occurred.",
-                    "request_id": request_id,
-                    "support_reference": f"ERR-{request_id[:8]}",
+                    "request_id": request_id_unhandled,
+                    "support_reference": f"ERR-{request_id_unhandled[:8]}",
                 },
             )
