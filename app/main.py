@@ -67,28 +67,37 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
                 pass
             else:
                 # No Bearer token, require basic auth
+                credentials = None  # Inisialisasi credentials
                 try:
+                    # Coba dapatkan kredensial Basic Auth
                     credentials = await security(request)
-                    if not (
-                        credentials.username == settings.STAGING_USERNAME
-                        and credentials.password == settings.STAGING_PASSWORD
+                except HTTPException as e:
+                    # Tangkap HTTPException spesifik dari security()
+                    # (Misalnya jika header Authorization tidak ada)
+                    # Pastikan header WWW-Authenticate ada untuk browser
+                    if (
+                        e.status_code == HTTP_401_UNAUTHORIZED
+                        and "WWW-Authenticate" not in e.headers
                     ):
-                        from fastapi import HTTPException
+                        e.headers = {"WWW-Authenticate": "Basic"}
+                    # Lempar kembali HTTPException ini agar ditangani framework/ErrorHandlingMiddleware
+                    raise e
+                # HAPUS blok 'except Exception:' yang luas di sini
 
-                        raise HTTPException(
-                            status_code=HTTP_401_UNAUTHORIZED,
-                            detail="Invalid staging credentials",
-                            headers={"WWW-Authenticate": "Basic"},
-                        )
-                except Exception:
-                    from fastapi import HTTPException
-
+                # Jika kredensial BERHASIL didapatkan, periksa nilainya
+                if not credentials or not (
+                    credentials.username == settings.STAGING_USERNAME
+                    and credentials.password == settings.STAGING_PASSWORD
+                ):
+                    # Jika kredensial salah atau tidak ada (meskipun tidak error saat diambil)
                     raise HTTPException(
                         status_code=HTTP_401_UNAUTHORIZED,
-                        detail="Staging authentication required",
+                        detail="Invalid or missing staging credentials",
                         headers={"WWW-Authenticate": "Basic"},
                     )
+                # Jika kredensial benar, lanjutkan ke middleware/route berikutnya (tidak perlu raise)
 
+        # Jika otentikasi berhasil atau tidak diperlukan
         response = await call_next(request)
         return response
 
