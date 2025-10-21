@@ -70,51 +70,39 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
-    """Middleware for consistent error handling and logging"""
-
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
+            # Coba jalankan request seperti biasa
             response = await call_next(request)
             return response
+        except HTTPException as http_exc:
+            # JANGAN tangani HTTPException di sini. Biarkan FastAPI/Starlette yang urus.
+            # Cukup catat jika perlu, lalu lempar kembali errornya.
+            logger.debug(f"HTTPException encountered: {http_exc.status_code} - {http_exc.detail}")
+            raise http_exc # Penting: Lempar kembali!
         except Exception as exc:
-            # Get request ID if available
+            # Blok ini HANYA untuk error tak terduga (bukan HTTPException)
             request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
-
-            # Check if this is a stream-related error that we should not log
             error_str = str(exc)
-            if any(
-                err in error_str
-                for err in [
-                    "EndOfStream",
-                    "WouldBlock",
-                    "Connection reset",
-                    "Broken pipe",
-                ]
-            ):
-                # These are client-side connection issues, not server errors
-                # Log at debug level only
-                logger.debug(
-                    f"Client connection issue - Request ID: {request_id}, "
-                    f"Error: {error_str}"
-                )
-                # Re-raise to let FastAPI handle it normally
-                raise exc
 
-            # Log actual server errors
+            # Penanganan khusus untuk client disconnect (opsional, bisa di-log saja)
+            if any(err in error_str for err in ["EndOfStream", "WouldBlock", "Connection reset", "Broken pipe"]):
+                logger.debug(f"Client connection issue - Request ID: {request_id}, Error: {error_str}")
+                # Pertimbangkan untuk raise exc di sini juga agar tidak mengembalikan 500
+                raise exc # Biarkan server menangani disconnect
+
+            # Ini adalah error server yang sebenarnya
             logger.error(
-                f"Unhandled exception - Request ID: {request_id}, "
-                f"Error: {error_str}",
+                f"Unhandled server exception - Request ID: {request_id}, Error: {error_str}",
                 exc_info=True,
             )
 
-            # Return structured error response
+            # Kembalikan respons 500 yang terstruktur
             return JSONResponse(
                 status_code=500,
                 content={
                     "error_code": "INTERNAL_SERVER_ERROR",
-                    "message": "An internal server error occurred",
-                    "details": None,
-                    "timestamp": time.time(),
+                    "message": "An internal server error occurred.",
                     "request_id": request_id,
                     "support_reference": f"ERR-{request_id[:8]}",
                 },
