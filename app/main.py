@@ -139,8 +139,8 @@ if settings.ENVIRONMENT in ["production", "staging"] and SLOWAPI_AVAILABLE:
 if settings.ENVIRONMENT in ["production", "staging"]:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
 
-# app.add_middleware(ErrorHandlingMiddleware)
-# app.add_middleware(AuditMiddleware)
+app.add_middleware(ErrorHandlingMiddleware)
+app.add_middleware(AuditMiddleware)
 
 # Include API routes
 app.include_router(api_router, prefix="/v1")
