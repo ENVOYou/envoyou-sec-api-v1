@@ -6,7 +6,7 @@ Climate Disclosure Rule Compliance Platform for US Public Companies
 from datetime import datetime
 
 import uvicorn
-from fastapi import Depends, FastAPI, Response
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
