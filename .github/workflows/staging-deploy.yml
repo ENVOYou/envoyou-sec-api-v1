@@ -47,6 +47,9 @@ jobs:
             PROJECT_DIR="$HOME/envoyou-staging"
             REPO_URL="git@github.com:ENVOYou/envoyou-sec-api-v1.git"
             COMPOSE_FILE="docker-compose.staging.yml"
+            # --- TAMBAHKAN NAMA IMAGE DAN TAG UNIK ---
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/envoyou-sec-api"
+            UNIQUE_TAG="staging-${{ github.sha }}"
 
             # --- Fungsi Bantuan ---
             log() {
@@ -138,6 +141,8 @@ jobs:
             # ---- Credentials Staging ----
             STAGING_USERNAME=${{ secrets.STAGING_USERNAME }}
             STAGING_PASSWORD=${{ secrets.STAGING_PASSWORD }}
+            STAGING_API_USER=${{ secrets.STAGING_API_USER }}
+            STAGING_API_PASS=${{ secrets.STAGING_API_PASS }}
 
             # ---- Misc ----
             STAGING_HOST=${{ secrets.STAGING_HOST }}

@@ -1,7 +1,7 @@
 services:
   # FastAPI application - Staging
   api:
-    image: ${DOCKER_USERNAME}/envoyou-sec-api:staging
+    image: ${DOCKER_USERNAME}/envoyou-sec-api:${DOCKER_IMAGE_TAG:-staging}
     ports:
       - "8000:8000"
     env_file:
