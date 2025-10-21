@@ -3,6 +3,7 @@ ENVOYOU SEC API - Main FastAPI Application
 Climate Disclosure Rule Compliance Platform for US Public Companies
 """
 
+import logging
 from datetime import datetime
 
 import uvicorn
@@ -43,6 +44,9 @@ app = FastAPI(
     debug=settings.DEBUG,  # Enable debug mode for detailed error logging
 )
 
+# Logger for staging auth middleware
+logger = logging.getLogger(__name__)
+
 # Security for staging authentication
 security = HTTPBasic()
 
@@ -52,21 +56,36 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request, call_next):
         if settings.ENVIRONMENT in ["staging", "production"]:
+            # Log the request details for debugging
+            logger.info(
+                f"StagingAuthMiddleware: path={request.url.path}, method={request.method}, "
+                f"environment={settings.ENVIRONMENT}"
+            )
+
             # Skip auth for health check and public auth endpoints
             if (
-                request.url.path == "/health"
+                request.url.path.rstrip("/") == "/health"
                 or request.url.path.startswith("/v1/auth/")
                 or request.method == "OPTIONS"
             ):
+                logger.info(
+                    "StagingAuthMiddleware: Skipping auth for health or auth endpoint"
+                )
                 return await call_next(request)
 
             # Check for Bearer token first (authenticated requests)
             auth_header = request.headers.get("authorization", "")
             if auth_header.startswith("Bearer "):
                 # Valid Bearer token present, allow request
+                logger.info(
+                    "StagingAuthMiddleware: Bearer token present, allowing request"
+                )
                 pass
             else:
                 # No Bearer token, require basic auth
+                logger.info(
+                    "StagingAuthMiddleware: No Bearer token, attempting basic auth"
+                )
                 credentials = None  # Inisialisasi credentials
                 try:
                     # Coba dapatkan kredensial Basic Auth
@@ -75,6 +94,9 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
                     # Tangkap HTTPException spesifik dari security()
                     # (Misalnya jika header Authorization tidak ada)
                     # Pastikan header WWW-Authenticate ada untuk browser
+                    logger.warning(
+                        f"StagingAuthMiddleware: HTTPException from security: {e.status_code} - {e.detail}"
+                    )
                     if (
                         e.status_code == HTTP_401_UNAUTHORIZED
                         and "WWW-Authenticate" not in e.headers
@@ -90,12 +112,18 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
                     and credentials.password == settings.STAGING_PASSWORD
                 ):
                     # Jika kredensial salah atau tidak ada (meskipun tidak error saat diambil)
+                    logger.warning(
+                        "StagingAuthMiddleware: Invalid or missing staging credentials"
+                    )
                     raise HTTPException(
                         status_code=HTTP_401_UNAUTHORIZED,
                         detail="Invalid or missing staging credentials",
                         headers={"WWW-Authenticate": "Basic"},
                     )
                 # Jika kredensial benar, lanjutkan ke middleware/route berikutnya (tidak perlu raise)
+                logger.info(
+                    "StagingAuthMiddleware: Valid basic auth credentials, allowing request"
+                )
 
         # Jika otentikasi berhasil atau tidak diperlukan
         response = await call_next(request)
