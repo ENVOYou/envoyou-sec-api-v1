@@ -3,6 +3,7 @@ Report Management Endpoints
 Handles report locking, comments, and revision tracking for audit and collaboration
 """
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -15,26 +16,224 @@ from app.models.user import User
 from app.schemas.report import (
     CommentCreate,
     CommentResponse,
+    CreateReportRequest,
     LockReportRequest,
     LockReportResponse,
     ReportCommentList,
     ReportLockInfo,
     ReportLockStatus,
+    ReportResponse,
     ReportRevisionList,
+    ReportsFilters,
+    ReportsListResponse,
     RevisionResponse,
     UnlockReportRequest,
+    UpdateReportRequest,
 )
 from app.services.report_lock_service import ReportLockService
+from app.services.report_service import ReportService
 
 router = APIRouter()
 
 report_lock_service = ReportLockService
+report_service = ReportService
 
 
 @router.get("/test")
 async def test_endpoint():
     """Test endpoint to verify router is working"""
     return {"message": "Reports router is working"}
+
+
+# CRUD Endpoints
+@router.get("/", response_model=ReportsListResponse)
+async def get_reports(
+    status: Optional[List[str]] = None,
+    report_type: Optional[List[str]] = None,
+    company_id: Optional[str] = None,
+    reporting_year: Optional[int] = None,
+    created_by: Optional[str] = None,
+    priority: Optional[List[str]] = None,
+    search: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    sort_by: Optional[str] = "created_at",
+    sort_order: Optional[str] = "desc",
+    page: int = 1,
+    page_size: int = 20,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get paginated list of reports with optional filtering"""
+    try:
+        filters = ReportsFilters(
+            status=status,
+            report_type=report_type,
+            company_id=company_id,
+            reporting_year=reporting_year,
+            created_by=created_by,
+            priority=priority,
+            search=search,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+
+        service = ReportService(db)
+        result = service.get_reports(filters, page, page_size, current_user)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get reports: {str(e)}",
+        )
+
+
+@router.post("/", response_model=ReportResponse)
+async def create_report(
+    report_data: CreateReportRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new report"""
+    try:
+        service = ReportService(db)
+        report = service.create_report(report_data, current_user)
+
+        return ReportResponse(
+            id=str(report.id),
+            title=report.title,
+            report_type=report.report_type,
+            status=report.status,
+            version=report.version,
+            created_at=report.created_at,
+            updated_at=report.updated_at,
+            completed_at=report.completed_at,
+            workflow_id=str(report.workflow_id) if report.workflow_id else None,
+            created_by=str(report.created_by),
+            updated_by=str(report.updated_by) if report.updated_by else None,
+            content=report.content,
+            report_metadata=report.report_metadata,
+            pdf_path=report.pdf_path,
+            excel_path=report.excel_path,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create report: {str(e)}",
+        )
+
+
+@router.get("/{report_id}", response_model=ReportResponse)
+async def get_report(
+    report_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get a specific report by ID"""
+    try:
+        service = ReportService(db)
+        report = service.get_report(report_id)
+
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
+
+        return ReportResponse(
+            id=str(report.id),
+            title=report.title,
+            report_type=report.report_type,
+            status=report.status,
+            version=report.version,
+            created_at=report.created_at,
+            updated_at=report.updated_at,
+            completed_at=report.completed_at,
+            workflow_id=str(report.workflow_id) if report.workflow_id else None,
+            created_by=str(report.created_by),
+            updated_by=str(report.updated_by) if report.updated_by else None,
+            content=report.content,
+            report_metadata=report.report_metadata,
+            pdf_path=report.pdf_path,
+            excel_path=report.excel_path,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get report: {str(e)}",
+        )
+
+
+@router.put("/{report_id}", response_model=ReportResponse)
+async def update_report(
+    report_id: str,
+    report_data: UpdateReportRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Update an existing report"""
+    try:
+        service = ReportService(db)
+        report = service.update_report(report_id, report_data, current_user)
+
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
+
+        return ReportResponse(
+            id=str(report.id),
+            title=report.title,
+            report_type=report.report_type,
+            status=report.status,
+            version=report.version,
+            created_at=report.created_at,
+            updated_at=report.updated_at,
+            completed_at=report.completed_at,
+            workflow_id=str(report.workflow_id) if report.workflow_id else None,
+            created_by=str(report.created_by),
+            updated_by=str(report.updated_by) if report.updated_by else None,
+            content=report.content,
+            report_metadata=report.report_metadata,
+            pdf_path=report.pdf_path,
+            excel_path=report.excel_path,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update report: {str(e)}",
+        )
+
+
+@router.delete("/{report_id}")
+async def delete_report(
+    report_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a report"""
+    try:
+        service = ReportService(db)
+        result = service.delete_report(report_id)
+
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            )
+
+        return {"success": True, "message": "Report deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete report: {str(e)}",
+        )
 
 
 @router.post("/{report_id}/lock", response_model=LockReportResponse)
